@@ -69,7 +69,7 @@ test.describe('ChaseFree AI: End-to-End E2E Validation Suite', () => {
 
       // 6. Select a tone preset and write custom instructions
       console.log('Step 7: Selecting Tone preset and entering custom guidelines...');
-      const toneButton = page.locator('button:has-text("Friendly")');
+      const toneButton = page.locator('button:has-text("Friendly")').first();
       if (await toneButton.isVisible()) {
         await toneButton.click();
       }
@@ -79,13 +79,13 @@ test.describe('ChaseFree AI: End-to-End E2E Validation Suite', () => {
 
       // 7. Generate draft and check unescaped JSON plain-text output
       console.log('Step 8: Clicking "Generate Draft" to trigger LLM completion...');
-      const generateDraftBtn = page.locator('button:has-text("Generate Draft")');
+      const generateDraftBtn = page.locator('button:has-text("Generate Draft")').first();
       if (await generateDraftBtn.isVisible()) {
         await generateDraftBtn.click();
         
         // Wait for LLM completion to load and output drafts
         console.log('Waiting for AI reminder response...');
-        const markSentBtn = page.locator('button:has-text("Mark as Sent")');
+        const markSentBtn = page.locator('button:has-text("Mark as Sent")').first();
         
         await expect(markSentBtn).toBeVisible({ timeout: 25000 });
 
