@@ -1,0 +1,282 @@
+'use client'
+
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { generateReminderAction, logReminderEventAction } from '@/lib/reminders/actions'
+
+type Tone = 'friendly' | 'professional' | 'firm' | 'final_notice'
+
+interface ReminderModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  invoiceId: string
+  invoiceNumber: string
+}
+
+const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
+  {
+    value: 'friendly',
+    label: 'Friendly',
+    description: 'Soft, warm poke. Assumes they simply forgot.',
+  },
+  {
+    value: 'professional',
+    label: 'Professional',
+    description: 'Standard business-appropriate reminder.',
+  },
+  {
+    value: 'firm',
+    label: 'Firm',
+    description: 'Urgent, direct, sets clear expectations.',
+  },
+  {
+    value: 'final_notice',
+    label: 'Final Notice',
+    description: 'Direct final warning before further action.',
+  },
+]
+
+export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber }: ReminderModalProps) {
+  const [tone, setTone] = useState<Tone>('professional')
+  const [customInstructions, setCustomInstructions] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Draft state
+  const [draft, setDraft] = useState<{ id: string; subject: string; body: string } | null>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [editedBody, setEditedBody] = useState('')
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [markingSent, setMarkingSent] = useState(false)
+
+  function handleClose(open: boolean) {
+    if (!open) {
+      setDraft(null)
+      setError(null)
+      setEditMode(false)
+      setEditedBody('')
+      setCopiedField(null)
+      setCustomInstructions('')
+    }
+    onOpenChange(open)
+  }
+
+  async function handleGenerate() {
+    setGenerating(true)
+    setError(null)
+    setDraft(null)
+
+    const result = await generateReminderAction(invoiceId, tone, customInstructions || undefined)
+
+    if (result.error) {
+      setError(result.error)
+    } else if (result.data) {
+      setDraft(result.data)
+      setEditedBody(result.data.body)
+    }
+    setGenerating(false)
+  }
+
+  async function handleCopy(field: 'subject' | 'body', text: string) {
+    await navigator.clipboard.writeText(text)
+    setCopiedField(field)
+    setTimeout(() => setCopiedField(null), 2000)
+
+    // Log copy event silently
+    if (draft) {
+      await logReminderEventAction(invoiceId, 'draft_copied', draft.id, `Copied ${field} to clipboard`)
+    }
+  }
+
+  async function handleMarkSent() {
+    if (!draft) return
+    setMarkingSent(true)
+
+    await logReminderEventAction(
+      invoiceId,
+      'marked_sent',
+      draft.id,
+      `Reminder marked as sent for Invoice ${invoiceNumber}`
+    )
+
+    setMarkingSent(false)
+    handleClose(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-neutral-950/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-neutral-100">
+            {draft ? 'Reminder Draft' : 'Generate Reminder'}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-neutral-500">
+            {draft
+              ? `AI-generated ${tone} reminder for Invoice ${invoiceNumber}`
+              : `Create an AI-drafted follow-up for Invoice ${invoiceNumber}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {!draft ? (
+          /* Tone Selection & Generate */
+          <div className="space-y-5 pt-2">
+            {error && (
+              <div className="p-3 text-xs font-medium bg-red-950/30 border border-red-900/50 text-red-400 rounded-lg text-center">
+                {error}
+              </div>
+            )}
+
+            {/* Tone Selector */}
+            <div className="space-y-2">
+              <Label className="text-neutral-400 text-sm">Select Tone</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {TONE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setTone(option.value)}
+                    className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                      tone === option.value
+                        ? 'border-neutral-600 bg-neutral-800/80'
+                        : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50'
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${tone === option.value ? 'text-neutral-100' : 'text-neutral-300'}`}>
+                      {option.label}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                      {option.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Instructions */}
+            <div className="space-y-1.5">
+              <Label className="text-neutral-400 text-sm">
+                Custom Instructions <span className="text-neutral-600">(optional)</span>
+              </Label>
+              <Textarea
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                placeholder="e.g., Mention the updated bank details, keep it under 3 sentences..."
+                rows={3}
+                className="border-neutral-800 bg-neutral-950 text-neutral-200 placeholder:text-neutral-600 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none text-sm"
+              />
+            </div>
+
+            {/* Generate Button */}
+            <Button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="w-full h-10 bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {generating ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-neutral-600 border-t-transparent rounded-full animate-spin" />
+                  AI is crafting your reminder...
+                </span>
+              ) : (
+                'Generate Draft'
+              )}
+            </Button>
+          </div>
+        ) : (
+          /* Draft Display */
+          <div className="space-y-4 pt-2">
+            {/* Subject */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-neutral-400 text-sm">Subject</Label>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('subject', draft.subject)}
+                  className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                >
+                  {copiedField === 'subject' ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <div className="p-3 rounded-lg border border-neutral-800/60 bg-neutral-900/40">
+                <p className="text-sm text-neutral-200">{draft.subject}</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-neutral-400 text-sm">Email Body</Label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editMode) {
+                        setDraft({ ...draft, body: editedBody })
+                      }
+                      setEditMode(!editMode)
+                    }}
+                    className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  >
+                    {editMode ? 'Save' : 'Edit'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy('body', editMode ? editedBody : draft.body)}
+                    className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  >
+                    {copiedField === 'body' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+              {editMode ? (
+                <Textarea
+                  value={editedBody}
+                  onChange={(e) => setEditedBody(e.target.value)}
+                  rows={10}
+                  className="border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none text-sm leading-relaxed"
+                />
+              ) : (
+                <div className="p-3.5 rounded-lg border border-neutral-800/60 bg-neutral-900/40 max-h-[320px] overflow-y-auto">
+                  <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">
+                    {draft.body}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2">
+              <Button
+                onClick={handleMarkSent}
+                disabled={markingSent}
+                className="flex-1 h-9 bg-green-600 text-white hover:bg-green-700 font-medium text-sm cursor-pointer disabled:opacity-50"
+              >
+                {markingSent ? 'Marking...' : 'Mark as Sent'}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setDraft(null)
+                  setError(null)
+                  setEditMode(false)
+                }}
+                className="h-9 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 text-sm cursor-pointer"
+              >
+                New Draft
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
