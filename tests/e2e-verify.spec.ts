@@ -36,15 +36,15 @@ test.describe('ChaseFree AI: End-to-End E2E Validation Suite', () => {
     await page.screenshot({ path: 'test-results/03_dashboard_loaded.png' });
 
     // 3. Verify Currency-Aware Stats cards
-    console.log('Step 4: Checking currency-aware Outstanding and Overdue stats...');
+    console.log('Step 4: Checking currency-aware Unpaid and Overdue stats...');
     // Inspect stats card values to ensure they contain correct currency-grouped symbols
-    const outstandingStat = page.locator('text=/Total Outstanding/i');
+    const outstandingStat = page.locator('text=/Unpaid/i').first();
     if (await outstandingStat.isVisible()) {
       await expect(outstandingStat).toBeVisible();
-      console.log('✔ Outstanding Balance Stat Card is visible.');
+      console.log('✔ Unpaid Balance Stat Card is visible.');
     }
 
-    const overdueStat = page.locator('text=/Total Overdue/i');
+    const overdueStat = page.locator('text=/Overdue/i').first();
     if (await overdueStat.isVisible()) {
       await expect(overdueStat).toBeVisible();
       console.log('✔ Overdue Balance Stat Card is visible.');

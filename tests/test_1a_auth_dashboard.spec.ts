@@ -47,9 +47,9 @@ test.describe('Test 1a: Authentication & Core Dashboard Verification', () => {
     console.log('✔ Verified core dashboard elements are visible.');
 
     // 5. Verify Outstanding and Overdue metrics cards are active
-    const outstandingCard = page.locator('text=/Outstanding/i').first();
+    const outstandingCard = page.locator('text=/Unpaid/i').first();
     await expect(outstandingCard).toBeVisible();
-    console.log('✔ Verified Outstanding balance card is visible.');
+    console.log('✔ Verified Unpaid balance card is visible.');
 
     const overdueCard = page.locator('text=/Overdue/i').first();
     await expect(overdueCard).toBeVisible();
