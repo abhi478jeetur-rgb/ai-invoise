@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChaseFree AI 💸🤖
 
-## Getting Started
+**ChaseFree AI** is an AI-first invoicing and payment follow-up assistant designed specifically for solo freelancers and small agencies. It removes the anxiety, awkwardness, and procrastination involved in chasing late payments by tracking overdue invoices and instantly drafting perfectly toned reminder emails.
 
-First, run the development server:
+*Stop chaser anxiety, secure your cash flow, and maintain healthy client relationships.*
 
+---
+
+## 🚀 Core Features
+
+### 1. Urgency-Aware Dashboard
+*   **Balancing Urgency**: Get a real-time snapshot of outstanding and overdue balances dynamically grouped and formatted by their actual currency (e.g. `₹52,200 + $1,200`).
+*   **Due This Week**: Scan invoices that are due in the next 7 days, sorted by currency to prevent cash flow surprises.
+*   **Recent Invoices**: A clean, reactive list of the latest invoices and their payment states.
+
+### 2. "Who to Chase Today"
+*   An algorithmic prioritization panel that dynamically lists and ranks unpaid and overdue invoices requiring immediate attention.
+*   Shows the invoice number, due date, amount, client name, and days overdue with a direct **"Generate Reminder"** action trigger.
+
+### 3. Context-Aware AI Reminder Generator
+*   Powered by secure OpenAI-compatible API configurations (integrated with the **NVIDIA AI Foundation** and the optimized **Meta Llama 3.1 8B Instruct** model).
+*   **Relationship-Safe Presets**: Generate reminder drafts in four distinct presets:
+    *   **Friendly Nudge**: Warm, polite poke assuming they simply forgot.
+    *   **Professional**: Courteous, direct, and standard business-appropriate.
+    *   **Firm**: Direct tone setting clear payment expectations and concrete deadlines.
+    *   **Final Notice**: Factual, serious final notification before further action.
+*   **Robust Parsing Engine**: Fully stabilized JSON response parsing with regular expression fallbacks that gracefully handle unescaped newlines in LLM outputs.
+*   **Zustand-Powered Modal UI**: Premium, glassmorphic modal with real-time preview, copy-to-clipboard actions, and single-click update to "Mark as Sent".
+
+### 4. Activity Logs & Timeline
+*   Tracks every generated draft, clipboard copy, manual email action, status change, and payment event in a chronological, audit-friendly activity timeline.
+
+---
+
+## 🛠️ Technology Stack
+
+*   **Framework**: [Next.js](https://nextjs.org/) (App Router, Server Actions, React Server Components)
+*   **Language**: TypeScript
+*   **Database & Authentication**: [Supabase](https://supabase.com/) (Postgres DB, Supabase Auth, Row-Level Security)
+*   **Styling & UI**: Tailwind CSS, CSS Variables, and [shadcn/ui](https://ui.shadcn.com/) primitives
+*   **State Management**: Zustand
+*   **AI Inference**: OpenAI-compatible LLM abstraction (pre-configured for NVIDIA NIM with `meta/llama-3.1-8b-instruct`)
+
+---
+
+## ⚙️ Project Setup
+
+### 1. Prerequisites
+Ensure you have Node.js (v18+) and an active Supabase project.
+
+### 2. Installation
+Clone the repository and install the project dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/abhi478jeetur-rgb/ai-invoise.git
+cd ai-invoise
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Database Schema Setup
+Execute the SQL statements provided in [supabase-schema.sql](file:///d:/Desktop/web/ai-nvoise/supabase-schema.sql) directly in your Supabase SQL Editor. This will configure:
+*   Postgres Enums (`invoice_status`, `reminder_tone`, `reminder_event_type`)
+*   Core Tables (`profiles`, `clients`, `invoices`, `reminder_drafts`, `reminder_events`, `user_ai_settings`)
+*   Indices and Updated At Triggers
+*   Strict Row-Level Security (RLS) policies checking `auth.uid() = user_id` for complete multi-tenant data isolation.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Environment Variables
+Create a `.env.local` file in the root directory and add your Supabase credentials:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 5. Running Locally
+Start the development server:
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🤖 Configuring AI Reminder Settings
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To generate email drafts, configure your preferred LLM provider in the app settings:
+1. Log in to ChaseFree AI.
+2. Navigate to **Settings** in the sidebar.
+3. In the **AI Provider Settings** card, enter:
+   *   **AI Provider Label**: e.g., `NVIDIA AI Foundation` or `Groq`
+   *   **Base URL**: e.g., `https://integrate.api.nvidia.com/v1` or `https://api.groq.com/openai/v1`
+   *   **Model Name**: e.g., `meta/llama-3.1-8b-instruct` or `llama3-8b-8192`
+   *   **API Key**: Your provider's secure API key.
+4. Click **Save Settings** and run the connection check. Once you get the green `Connection successful!` notification, your AI Reminder Generator is ready!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📂 Codebase Navigation & Agent Rules
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For developers and AI coding agents working on ChaseFree AI:
+*   [CLAUDE.md](file:///d:/Desktop/web/ai-nvoise/CLAUDE.md) — Fast reference for developer commands and tech conventions.
+*   [AGENTS.md](file:///d:/Desktop/web/ai-nvoise/AGENTS.md) — Split-Agent execution parameters (Antigravity & OpenClaude) and strict startup engineering rules.
+*   [My research docs/prd.md](file:///d:/Desktop/web/ai-nvoise/My%20research%20docs/prd.md) — Comprehensive Product Requirement Document.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📄 License
+This project is licensed under the MIT License - see the `LICENSE` file for details.
