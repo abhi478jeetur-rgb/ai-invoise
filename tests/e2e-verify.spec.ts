@@ -74,7 +74,7 @@ test.describe('ChaseFree AI: End-to-End E2E Validation Suite', () => {
         await toneButton.click();
       }
 
-      await page.fill('textarea[placeholder*="instructions"]', 'Please keep it warm and mention our Bank Details.');
+      await page.fill('textarea', 'Please keep it warm and mention our Bank Details.');
       await page.screenshot({ path: 'test-results/06_tone_presets_selected.png' });
 
       // 7. Generate draft and check unescaped JSON plain-text output
