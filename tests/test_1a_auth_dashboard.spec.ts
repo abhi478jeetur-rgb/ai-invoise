@@ -13,27 +13,25 @@ test.describe('Test 1a: Authentication & Core Dashboard Verification', () => {
   test('Should log in successfully with credentials and load currency-aware dashboard layout', async ({ page }) => {
     console.log('=== Starting Test 1a: Authentication & Core Dashboard ===');
 
-    // 1. Visit the home page
-    await page.goto('/');
-    console.log('Navigated to homepage:', page.url());
-    await page.screenshot({ path: 'test-results/test_1a_01_landing.png' });
+    // 1. Visit the sign-in page directly
+    await page.goto('/sign-in');
+    console.log('Navigated to sign-in page:', page.url());
+    await page.screenshot({ path: 'test-results/test_1a_01_signin_page.png' });
 
-    // 2. Redirect to sign-in page if not authenticated
-    if (page.url().includes('/sign-in') || await page.locator('input[type="email"]').isVisible()) {
-      console.log('Filling sign-in credentials...');
-      
-      // Target elements based on sign-in form labels
-      await page.fill('input[name="email"]', 'abhi478jeetur@gmail.com');
-      await page.fill('input[name="password"]', 'password123');
-      await page.screenshot({ path: 'test-results/test_1a_02_signin_filled.png' });
+    // 2. Fill in credentials and submit
+    console.log('Filling sign-in credentials...');
+    await page.fill('input[name="email"]', 'testabhi@clockivo.com');
+    await page.fill('input[name="password"]', 'U+o6;;EH');
+    await page.screenshot({ path: 'test-results/test_1a_02_signin_filled.png' });
 
-      // Click sign in button
-      console.log('Submitting sign-in form...');
-      await page.click('button[type="submit"]');
-      
-      // Wait for navigation or successful state
-      await page.waitForTimeout(3000); 
-    }
+    // Click sign in button
+    console.log('Submitting sign-in form...');
+    await page.click('button[type="submit"]');
+
+    // Wait for navigation to dashboard
+    await page.waitForURL('**/dashboard**', { timeout: 10000 }).catch(() => {
+      console.log('URL after login attempt:', page.url());
+    });
 
     // 3. Confirm redirected to dashboard
     console.log('Current URL after login attempt:', page.url());
