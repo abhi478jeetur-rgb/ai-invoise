@@ -34,10 +34,10 @@ export function InvoiceReminderSection({
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
-    if (autoReminder) {
+    if (autoReminder && variant === 'cta') {
       setModalOpen(true)
     }
-  }, [autoReminder])
+  }, [autoReminder, variant])
 
   if (variant === 'cta') {
     return (
