@@ -156,13 +156,13 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
+        <div className="flex items-center justify-end pt-4 border-t border-neutral-800">
           <div className="flex gap-2">
             {step > 1 && (
-              <Button variant="ghost" size="sm" onClick={handleBack} disabled={isPending}>Previous</Button>
+              <Button variant="outline" size="sm" onClick={handleBack} disabled={isPending} className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white">Previous</Button>
             )}
             {step > 1 && step < 3 && (
-              <Button variant="ghost" size="sm" onClick={handleSkip} disabled={isPending}>Skip</Button>
+              <Button variant="outline" size="sm" onClick={handleSkip} disabled={isPending} className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white">Skip</Button>
             )}
             {step < 3 ? (
               <Button size="sm" onClick={handleNext} disabled={!canGoNext() || isPending}>Next</Button>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createInvoiceAction, updateInvoiceAction } from '@/lib/invoices/actions'
+import { createInvoiceAction, updateInvoiceAction, getNextInvoiceNumberAction } from '@/lib/invoices/actions'
 
 interface Client {
   id: string
@@ -54,18 +54,26 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>('')
+  const invoiceNumberRef = useRef<HTMLInputElement>(null)
 
   const isEditing = !!invoice
 
   useEffect(() => {
     if (open) {
       setSelectedClientId(invoice?.client_id ?? '')
+      if (!isEditing) {
+        getNextInvoiceNumberAction().then((res) => {
+          if (res.success && invoiceNumberRef.current) {
+            invoiceNumberRef.current.value = res.data
+          }
+        })
+      }
     } else {
       setError(null)
       setLoading(false)
       setSelectedClientId('')
     }
-  }, [open, invoice])
+  }, [open, invoice, isEditing])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -144,6 +152,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
               <Input
                 id="invoiceNumber"
                 name="invoiceNumber"
+                ref={invoiceNumberRef}
                 required
                 defaultValue={invoice?.invoice_number ?? ''}
                 placeholder="INV-001"
