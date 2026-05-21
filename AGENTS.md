@@ -144,7 +144,26 @@ The agent must be careful with:
 
 ---
 
-## 7. Reporting Format
+## 7. Extended QA and Validation Framework
+
+### 🛡️ Rule 5: Scope Control
+The agent must stay inside the requested scope. If a prompt asks for a specific cleanup, only do that cleanup. Unrelated rewrites or sneaky layout changes are prohibited.
+
+### 🛡️ Rule 6: Validation-First
+Every phase must validate happy paths, empty states, invalid input paths, loading states, and error states. If any of these are not tested, completion cannot be claimed honestly.
+
+### 🛡️ Rule 7: UX Discipline
+ChaseFree AI is built for freelancers, not developers. The interface must remain simple, calm, lightweight, and action-oriented. Maintain the premium glassmorphism design system without generic SaaS templates or visual bloat.
+
+### 🛡️ Rule 8: Security Integrity
+Never mock security or RLS policies. The application must treat database constraints and Row-Level Security as real-world absolute boundaries. API keys must remain strictly hidden in Server Action environments.
+
+### 🛡️ Rule 9: Stop-and-Report
+If a task is ambiguous, or the current architecture blocks a safe implementation, the agent must stop execution and report the exact blocker immediately instead of writing speculative filler code.
+
+---
+
+## 8. Reporting Format
 After every implementation pass, the agent must report in this structure:
 *   **What was changed**: A concise list of actual code and behavior changes.
 *   **What now works**: Only features that were reasonably validated.

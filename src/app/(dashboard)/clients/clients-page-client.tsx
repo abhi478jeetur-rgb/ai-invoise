@@ -56,6 +56,8 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     const result = await deleteClientAction(clientId)
     if (result.success) {
       router.refresh()
+    } else {
+      console.error('[Client Deletion Failed]', result.error)
     }
   }
 
@@ -172,15 +174,17 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                       <span className="text-xs text-neutral-600 hidden lg:inline">{client.phone}</span>
                     )}
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
-                        >
-                          <span className="text-lg leading-none">...</span>
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
+                          >
+                            <span className="text-lg leading-none">...</span>
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent
                         align="end"
                         className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl"

@@ -132,7 +132,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
               <Input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 defaultValue={client?.email ?? ''}
                 placeholder="billing@acme.com"
                 className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"

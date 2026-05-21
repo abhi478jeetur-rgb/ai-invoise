@@ -14,7 +14,13 @@ interface OnboardingModalProps {
 export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   const [open, setOpen] = useState(initialOpen)
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({ full_name: '', profession: '', primary_problem: '', discovery_source: '' })
+  const [form, setForm] = useState({
+    full_name: '',
+    profession: '',
+    profession_other: '',
+    discovery_source: '',
+    discovery_other: ''
+  })
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -28,7 +34,7 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   }
 
   const handleNext = () => {
-    if (canGoNext() && step < 4) setStep(step + 1)
+    if (canGoNext() && step < 3) setStep(step + 1)
   }
 
   const handleBack = () => {
@@ -36,17 +42,23 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   }
 
   const handleSkip = () => {
-    if (step < 4) setStep(step + 1)
+    if (step > 1 && step < 3) setStep(step + 1)
   }
 
   const handleSubmit = () => {
     setError(null)
     startTransition(async () => {
+      const professionValue = form.profession === 'Other' 
+        ? (form.profession_other.trim() || 'Other') 
+        : form.profession || undefined
+      const sourceValue = form.discovery_source === 'Other' 
+        ? (form.discovery_other.trim() || 'Other') 
+        : form.discovery_source || undefined
+
       const result = await updateUserOnboardingAction({
         full_name: form.full_name,
-        profession: form.profession || undefined,
-        primary_problem: form.primary_problem || undefined,
-        discovery_source: form.discovery_source || undefined,
+        profession: professionValue,
+        discovery_source: sourceValue,
       })
       if (result?.error) {
         setError(result.error)
@@ -57,8 +69,7 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   }
 
   const professionOptions = ['Freelance Designer', 'Software Developer', 'Marketing Agency', 'Consultant', 'Creator / Writer', 'Other']
-  const problemOptions = ['Clients pay late (I need reminders)', 'Creating invoices takes too long', 'Tracking who owes me money', 'I want to look more professional']
-  const sourceOptions = ['Twitter / X', 'YouTube', 'Google Search', 'Friend / Colleague', 'Product Hunt']
+  const sourceOptions = ['Twitter / X', 'YouTube', 'Google Search', 'Friend / Colleague', 'Product Hunt', 'Other']
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -68,9 +79,10 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
           <DialogDescription className="text-sm text-neutral-500">Quick setup to personalize your experience.</DialogDescription>
         </DialogHeader>
 
+        <div className="text-center text-[11px] text-neutral-500 mb-1">Step {step} of 3</div>
         <div className="flex items-center justify-center gap-2 py-2">
-          {[1,2,3,4].map((s) => (
-            <div key={s} className={`h-1.5 w-6 rounded-full transition-all ${s <= step ? 'bg-neutral-100' : 'bg-neutral-800'}`} />
+          {[1,2,3].map((s) => (
+            <div key={s} className={`h-1.5 w-8 rounded-full transition-all ${s <= step ? 'bg-neutral-100' : 'bg-neutral-800'}`} />
           ))}
         </div>
 
@@ -103,28 +115,20 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
                 </button>
               ))}
             </div>
+            {form.profession === 'Other' && (
+              <div className="space-y-1.5">
+                <Input
+                  placeholder="Please specify your profession"
+                  value={form.profession_other}
+                  onChange={(e) => updateForm('profession_other', e.target.value)}
+                  className="bg-neutral-900/50 border-neutral-800"
+                />
+              </div>
+            )}
           </div>
         )}
 
         {step === 3 && (
-          <div className="space-y-4 py-2">
-            <Label className="text-neutral-400">What is your biggest challenge with invoices?</Label>
-            <div className="grid grid-cols-1 gap-2">
-              {problemOptions.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => updateForm('primary_problem', opt)}
-                  className={`p-3 rounded-lg border text-sm text-left transition-all cursor-pointer ${form.primary_problem === opt ? 'border-neutral-600 bg-neutral-800/80 text-neutral-100' : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50 text-neutral-300'}`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
           <div className="space-y-4 py-2">
             <Label className="text-neutral-400">How did you hear about us?</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -139,24 +143,32 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
                 </button>
               ))}
             </div>
+            {form.discovery_source === 'Other' && (
+              <div className="space-y-1.5">
+                <Input
+                  placeholder="Please specify"
+                  value={form.discovery_other}
+                  onChange={(e) => updateForm('discovery_other', e.target.value)}
+                  className="bg-neutral-900/50 border-neutral-800"
+                />
+              </div>
+            )}
           </div>
         )}
 
         <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
-          <div>
-            {step > 1 && (
-              <Button variant="ghost" size="sm" onClick={handleBack} disabled={isPending}>Back</Button>
-            )}
-          </div>
           <div className="flex gap-2">
-            {step < 4 && (
+            {step > 1 && (
+              <Button variant="ghost" size="sm" onClick={handleBack} disabled={isPending}>Previous</Button>
+            )}
+            {step > 1 && step < 3 && (
               <Button variant="ghost" size="sm" onClick={handleSkip} disabled={isPending}>Skip</Button>
             )}
-            {step < 4 ? (
+            {step < 3 ? (
               <Button size="sm" onClick={handleNext} disabled={!canGoNext() || isPending}>Next</Button>
             ) : (
               <Button size="sm" onClick={handleSubmit} disabled={isPending}>
-                {isPending ? 'Saving...' : 'Complete Setup'}
+                {isPending ? 'Submitting...' : 'Complete Setup'}
               </Button>
             )}
           </div>

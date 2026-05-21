@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/db/server'
+import { sanitizeDatabaseError } from '@/lib/utils/security'
 
 const ACTIVE_STATUSES = ['sent', 'due_soon', 'overdue'] as const
 
@@ -16,7 +17,7 @@ export async function getDashboardDataAction() {
       .select('id, amount, currency, status, due_date, invoice_number, title, client_id, reminder_count, last_reminder_at, created_at, clients (client_name, email, company_name)')
       .eq('user_id', user.id)
 
-    if (invoicesError) return { error: invoicesError.message }
+    if (invoicesError) return { error: sanitizeDatabaseError(invoicesError) }
 
     const invoices = allInvoices ?? []
 
@@ -116,7 +117,7 @@ export async function getDashboardDataAction() {
       .order('created_at', { ascending: false })
       .limit(5)
 
-    if (activitiesError) return { error: activitiesError.message }
+    if (activitiesError) return { error: sanitizeDatabaseError(activitiesError) }
 
     const recentActivities = (activities ?? []).map((act) => {
       const invoicesData = act.invoices as any

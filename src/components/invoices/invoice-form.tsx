@@ -175,7 +175,6 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
                 name="amount"
                 type="number"
                 step="0.01"
-                min="0"
                 required
                 defaultValue={invoice?.amount ?? ''}
                 placeholder="2500.00"
