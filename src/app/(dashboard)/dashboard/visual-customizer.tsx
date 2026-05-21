@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
 
 interface DashboardData {
   stats: {
@@ -12,6 +13,7 @@ interface DashboardData {
     overdueCount: number
     paidCount: number
     clientsToChaseCount: number
+    totalInvoiceCount: number
   }
   chaseList: any[]
   recentActivities: any[]
@@ -270,7 +272,10 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
           </div>
         </div>
 
-        {/* 2. Summary Cards Row */}
+        {/* 2. Quick Start Banner (empty state) or Summary Cards */}
+        {stats.totalInvoiceCount === 0 ? (
+          <QuickStartBanner />
+        ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Unpaid */}
@@ -329,6 +334,7 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
             </p>
           </div>
         </div>
+        )}
 
         {/* 3. Who to Chase Today */}
         <div

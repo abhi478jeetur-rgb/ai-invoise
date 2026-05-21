@@ -168,6 +168,7 @@ export async function getDashboardDataAction() {
           overdueCount: overdueInvoices.length,
           paidCount: paidInvoices.length,
           clientsToChaseCount: chaseInvoices.length,
+          totalInvoiceCount: invoices.length,
         },
         chaseList,
         recentActivities,
