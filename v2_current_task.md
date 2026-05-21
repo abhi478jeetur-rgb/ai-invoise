@@ -1,27 +1,39 @@
-# Current Task: Version 2 Onboarding (Part 4 - Advanced UI & UX Polish)
+# Current Task: Version 2 - Dashboard Quick Start Banner (Empty State)
 
-**Status:** In Progress
+**Status:** Complete
 
 ## Context
-The basic UI is built, but it lacks the "Premium SaaS" feel. Users cannot navigate backward, and the "Other" options don't allow custom text input. We need to upgrade this modal to be fully robust, navigable, and detailed.
+When a new user finishes onboarding, their dashboard is completely empty. This causes "Blank Slate Syndrome" where they don't know what to do next. We need to build a "Quick Start Banner" on the `/dashboard` page that guides them through the core workflow.
 
-## Strict Checklist for `src/components/onboarding/OnboardingModal.tsx`
+## Strict Checklist for Open Claude
 
-### 1. Navigation & Progress
-- [x] **"Previous" Button:** Add a "Back" button next to "Next". Users must be able to return to previous steps without losing the data they already clicked/typed. (Hide it on Step 1).
-- [x] **Progress Indicator:** Add a visual indicator at the top (e.g., "Step 1 of 3" or a progress bar) so the user knows how many steps remain.
-- [x] **Validation:** The "Next" button on Step 1 MUST be disabled if the user's name is empty.
+### 1. Create the Banner Component (`src/components/dashboard/QuickStartBanner.tsx`)
+- [x] Create this as a React Client Component (`"use client"`).
+- [x] Use a Shadcn `Card` with a subtle Glassmorphism background (e.g., `bg-white/5 backdrop-blur-md border-white/10`).
+- [x] Add a welcoming Header: "Welcome to ChaseFree AI! Let's get you paid."
 
-### 2. The "Other" Option (Dynamic Inputs)
-- [x] **Profession (Step 2):** Add "Other" to the clickable options. If the user selects "Other", conditionally render a Shadcn `<Input />` directly below it so they can type their exact profession.
-- [x] **Discovery Source (Step 3):** Add "Other" to the options. If selected, render a text `<Input />` for them to type.
-- [x] Ensure the text typed into these "Other" inputs is what gets saved to the state and sent to the database.
+### 2. Implement the 3-Step Action Grid
+Inside the banner, create a 3-column responsive grid (`grid-cols-1 md:grid-cols-3`):
+- [x] **Card 1 (Add Client):**
+  - Icon: Lucide `UserPlus`
+  - Text: "Step 1: Add your first client"
+  - Button: "Add Client" (Links to `/clients` or opens client modal).
+- [x] **Card 2 (Create Invoice):**
+  - Icon: Lucide `FileText`
+  - Text: "Step 2: Create a professional invoice"
+  - Button: "Create Invoice" (Links to `/invoices/new`).
+- [x] **Card 3 (Chase Payments):**
+  - Icon: Lucide `Sparkles` or `Bot`
+  - Text: "Step 3: Let AI chase your payments"
+  - Info text: "Generates polite follow-ups automatically."
 
-### 3. Loading & Error Handling
-- [x] **Submit State:** On the final step, when "Complete" is clicked, disable the button and show a loading state (e.g., "Submitting..." or a spinner) to prevent double submissions.
-- [x] **Error UI:** If `updateUserOnboardingAction` returns an error, show it cleanly using Shadcn Toasts or an inline red text alert.
+### 3. Conditional Rendering (Empty State Logic)
+- [x] In the main Dashboard page (`src/app/(dashboard)/page.tsx` or similar), fetch the user's total invoice count from Supabase.
+- [x] **CRITICAL:** Render the `QuickStartBanner` ONLY if the user has **0 invoices**.
+- [x] If they have 1 or more invoices, DO NOT show the banner (show the normal revenue charts/tables instead).
 
-### 4. Commit
-- [ ] Run `git add .` and `git commit -m "refactor(v2): add previous button, dynamic other inputs, and loading states to onboarding"`.
+### 4. Version Control
+- [x] Run `git add .`
+- [x] Run `git commit -m "feat(v2): add quick start banner for empty dashboard state"`
 
-**Note for Open Claude:** Do not assume anything. Build exactly this. This file is your strict blueprint. Do not skip the "Previous" button or the conditional "Other" inputs. Check off [x] as you go.
+**Note for Open Claude:** You must strictly follow this checklist. Pay special attention to the UI styling (it must look premium) and the conditional rendering logic. Mark checkboxes [x] when finished.
