@@ -72,6 +72,35 @@ export async function createInvoiceAction(formData: FormData) {
   }
 }
 
+export async function getNextInvoiceNumberAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('invoice_number')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) return { success: true, data: 'INV-001' }
+
+    const match = data.invoice_number.match(/^([A-Za-z]+-)(\d+)$/)
+    if (!match) return { success: true, data: 'INV-001' }
+
+    const prefix = match[1]
+    const num = parseInt(match[2], 10) + 1
+    const next = prefix + String(num).padStart(match[2].length, '0')
+
+    return { success: true, data: next }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
 export async function getInvoicesAction(filters?: { status?: string; clientId?: string }) {
   try {
     const supabase = await createClient()
