@@ -18,7 +18,7 @@ import { createClientAction, updateClientAction } from '@/lib/clients/actions'
 interface ClientFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSaved?: () => void
+  onSaved?: (client?: any) => void
   client?: {
     id: string
     client_name: string
@@ -58,7 +58,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
       setLoading(false)
     } else {
       onOpenChange(false)
-      onSaved?.()
+      onSaved?.(result.data)
     }
   }
 
