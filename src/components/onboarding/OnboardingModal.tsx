@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateUserOnboardingAction } from '@/lib/profile/actions'
 
 interface OnboardingModalProps {
@@ -29,7 +28,7 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   }
 
   const handleNext = () => {
-    if (canGoNext() && step < 3) setStep(step + 1)
+    if (canGoNext() && step < 4) setStep(step + 1)
   }
 
   const handleBack = () => {
@@ -37,7 +36,7 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
   }
 
   const handleSkip = () => {
-    if (step < 3) setStep(step + 1)
+    if (step < 4) setStep(step + 1)
   }
 
   const handleSubmit = () => {
@@ -57,7 +56,9 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
     })
   }
 
-  const discoveryOptions = ['Twitter / X', 'LinkedIn', 'Google Search', 'Referral', 'Product Hunt', 'Other']
+  const professionOptions = ['Freelance Designer', 'Software Developer', 'Marketing Agency', 'Consultant', 'Creator / Writer', 'Other']
+  const problemOptions = ['Clients pay late (I need reminders)', 'Creating invoices takes too long', 'Tracking who owes me money', 'I want to look more professional']
+  const sourceOptions = ['Twitter / X', 'YouTube', 'Google Search', 'Friend / Colleague', 'Product Hunt']
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -68,8 +69,8 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
         </DialogHeader>
 
         <div className="flex items-center justify-center gap-2 py-2">
-          {[1,2,3].map((s) => (
-            <div key={s} className={`h-1.5 w-8 rounded-full transition-all ${s <= step ? 'bg-neutral-100' : 'bg-neutral-800'}`} />
+          {[1,2,3,4].map((s) => (
+            <div key={s} className={`h-1.5 w-6 rounded-full transition-all ${s <= step ? 'bg-neutral-100' : 'bg-neutral-800'}`} />
           ))}
         </div>
 
@@ -89,31 +90,54 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
 
         {step === 2 && (
           <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-neutral-400">Profession (optional)</Label>
-              <Input value={form.profession} onChange={(e) => updateForm('profession', e.target.value)} placeholder="Freelance Designer" className="bg-neutral-900/50 border-neutral-800" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-neutral-400">What is your biggest challenge with invoices?</Label>
-              <Input value={form.primary_problem} onChange={(e) => updateForm('primary_problem', e.target.value)} placeholder="Chasing late payments" className="bg-neutral-900/50 border-neutral-800" />
+            <Label className="text-neutral-400">What best describes you?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {professionOptions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => updateForm('profession', opt)}
+                  className={`p-3 rounded-lg border text-sm text-left transition-all cursor-pointer ${form.profession === opt ? 'border-neutral-600 bg-neutral-800/80 text-neutral-100' : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50 text-neutral-300'}`}
+                >
+                  {opt}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
         {step === 3 && (
           <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-neutral-400">How did you hear about us?</Label>
-              <Select value={form.discovery_source} onValueChange={(v) => updateForm('discovery_source', v)}>
-                <SelectTrigger className="bg-neutral-900/50 border-neutral-800 w-full">
-                  <SelectValue placeholder="Select an option" />
-                </SelectTrigger>
-                <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-sm">
-                  {discoveryOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Label className="text-neutral-400">What is your biggest challenge with invoices?</Label>
+            <div className="grid grid-cols-1 gap-2">
+              {problemOptions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => updateForm('primary_problem', opt)}
+                  className={`p-3 rounded-lg border text-sm text-left transition-all cursor-pointer ${form.primary_problem === opt ? 'border-neutral-600 bg-neutral-800/80 text-neutral-100' : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50 text-neutral-300'}`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-4 py-2">
+            <Label className="text-neutral-400">How did you hear about us?</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {sourceOptions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => updateForm('discovery_source', opt)}
+                  className={`p-3 rounded-lg border text-sm text-left transition-all cursor-pointer ${form.discovery_source === opt ? 'border-neutral-600 bg-neutral-800/80 text-neutral-100' : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50 text-neutral-300'}`}
+                >
+                  {opt}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -125,10 +149,10 @@ export function OnboardingModal({ initialOpen = false }: OnboardingModalProps) {
             )}
           </div>
           <div className="flex gap-2">
-            {step < 3 && (
+            {step < 4 && (
               <Button variant="ghost" size="sm" onClick={handleSkip} disabled={isPending}>Skip</Button>
             )}
-            {step < 3 ? (
+            {step < 4 ? (
               <Button size="sm" onClick={handleNext} disabled={!canGoNext() || isPending}>Next</Button>
             ) : (
               <Button size="sm" onClick={handleSubmit} disabled={isPending}>
