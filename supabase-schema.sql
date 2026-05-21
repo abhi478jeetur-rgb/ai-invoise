@@ -52,7 +52,19 @@ create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   full_name text,
+  onboarding_completed boolean not null default false,
+  profession text,
+  primary_problem text,
+  discovery_source text,
+  credits_balance integer not null default 5,
+  timezone text,
   default_currency text not null default 'USD',
+  company_name text,
+  company_address text,
+  tax_id text,
+  logo_url text,
+  theme_preference text not null default 'system',
+  stripe_customer_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -250,6 +262,60 @@ $$;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+-- validate that an invoice's client belongs to the same user
+create or replace function public.validate_invoice_client_ownership()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  client_owner uuid;
+begin
+  select user_id into client_owner
+  from public.clients
+  where id = new.client_id;
+
+  if client_owner is not null and client_owner != new.user_id then
+    raise exception 'Client does not belong to the user';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger validate_invoice_client_ownership
+before insert or update on public.invoices
+for each row execute function public.validate_invoice_client_ownership();
+
+-- validate that a reminder draft/event's invoice belongs to the same user
+create or replace function public.validate_reminder_invoice_ownership()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  invoice_owner uuid;
+begin
+  select user_id into invoice_owner
+  from public.invoices
+  where id = new.invoice_id;
+
+  if invoice_owner is not null and invoice_owner != new.user_id then
+    raise exception 'Invoice does not belong to the user';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger validate_reminder_draft_invoice_ownership
+before insert or update on public.reminder_drafts
+for each row execute function public.validate_reminder_invoice_ownership();
+
+create trigger validate_reminder_event_invoice_ownership
+before insert or update on public.reminder_events
+for each row execute function public.validate_reminder_invoice_ownership();
 
 -- ============================================================
 -- 6. ROW LEVEL SECURITY
