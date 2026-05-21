@@ -138,7 +138,11 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
             </div>
             <Select value={selectedClientId} onValueChange={(val) => setSelectedClientId(val ?? '')} required>
               <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
-                <SelectValue placeholder="Select a client" />
+                <SelectValue placeholder="Select a client">
+                  {selectedClientId
+                    ? localClients.find((c) => c.id === selectedClientId)?.client_name
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
                 {localClients.map((client) => (
