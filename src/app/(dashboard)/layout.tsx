@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { logout } from '@/lib/auth/actions'
 import { Button } from '@/components/ui/button'
 import Sidebar from './sidebar'
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal'
 
 export default async function DashboardLayout({
   children,
@@ -20,6 +21,12 @@ export default async function DashboardLayout({
   const initials = fullName
     ? fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email?.[0]?.toUpperCase() ?? '?'
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_completed')
+    .eq('id', user.id)
+    .single()
 
   return (
     <div 
@@ -80,6 +87,7 @@ export default async function DashboardLayout({
         </main>
 
       </div>
+      <OnboardingModal initialOpen={!profile?.onboarding_completed} />
     </div>
   )
 }
