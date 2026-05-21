@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createInvoiceAction, updateInvoiceAction, getNextInvoiceNumberAction } from '@/lib/invoices/actions'
+import { ClientForm } from '@/components/clients/client-form'
 
 interface Client {
   id: string
@@ -54,6 +55,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>('')
+  const [localClients, setLocalClients] = useState(clients)
+  const [showClientModal, setShowClientModal] = useState(false)
   const invoiceNumberRef = useRef<HTMLInputElement>(null)
 
   const isEditing = !!invoice
@@ -72,6 +75,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
       setError(null)
       setLoading(false)
       setSelectedClientId('')
+      setLocalClients(clients)
+      setShowClientModal(false)
     }
   }, [open, invoice, isEditing])
 
@@ -119,15 +124,24 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
 
           {/* Client Select */}
           <div className="space-y-1.5">
-            <Label className="text-neutral-400">
-              Client <span className="text-red-500">*</span>
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-neutral-400">
+                Client <span className="text-red-500">*</span>
+              </Label>
+              <button
+                type="button"
+                onClick={() => setShowClientModal(true)}
+                className="text-xs text-neutral-500 hover:text-neutral-200 transition-colors cursor-pointer"
+              >
+                + Add New Client
+              </button>
+            </div>
             <Select value={selectedClientId} onValueChange={(val) => setSelectedClientId(val ?? '')} required>
               <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
                 <SelectValue placeholder="Select a client" />
               </SelectTrigger>
               <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
-                {clients.map((client) => (
+                {localClients.map((client) => (
                   <SelectItem
                     key={client.id}
                     value={client.id}
@@ -285,6 +299,16 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
           </DialogFooter>
         </form>
       </DialogContent>
+      <ClientForm
+        open={showClientModal}
+        onOpenChange={setShowClientModal}
+        onSaved={(newClient) => {
+          if (newClient) {
+            setLocalClients((prev) => [...prev, newClient])
+            setSelectedClientId(newClient.id)
+          }
+        }}
+      />
     </Dialog>
   )
 }
