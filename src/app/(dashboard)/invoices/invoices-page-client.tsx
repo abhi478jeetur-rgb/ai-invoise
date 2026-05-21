@@ -174,6 +174,8 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
     const result = await deleteInvoiceAction(invoiceId)
     if (result.success) {
       router.refresh()
+    } else {
+      console.error('[Invoice Deletion Failed]', result.error)
     }
   }
 
@@ -342,15 +344,17 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
                     {/* Actions */}
                     <div className="shrink-0">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
-                          >
-                            <span className="text-lg leading-none">...</span>
-                          </Button>
-                        </DropdownMenuTrigger>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
+                            >
+                              <span className="text-lg leading-none">...</span>
+                            </Button>
+                          }
+                        />
                         <DropdownMenuContent
                           align="end"
                           className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl"

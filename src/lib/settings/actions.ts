@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { encryptKey, decryptKey, maskApiKey } from '@/lib/crypto'
+import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
+import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
 
 export async function getSettingsAction() {
   try {
@@ -35,10 +37,10 @@ export async function getSettingsAction() {
           profile = newProfile
           profileError = null
         } else {
-          return { error: insertError?.message || 'Failed to auto-create missing user profile.' }
+          return { error: sanitizeDatabaseError(insertError, 'Failed to auto-create missing user profile.') }
         }
       } else {
-        return { error: profileError.message }
+        return { error: sanitizeDatabaseError(profileError) }
       }
     }
 
@@ -91,6 +93,12 @@ export async function saveProfileSettingsAction(formData: FormData) {
     if (!fullName || fullName.trim().length === 0) {
       return { error: 'Full name is required.' }
     }
+    if (fullName.trim().length > 100) {
+      return { error: 'Full name must be 100 characters or less.' }
+    }
+    if (defaultCurrency && defaultCurrency.trim().length > 10) {
+      return { error: 'Currency must be 10 characters or less.' }
+    }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -104,7 +112,7 @@ export async function saveProfileSettingsAction(formData: FormData) {
       })
       .eq('id', user.id)
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/settings')
     revalidatePath('/dashboard')
@@ -123,7 +131,15 @@ export async function saveAiSettingsAction(formData: FormData) {
     const maskedKey = formData.get('maskedApiKey') as string
 
     if (!baseUrl || baseUrl.trim().length === 0) return { error: 'Base URL is required.' }
+    if (baseUrl.trim().length > 500) return { error: 'Base URL must be 500 characters or less.' }
     if (!modelName || modelName.trim().length === 0) return { error: 'Model name is required.' }
+    if (modelName.trim().length > 100) return { error: 'Model name must be 100 characters or less.' }
+    if (providerLabel && providerLabel.trim().length > 100) return { error: 'Provider label must be 100 characters or less.' }
+    if (apiKey && apiKey.trim().length > 1000) return { error: 'API key must be 1000 characters or less.' }
+
+    // SSRF Check
+    const safeUrl = await isSafeUrl(baseUrl)
+    if (!safeUrl) return { error: 'The AI Base URL is invalid or points to an unsafe local address.' }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -162,7 +178,7 @@ export async function saveAiSettingsAction(formData: FormData) {
         onConflict: 'user_id',
       })
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/settings')
     return { success: true }
@@ -173,22 +189,30 @@ export async function saveAiSettingsAction(formData: FormData) {
 
 export async function testAiConnectionAction(formData: FormData) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    await enforceRateLimit(user.id, { limit: 5, windowMs: 60_000 })
+
     const baseUrl = formData.get('baseUrl') as string
     const modelName = formData.get('modelName') as string
     const apiKey = formData.get('apiKey') as string
     const maskedKey = formData.get('maskedApiKey') as string
 
     if (!baseUrl) return { error: 'Base URL is required.' }
+    if (baseUrl.trim().length > 500) return { error: 'Base URL must be 500 characters or less.' }
     if (!modelName) return { error: 'Model name is required.' }
+    if (modelName.trim().length > 100) return { error: 'Model name must be 100 characters or less.' }
+
+    // SSRF Check
+    const safeUrl = await isSafeUrl(baseUrl)
+    if (!safeUrl) return { error: 'The AI Base URL is invalid or points to an unsafe local address.' }
 
     let resolvedApiKey = apiKey
 
     // If the key is the masked placeholder, decrypt the saved one
     if (!apiKey || apiKey.trim().length === 0 || apiKey === maskedKey) {
-      const supabase = await createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return { error: 'You must be authenticated.' }
-
       const { data: settings } = await supabase
         .from('user_ai_settings')
         .select('api_key_encrypted')
@@ -240,6 +264,9 @@ export async function testAiConnectionAction(formData: FormData) {
 
     return { success: true, message: 'Connection successful! (Unexpected response format, but endpoint is reachable)' }
   } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
+    }
     if (e instanceof Error && e.name === 'TimeoutError') {
       return { error: 'Connection timed out after 15 seconds. Check your base URL and network.' }
     }

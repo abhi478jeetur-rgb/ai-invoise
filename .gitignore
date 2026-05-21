@@ -5,6 +5,10 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
 
 # next.js
 /.next/
@@ -19,8 +23,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
 
 # vercel
 .vercel
@@ -33,3 +41,8 @@ next-env.d.ts
 .agents/
 graphify-out/
 .openclaude/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+*.local

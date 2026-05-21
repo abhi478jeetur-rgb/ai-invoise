@@ -33,26 +33,52 @@
 
 ---
 
-## 🚀 प्राथमिकता 2: Reducing Friction in Core Workflow
-**6. API Key Setup Helper / Simplified UI**
+## 🚀 प्राथमिकता 2: Perceived Performance & Core Workflow
+**6. UI Skeleton Loaders (Loading States)**
+- **समस्या:** पेज रिफ्रेश या डेटा फेच होने पर स्क्रीन ब्लैंक हो जाती है, जिससे ऐप स्लो लगता है।
+- **समाधान:** पूरे ऐप में (डैशबोर्ड, इनवॉइस लिस्ट) Skeletons जोड़ना ताकि डेटा लोड होने तक यूज़र को एक स्मूथ 'ग्रे आउट' लेआउट दिखे।
+
+**7. API Key Setup Helper / Simplified UI**
 - **समस्या:** API Key सेटअप करना डरावना लगता है।
 - **समाधान:** Settings पेज पर एक साफ़ 'How to get your free key in 1 min' वीडियो/लिंक या टूलटिप देना।
 
-**7. Direct Email Integration ("Open in Gmail")**
+**8. Direct Email Integration ("Open in Gmail")**
 - **समस्या:** ईमेल को कॉपी-पेस्ट करना पड़ता है।
 - **समाधान:** AI द्वारा जनरेट किए गए ड्राफ्ट के नीचे `mailto:` का इस्तेमाल करके एक बटन देना, जो सीधे Gmail/Outlook खोल दे।
 
 ---
 
 ## 🚀 प्राथमिकता 3: Professional Flexibility & Status Control
-**8. Flexible Payment Terms (Net-30 / Net-60 Dropdown)**
+**9. Flexible Payment Terms (Net-30 / Net-60 Dropdown)**
 - **समस्या:** कॉर्पोरेट क्लाइंट्स के लिए तारीख मैन्युअली गिननी पड़ती है।
 - **समाधान:** Due Date में एक ड्रॉपडाउन देना (Due on Receipt, Net-15, Net-30, Net-60)।
 
-**9. Advanced Invoice Statuses ("Promised to Pay", "Partial Payment")**
+**10. Advanced Invoice Statuses ("Promised to Pay", "Partial Payment")**
 - **समस्या:** अगर क्लाइंट ने वादा कर दिया है, तो भी इनवॉइस 'Overdue' ही दिखता है।
 - **समाधान:** स्टेटस को 'Pause' करने या 'Promised to Pay' मार्क करने का विकल्प देना।
 
-**10. "Who to Chase Today" Focused View**
+**11. "Who to Chase Today" Focused View**
 - **समस्या:** बहुत सारे लाल इनवॉइस देखकर डर लगता है।
 - **समाधान:** डैशबोर्ड पर एक साफ सेक्शन बनाना जो सिर्फ उन्हें दिखाए जिन्हें *आज* रिमाइंडर भेजना ज़रूरी है।
+
+---
+
+## 🚀 प्राथमिकता 4: Analytics & Infrastructure
+**12. PostHog Product Analytics**
+- **समस्या:** हमें नहीं पता यूज़र ऐप में कहाँ क्लिक कर रहा है या सर्वे छोड़ रहा है।
+- **समाधान:** PostHog इंटीग्रेट करना ताकि यूज़र जर्नी (User Journey) ट्रैक की जा सके।
+
+**13. Error Tracking (e.g., Sentry / PostHog Error Tracking)**
+- **समस्या:** प्रोडक्शन में बग्स या 404 आने पर हमें खुद पता नहीं चलता जब तक यूज़र शिकायत न करे।
+- **समाधान:** UI क्रैश या फेलियर्स को ट्रैक करने के लिए एरर मॉनिटरिंग टूल लगाना।
+
+---
+
+## 🚀 प्राथमिकता 5: Trust & Compliance (Version 2.5 / Version 3)
+**14. Recycle Bin (Trash) for Invoices & Clients**
+- **समस्या:** अगर यूज़र गलती से कोई इनवॉइस डिलीट कर दे, तो वह उसे वापस नहीं ला सकता (Customer Support टिकट बढ़ता है)।
+- **समाधान:** Settings या Sidebar में एक 'Trash' फोल्डर देना, जहाँ से यूज़र 30 दिन के अंदर अपना डेटा 'Restore' कर सके।
+
+**15. Account Deletion (GDPR Compliance)**
+- **समस्या:** अगर कोई यूज़र अपना अकाउंट और डेटा पूरी तरह मिटाना चाहे, तो उसके पास कोई विकल्प नहीं है।
+- **समाधान:** Settings में 'Delete My Account' का लाल बटन देना, जो डेटाबेस (Supabase) से उसकी सारी जानकारी (Hard Delete) हमेशा के लिए मिटा दे।

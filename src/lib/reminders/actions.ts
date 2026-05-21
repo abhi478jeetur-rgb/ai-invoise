@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { decryptKey } from '@/lib/crypto'
+import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
+import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
 
 interface ReminderResult {
   success?: boolean
@@ -37,6 +39,8 @@ export async function generateReminderAction(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
+    await enforceRateLimit(user.id, { limit: 10, windowMs: 60_000 })
+
     // Fetch invoice with client
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
@@ -63,6 +67,12 @@ export async function generateReminderAction(
 
     if (settingsError || !aiSettings) {
       return { error: 'AI settings not configured. Please set your API key in Settings.' }
+    }
+
+    // SSRF Defense-in-depth Check
+    const safeUrl = await isSafeUrl(aiSettings.base_url)
+    if (!safeUrl) {
+      return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
     }
 
     let apiKey: string
@@ -208,7 +218,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
       .select()
       .single()
 
-    if (draftError) return { error: draftError.message }
+    if (draftError) return { error: sanitizeDatabaseError(draftError) }
 
     // Update invoice: increment reminder_count and set last_reminder_at
     const { error: updateError } = await supabase
@@ -253,6 +263,9 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
       },
     }
   } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
+    }
     if (e instanceof Error && e.name === 'TimeoutError') {
       return { error: 'AI request timed out after 30 seconds. Please try again.' }
     }
@@ -268,6 +281,8 @@ export async function generateMultipleDraftsAction(
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    await enforceRateLimit(user.id, { limit: 5, windowMs: 60_000 })
 
     // Fetch invoice with client
     const { data: invoice, error: invoiceError } = await supabase
@@ -295,6 +310,12 @@ export async function generateMultipleDraftsAction(
 
     if (settingsError || !aiSettings) {
       return { error: 'AI settings not configured. Please set your API key in Settings.' }
+    }
+
+    // SSRF Defense-in-depth Check
+    const safeUrl = await isSafeUrl(aiSettings.base_url)
+    if (!safeUrl) {
+      return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
     }
 
     let apiKey: string
@@ -474,6 +495,9 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
 
     return { success: true, data: inserted }
   } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
+    }
     if (e instanceof Error && e.name === 'TimeoutError') {
       return { error: 'AI request timed out after 30 seconds. Please try again.' }
     }
@@ -502,7 +526,7 @@ export async function logReminderEventAction(
         description: description || (eventType === 'draft_copied' ? 'Copied draft to clipboard' : 'Reminder marked as sent'),
       })
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath(`/invoices/${invoiceId}`)
     return { success: true }
@@ -542,7 +566,7 @@ export async function getReminderHistoryAction(
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (eventsError) return { error: eventsError.message }
+    if (eventsError) return { error: sanitizeDatabaseError(eventsError) }
 
     // Collect draft_ids to fetch their tone and subject
     const draftIds = events

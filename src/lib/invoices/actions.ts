@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
+import { sanitizeDatabaseError } from '@/lib/utils/security'
 
 export async function createInvoiceAction(formData: FormData) {
   try {
@@ -17,12 +18,31 @@ export async function createInvoiceAction(formData: FormData) {
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
+    if (invoiceNumber.trim().length > 50) return { error: 'Invoice number must be 50 characters or less.' }
+    if (title && title.trim().length > 150) return { error: 'Title must be 150 characters or less.' }
+    if (description && description.trim().length > 1000) return { error: 'Description must be 1000 characters or less.' }
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
+    if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (!dueDate) return { error: 'Due date is required.' }
+    if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
+    if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
+    if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // Verify that the client belongs to the authenticated user (IDOR prevention)
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (clientError || !client) {
+      return { error: 'Invalid client reference.' }
+    }
 
     const { data, error } = await supabase
       .from('invoices')
@@ -42,7 +62,7 @@ export async function createInvoiceAction(formData: FormData) {
       .select()
       .single()
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
@@ -74,7 +94,7 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
 
     const { data, error } = await query
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     return { success: true, data }
   } catch (e) {
@@ -95,7 +115,7 @@ export async function getInvoiceDetailAction(invoiceId: string) {
       .eq('user_id', user.id)
       .single()
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     return { success: true, data }
   } catch (e) {
@@ -117,12 +137,31 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
+    if (invoiceNumber.trim().length > 50) return { error: 'Invoice number must be 50 characters or less.' }
+    if (title && title.trim().length > 150) return { error: 'Title must be 150 characters or less.' }
+    if (description && description.trim().length > 1000) return { error: 'Description must be 1000 characters or less.' }
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
+    if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (!dueDate) return { error: 'Due date is required.' }
+    if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
+    if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
+    if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // Verify that the client belongs to the authenticated user (IDOR prevention)
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (clientError || !client) {
+      return { error: 'Invalid client reference.' }
+    }
 
     const { data, error } = await supabase
       .from('invoices')
@@ -142,7 +181,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
       .select()
       .single()
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)
@@ -165,7 +204,7 @@ export async function deleteInvoiceAction(invoiceId: string) {
       .eq('id', invoiceId)
       .eq('user_id', user.id)
 
-    if (error) return { error: error.message }
+    if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
@@ -194,7 +233,7 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
       .select()
       .single()
 
-    if (updateError) return { error: updateError.message }
+    if (updateError) return { error: sanitizeDatabaseError(updateError) }
 
     // Log status change event
     const { error: eventError } = await supabase

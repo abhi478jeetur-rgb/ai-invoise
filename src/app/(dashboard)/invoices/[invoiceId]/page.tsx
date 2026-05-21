@@ -2,6 +2,7 @@ import { createClient } from '@/lib/db/server'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getInvoiceDetailAction } from '@/lib/invoices/actions'
+import { sanitizeHref } from '@/lib/utils/security'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InvoiceDetailActions } from './invoice-detail-actions'
 import { InvoiceReminderSection } from './invoice-reminder-section'
@@ -105,7 +106,12 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   const result = await getInvoiceDetailAction(invoiceId)
 
   if (!result.success || !result.data) {
-    notFound()
+    return (
+      <div className="p-8 text-white bg-red-900 rounded-md">
+        <h2>DEBUG 404 ERROR</h2>
+        <pre>{JSON.stringify({ invoiceId, result }, null, 2)}</pre>
+      </div>
+    )
   }
 
   const invoice = result.data
@@ -249,7 +255,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                 <div className="mt-4 pt-4 border-t border-neutral-800/50">
                   <p className="text-xs text-neutral-500 mb-1">Payment Link</p>
                   <a
-                    href={invoice.payment_link}
+                    href={sanitizeHref(invoice.payment_link)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors break-all"
