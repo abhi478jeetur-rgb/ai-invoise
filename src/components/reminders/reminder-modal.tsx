@@ -114,7 +114,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-neutral-950/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-neutral-100">
             {draft ? 'Reminder Draft' : 'Generate Reminder'}

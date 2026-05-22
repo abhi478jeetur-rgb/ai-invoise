@@ -181,7 +181,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     id="email"
                     value={initialData.profile.email}
                     disabled
-                    className="h-9 border-neutral-800 bg-neutral-950/50 text-neutral-500 cursor-not-allowed"
+                    className="h-9 border-neutral-800 bg-neutral-900/50 text-neutral-300 cursor-not-allowed disabled:opacity-100"
                   />
                   <p className="text-[11px] text-neutral-600">Email is managed by your auth provider.</p>
                 </div>
