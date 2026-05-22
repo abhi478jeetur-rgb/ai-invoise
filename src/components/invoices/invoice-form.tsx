@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -52,6 +53,7 @@ interface InvoiceFormProps {
 }
 
 export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: InvoiceFormProps) {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string>('')
@@ -103,7 +105,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-neutral-950/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-neutral-100">
             {isEditing ? 'Edit Invoice' : 'New Invoice'}
@@ -310,6 +312,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
           if (newClient) {
             setLocalClients((prev) => [...prev, newClient])
             setSelectedClientId(newClient.id)
+            router.refresh()
           }
         }}
       />

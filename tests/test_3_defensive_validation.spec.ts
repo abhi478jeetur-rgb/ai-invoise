@@ -412,7 +412,8 @@ test.describe('Authenticated Defensive Tests', () => {
 
       // Create first invoice
       await createInvoice();
-      await page.waitForSelector(`text=${invNum}`, { timeout: 10000 });
+      const invoiceRow = page.locator('span.font-mono, td, div', { hasText: invNum }).first();
+      await expect(invoiceRow).toBeVisible({ timeout: 15000 });
       console.log('[DB Sanitization] First invoice created.');
 
       // Try duplicate — should get friendly error

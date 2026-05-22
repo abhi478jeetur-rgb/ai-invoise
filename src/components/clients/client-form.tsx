@@ -64,7 +64,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
+      <DialogContent className="sm:max-w-[480px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-neutral-100">
             {isEditing ? 'Edit Client' : 'Add Client'}
