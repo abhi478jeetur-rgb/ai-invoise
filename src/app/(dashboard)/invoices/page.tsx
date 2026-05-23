@@ -12,13 +12,20 @@ export default async function InvoicesPage() {
     redirect('/sign-in')
   }
 
-  const [invoicesResult, clientsResult] = await Promise.all([
+  const [invoicesResult, clientsResult, profileResult] = await Promise.all([
     getInvoicesAction(),
     getClientsAction(),
+    supabase
+      .from('profiles')
+      .select('default_currency, payment_link_default, default_payment_terms')
+      .eq('id', user.id)
+      .single(),
   ])
 
   const invoices = invoicesResult.success ? invoicesResult.data : []
   const clients = clientsResult.success ? clientsResult.data : []
+  const defaultProfile = profileResult.data ?? {}
 
-  return <InvoicesPageClient invoices={invoices ?? []} clients={clients ?? []} />
+  return <InvoicesPageClient invoices={invoices ?? []} clients={clients ?? []} defaultProfile={defaultProfile} />
 }
+

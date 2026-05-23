@@ -12,10 +12,16 @@ export async function getSettingsAction() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    // Fetch profile
+    // Fetch profile (includes all business fields)
     let { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('full_name, email, default_currency, reminder_enabled, reminder_day, reminder_time')
+      .select(`
+        full_name, email, default_currency,
+        reminder_enabled, reminder_day, reminder_time,
+        company_name, company_address, company_website,
+        tax_id, logo_url, bank_details, payment_link_default,
+        global_rules, default_tax_label, default_tax_rate, default_payment_terms
+      `)
       .eq('id', user.id)
       .single()
 
@@ -30,7 +36,13 @@ export async function getSettingsAction() {
             full_name: user.user_metadata?.full_name || '',
             default_currency: 'USD'
           })
-          .select('full_name, email, default_currency, reminder_enabled, reminder_day, reminder_time')
+          .select(`
+            full_name, email, default_currency,
+            reminder_enabled, reminder_day, reminder_time,
+            company_name, company_address, company_website,
+            tax_id, logo_url, bank_details, payment_link_default,
+            global_rules, default_tax_label, default_tax_rate, default_payment_terms
+          `)
           .single()
 
         if (!insertError && newProfile) {
@@ -71,6 +83,18 @@ export async function getSettingsAction() {
           reminder_enabled: profile?.reminder_enabled ?? false,
           reminder_day: profile?.reminder_day ?? 'Monday',
           reminder_time: profile?.reminder_time ?? 'Morning',
+          // Business Profile fields
+          company_name: profile?.company_name ?? '',
+          company_address: profile?.company_address ?? '',
+          company_website: profile?.company_website ?? '',
+          tax_id: profile?.tax_id ?? '',
+          logo_url: profile?.logo_url ?? '',
+          bank_details: profile?.bank_details ?? '',
+          payment_link_default: profile?.payment_link_default ?? '',
+          global_rules: profile?.global_rules ?? {},
+          default_tax_label: profile?.default_tax_label ?? '',
+          default_tax_rate: profile?.default_tax_rate ?? null,
+          default_payment_terms: profile?.default_payment_terms ?? 'net_30',
         },
         aiSettings: aiSettings
           ? {
@@ -87,6 +111,7 @@ export async function getSettingsAction() {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
+
 
 export async function saveProfileSettingsAction(formData: FormData) {
   try {
@@ -125,7 +150,151 @@ export async function saveProfileSettingsAction(formData: FormData) {
   }
 }
 
+// Allowed currency codes (whitelist to prevent injection)
+const ALLOWED_CURRENCIES = ['USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR']
+const ALLOWED_PAYMENT_TERMS = ['receipt','net_15','net_30','net_60','net_90','custom']
+
+export async function saveBusinessProfileAction(formData: FormData) {
+  try {
+    const companyName    = formData.get('companyName') as string
+    const companyAddress = formData.get('companyAddress') as string
+    const companyWebsite = formData.get('companyWebsite') as string
+    const taxId          = formData.get('taxId') as string
+    const bankDetails    = formData.get('bankDetails') as string
+    const paymentLinkDefault = formData.get('paymentLinkDefault') as string
+    const defaultTaxLabel = formData.get('defaultTaxLabel') as string
+    const defaultTaxRateRaw = formData.get('defaultTaxRate') as string
+    const defaultPaymentTerms = formData.get('defaultPaymentTerms') as string
+    const defaultCurrency = formData.get('defaultCurrency') as string
+
+    // Late Payment Policy and T&C rules
+    const latePolicyText = formData.get('rule_late_payment') as string
+    const tncText        = formData.get('rule_tnc') as string
+    const commStyle      = formData.get('rule_comm_style') as string
+    const refundPolicy   = formData.get('rule_refund') as string
+
+    // --- Validation ---
+    if (companyName && companyName.trim().length > 150)
+      return { error: 'Company name must be 150 characters or less.' }
+    if (companyAddress && companyAddress.trim().length > 500)
+      return { error: 'Company address must be 500 characters or less.' }
+    if (bankDetails && bankDetails.trim().length > 2000)
+      return { error: 'Bank details must be 2000 characters or less.' }
+    if (taxId && taxId.trim().length > 50)
+      return { error: 'Tax ID must be 50 characters or less.' }
+    if (companyWebsite && companyWebsite.trim().length > 0) {
+      if (!/^https?:\/\//i.test(companyWebsite.trim()))
+        return { error: 'Company website must start with http:// or https://' }
+      if (companyWebsite.trim().length > 200)
+        return { error: 'Website URL must be 200 characters or less.' }
+    }
+    if (paymentLinkDefault && paymentLinkDefault.trim().length > 0) {
+      if (!/^https?:\/\//i.test(paymentLinkDefault.trim()))
+        return { error: 'Payment link must start with http:// or https://' }
+    }
+    if (defaultCurrency && !ALLOWED_CURRENCIES.includes(defaultCurrency))
+      return { error: 'Invalid currency selection.' }
+    if (defaultPaymentTerms && !ALLOWED_PAYMENT_TERMS.includes(defaultPaymentTerms))
+      return { error: 'Invalid payment terms selection.' }
+    
+    const defaultTaxRate = defaultTaxRateRaw ? parseFloat(defaultTaxRateRaw) : null
+    if (defaultTaxRate !== null && (isNaN(defaultTaxRate) || defaultTaxRate < 0 || defaultTaxRate > 100))
+      return { error: 'Tax rate must be between 0 and 100.' }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    // Build global_rules JSON from form fields
+    const global_rules: Record<string, string> = {}
+    if (latePolicyText?.trim()) global_rules.late_payment_policy = latePolicyText.trim().slice(0, 500)
+    if (tncText?.trim())        global_rules.terms_and_conditions  = tncText.trim().slice(0, 2000)
+    if (commStyle?.trim())      global_rules.communication_style   = commStyle.trim().slice(0, 500)
+    if (refundPolicy?.trim())   global_rules.refund_policy         = refundPolicy.trim().slice(0, 500)
+
+    const updates: Record<string, unknown> = {
+      company_name:          companyName?.trim() || null,
+      company_address:       companyAddress?.trim() || null,
+      company_website:       companyWebsite?.trim() || null,
+      tax_id:                taxId?.trim() || null,
+      bank_details:          bankDetails?.trim() || null,
+      payment_link_default:  paymentLinkDefault?.trim() || null,
+      default_tax_label:     defaultTaxLabel?.trim() || null,
+      default_tax_rate:      defaultTaxRate,
+      global_rules,
+    }
+
+    if (defaultCurrency)     updates.default_currency      = defaultCurrency
+    if (defaultPaymentTerms) updates.default_payment_terms = defaultPaymentTerms
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id)
+
+    if (error) return { error: sanitizeDatabaseError(error) }
+
+    revalidatePath('/settings')
+    revalidatePath('/invoices')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function uploadBusinessLogoAction(formData: FormData) {
+  try {
+    const file = formData.get('logo') as File | null
+    if (!file || file.size === 0) return { error: 'No file provided.' }
+
+    // Security: only allow image types
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { error: 'Only JPG, PNG, WebP, and SVG images are allowed.' }
+    }
+    // 2MB limit
+    if (file.size > 2 * 1024 * 1024) {
+      return { error: 'Logo must be smaller than 2MB.' }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const ext = file.type === 'image/svg+xml' ? 'svg'
+      : file.type === 'image/webp' ? 'webp'
+      : file.type === 'image/png' ? 'png' : 'jpg'
+
+    // Store under user's own folder: {user_id}/logo.{ext}
+    const filePath = `${user.id}/logo.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('business-logos')
+      .upload(filePath, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) return { error: 'Failed to upload logo. Please try again.' }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('business-logos')
+      .getPublicUrl(filePath)
+
+    // Save URL to profile
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ logo_url: publicUrl })
+      .eq('id', user.id)
+
+    if (updateError) return { error: sanitizeDatabaseError(updateError) }
+
+    revalidatePath('/settings')
+    return { success: true, url: publicUrl }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
 export async function saveAiSettingsAction(formData: FormData) {
+
   try {
     const baseUrl = formData.get('baseUrl') as string
     const modelName = formData.get('modelName') as string
