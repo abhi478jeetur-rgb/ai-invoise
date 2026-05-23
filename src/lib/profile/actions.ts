@@ -110,7 +110,7 @@ export async function completeTourAction() {
   }
 }
 
-export const reminderSettingsSchema = z.object({
+const reminderSettingsSchema = z.object({
   reminder_enabled: z.boolean(),
   reminder_day: z.string(),
   reminder_time: z.string()
