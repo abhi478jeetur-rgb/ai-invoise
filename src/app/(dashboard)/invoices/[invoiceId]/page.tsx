@@ -307,6 +307,8 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                   invoiceNumber={invoice.invoice_number}
                   initialEvents={activities}
                   clientEmail={client?.email}
+                  amount={invoice.amount}
+                  currency={invoice.currency}
                 />
               </CardContent>
             </Card>
@@ -396,6 +398,8 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
             initialEvents={activities}
             variant="cta"
             clientEmail={client?.email}
+            amount={invoice.amount}
+            currency={invoice.currency}
           />
         </div>
       </div>
