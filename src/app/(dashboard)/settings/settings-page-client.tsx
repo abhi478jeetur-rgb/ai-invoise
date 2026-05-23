@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,13 +12,18 @@ import {
   saveProfileSettingsAction,
   saveAiSettingsAction,
   testAiConnectionAction,
+  deleteAccountAction,
 } from '@/lib/settings/actions'
+import { updateReminderSettingsAction } from '@/lib/profile/actions'
 
 interface SettingsData {
   profile: {
     full_name: string
     email: string
     default_currency: string
+    reminder_enabled: boolean
+    reminder_day: string
+    reminder_time: string
   }
   aiSettings: {
     base_url: string
@@ -50,6 +56,13 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
 
+  // Reminder state
+  const [reminderSaving, setReminderSaving] = useState(false)
+  const [reminderSuccess, setReminderSuccess] = useState(false)
+  const [reminderError, setReminderError] = useState<string | null>(null)
+  
+  const [reminderEnabled, setReminderEnabled] = useState(initialData.profile.reminder_enabled)
+
   // AI state
   const [aiSaving, setAiSaving] = useState(false)
   const [aiSuccess, setAiSuccess] = useState(false)
@@ -58,6 +71,11 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   // Test connection state
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  // Account state
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [accountDeleting, setAccountDeleting] = useState(false)
+  const [accountError, setAccountError] = useState<string | null>(null)
 
   async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -75,6 +93,25 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
       router.refresh()
     }
     setProfileSaving(false)
+  }
+
+  async function handleReminderSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setReminderSaving(true)
+    setReminderSuccess(false)
+    setReminderError(null)
+
+    const formData = new FormData(e.currentTarget)
+    formData.set('reminder_enabled', reminderEnabled ? 'true' : 'false')
+    const result = await updateReminderSettingsAction(formData)
+
+    if (result.error) {
+      setReminderError(result.error)
+    } else {
+      setReminderSuccess(true)
+      router.refresh()
+    }
+    setReminderSaving(false)
   }
 
   async function handleAiSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -111,6 +148,31 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     setTesting(false)
   }
 
+  const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setAccountError(null)
+
+    if (deleteConfirmation !== 'delete my account') {
+      setAccountError('Please type the exact confirmation sentence.')
+      return
+    }
+
+    setAccountDeleting(true)
+    
+    try {
+      const result = await deleteAccountAction(deleteConfirmation)
+      if (result.error) {
+        setAccountError(result.error)
+        setAccountDeleting(false)
+      } else {
+        router.push('/sign-in')
+      }
+    } catch (err) {
+      setAccountError('An unexpected error occurred.')
+      setAccountDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -134,6 +196,12 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer"
           >
             AI Provider
+          </TabsTrigger>
+          <TabsTrigger
+            value="account"
+            className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 text-xs cursor-pointer"
+          >
+            Account (Danger Zone)
           </TabsTrigger>
         </TabsList>
 
@@ -210,6 +278,110 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                   {profileSaving ? 'Saving...' : 'Save Profile'}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg mt-6">
+            <CardHeader>
+              <CardTitle className="text-base font-medium text-neutral-200">
+                Invoice Reminders
+              </CardTitle>
+              <CardDescription className="text-sm text-neutral-500">
+                Set a schedule to remind you to log your unbilled work into invoices.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleReminderSubmit} className="space-y-4">
+                {reminderSuccess && (
+                  <div className="p-3 text-xs font-medium bg-green-950/30 border border-green-900/50 text-green-400 rounded-lg text-center">
+                    Reminder settings updated successfully.
+                  </div>
+                )}
+                {reminderError && (
+                  <div className="p-3 text-xs font-medium bg-red-950/30 border border-red-900/50 text-red-400 rounded-lg text-center">
+                    {reminderError}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <Label className="text-neutral-400" htmlFor="reminderEnabled">
+                    Enable Weekly Reminders
+                  </Label>
+                  <input
+                    type="checkbox"
+                    id="reminderEnabled"
+                    checked={reminderEnabled}
+                    onChange={(e) => setReminderEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50"
+                  />
+                </div>
+
+                {reminderEnabled && (
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-neutral-400" htmlFor="reminderDay">
+                        Day of Week
+                      </Label>
+                      <select
+                        id="reminderDay"
+                        name="reminder_day"
+                        defaultValue={initialData.profile.reminder_day || 'Monday'}
+                        className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700"
+                      >
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-neutral-400" htmlFor="reminderTime">
+                        Time of Day
+                      </Label>
+                      <select
+                        id="reminderTime"
+                        name="reminder_time"
+                        defaultValue={initialData.profile.reminder_time || 'Morning'}
+                        className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700"
+                      >
+                        <option value="Morning">Morning (9 AM - 12 PM)</option>
+                        <option value="Afternoon">Afternoon (12 PM - 5 PM)</option>
+                        <option value="Evening">Evening (5 PM - 9 PM)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={reminderSaving}
+                  className="bg-neutral-800 text-white hover:bg-neutral-700 font-medium text-sm cursor-pointer disabled:opacity-50 mt-2"
+                >
+                  {reminderSaving ? 'Saving...' : 'Save Reminder Schedule'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg mt-6">
+            <CardHeader>
+              <CardTitle className="text-base font-medium text-neutral-200">
+                Recycle Bin
+              </CardTitle>
+              <CardDescription className="text-sm text-neutral-500">
+                Manage your deleted invoices and clients. You can restore them or permanently delete them from here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/trash" className="inline-block">
+                <Button variant="outline" className="bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer">
+                  Open Recycle Bin
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>
@@ -338,6 +510,51 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     )}
                   </Button>
                 </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 3: Account (Danger Zone) */}
+        <TabsContent value="account" className="mt-4">
+          <Card className="border-red-900/50 bg-red-950/10 backdrop-blur-xl max-w-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-medium text-red-500">
+                Danger Zone
+              </CardTitle>
+              <CardDescription className="text-sm text-red-400/80">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleDeleteAccount} className="space-y-4">
+                {accountError && (
+                  <div className="p-3 text-xs font-medium bg-red-950/30 border border-red-900/50 text-red-400 rounded-lg text-center">
+                    {accountError}
+                  </div>
+                )}
+                
+                <div className="space-y-2 p-4 bg-red-950/20 border border-red-900/30 rounded-md">
+                  <p className="text-sm text-neutral-300">
+                    To verify, type <strong className="text-red-400 select-all">delete my account</strong> below:
+                  </p>
+                  <Input
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder="delete my account"
+                    className="h-9 border-red-900/50 bg-neutral-950 text-neutral-200 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={accountDeleting || deleteConfirmation !== 'delete my account'}
+                  variant="destructive"
+                  className="font-medium text-sm cursor-pointer disabled:opacity-50"
+                >
+                  {accountDeleting ? 'Deleting Account...' : 'Delete My Account'}
+                </Button>
               </form>
             </CardContent>
           </Card>

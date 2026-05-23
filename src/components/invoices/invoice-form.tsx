@@ -61,11 +61,20 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
   const [showClientModal, setShowClientModal] = useState(false)
   const invoiceNumberRef = useRef<HTMLInputElement>(null)
 
+  const [dueDate, setDueDate] = useState('')
+  const [paymentTerm, setPaymentTerm] = useState('custom')
+
   const isEditing = !!invoice
 
   useEffect(() => {
     if (open) {
       setSelectedClientId(invoice?.client_id ?? '')
+      if (invoice?.due_date) {
+        setDueDate(invoice.due_date)
+        setPaymentTerm('custom')
+      } else {
+        handleTermChange('net_30')
+      }
       if (!isEditing) {
         getNextInvoiceNumberAction().then((res) => {
           if (res.success && invoiceNumberRef.current) {
@@ -79,8 +88,35 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
       setSelectedClientId('')
       setLocalClients(clients)
       setShowClientModal(false)
+      setDueDate('')
+      setPaymentTerm('custom')
     }
   }, [open, invoice, isEditing])
+
+  function handleTermChange(term: string) {
+    setPaymentTerm(term)
+    if (term === 'custom') return
+
+    const date = new Date()
+    if (term === 'net_15') date.setDate(date.getDate() + 15)
+    else if (term === 'net_30') date.setDate(date.getDate() + 30)
+    else if (term === 'net_60') date.setDate(date.getDate() + 60)
+    
+    setDueDate(date.toISOString().split('T')[0])
+  }
+
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDueDate(e.target.value)
+    setPaymentTerm('custom')
+  }
+
+  // Calculate min and max dates (1 year past to 1 year future)
+  const minDate = new Date()
+  minDate.setFullYear(minDate.getFullYear() - 1)
+  const maxDate = new Date()
+  maxDate.setFullYear(maxDate.getFullYear() + 1)
+  const minDateStr = minDate.toISOString().split('T')[0]
+  const maxDateStr = maxDate.toISOString().split('T')[0]
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -224,19 +260,39 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
             </div>
           </div>
 
-          {/* Due Date */}
-          <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="dueDate">
-              Due Date <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="dueDate"
-              name="dueDate"
-              type="date"
-              required
-              defaultValue={invoice?.due_date ?? ''}
-              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
-            />
+          {/* Payment Terms & Due Date */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-neutral-400">Payment Terms</Label>
+              <Select value={paymentTerm} onValueChange={handleTermChange}>
+                <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
+                  <SelectItem value="receipt" className="text-neutral-200 focus:bg-neutral-800">Due on Receipt</SelectItem>
+                  <SelectItem value="net_15" className="text-neutral-200 focus:bg-neutral-800">Net 15</SelectItem>
+                  <SelectItem value="net_30" className="text-neutral-200 focus:bg-neutral-800">Net 30</SelectItem>
+                  <SelectItem value="net_60" className="text-neutral-200 focus:bg-neutral-800">Net 60</SelectItem>
+                  <SelectItem value="custom" className="text-neutral-200 focus:bg-neutral-800">Custom Date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-400" htmlFor="dueDate">
+                Due Date <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="dueDate"
+                name="dueDate"
+                type="date"
+                required
+                value={dueDate}
+                onChange={handleDateChange}
+                min={minDateStr}
+                max={maxDateStr}
+                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              />
+            </div>
           </div>
 
           {/* Description */}

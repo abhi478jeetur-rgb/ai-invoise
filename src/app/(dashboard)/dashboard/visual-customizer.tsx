@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
+import { UnbilledScratchpad } from '@/components/dashboard/UnbilledScratchpad'
 
 interface DashboardData {
   stats: {
@@ -21,9 +22,8 @@ interface DashboardData {
 }
 
 interface CustomizerProps {
-  data: DashboardData
-  firstName: string
-  today: string
+  initialData: DashboardData
+  setupPreference?: string
 }
 
 const THEME_PRESETS = [
@@ -73,8 +73,8 @@ const THEME_PRESETS = [
   }
 ]
 
-export default function DashboardVisualCustomizer({ data, firstName, today }: CustomizerProps) {
-  const { stats, chaseList, recentActivities, recentInvoices } = data
+export default function DashboardVisualCustomizer({ initialData, setupPreference }: CustomizerProps) {
+  const { stats, chaseList, recentActivities, recentInvoices } = initialData
 
   // Load styling configuration with a hydration-safe pattern
   const [config, setConfig] = useState(THEME_PRESETS[0])
@@ -273,9 +273,10 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
         </div>
 
         {/* 2. Quick Start Banner (empty state) or Summary Cards */}
-        {stats.totalInvoiceCount === 0 ? (
-          <QuickStartBanner />
-        ) : (
+        <div>
+          {setupPreference !== 'completed' && <QuickStartBanner />}
+        </div>
+        
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Unpaid */}
@@ -334,11 +335,14 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
             </p>
           </div>
         </div>
-        )}
 
-        {/* 3. Who to Chase Today */}
-        <div
-          className="border p-6"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                <UnbilledScratchpad />
+                
+                {/* 3. Who to Chase Today */}
+                <div
+                  className="border p-6"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
@@ -449,62 +453,47 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
             </Link>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 overflow-x-auto">
             {recentInvoices.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>No invoices yet.</p>
+                <p className="text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                  No invoices created yet.
+                </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
-                      <th className="pb-2 pr-4 font-medium">Invoice</th>
-                      <th className="pb-2 pr-4 font-medium">Client</th>
-                      <th className="pb-2 pr-4 font-medium text-right">Amount</th>
-                      <th className="pb-2 pr-4 font-medium">Due Date</th>
-                      <th className="pb-2 pr-4 font-medium">Status</th>
-                      <th className="pb-2 font-medium text-right">Action</th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: 'var(--user-border)' }}>
+                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Client</th>
+                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider text-right" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Amount</th>
+                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due Date</th>
+                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y" style={{ borderColor: 'var(--user-border)', opacity: 0.8 }}>
+                  {recentInvoices.map((inv: any) => (
+                    <tr key={inv.id} className="transition-colors hover:opacity-80">
+                      <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
+                      <td className="py-2.5 pr-4 text-[11px] font-medium text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
+                      <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>
+                        {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded border ${STATUS_STYLES[inv.status] ?? ''}`}>
+                          {STATUS_LABELS[inv.status] ?? inv.status}
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {recentInvoices.map((inv: any) => (
-                      <tr key={inv.id} className="border-t" style={{ borderColor: 'var(--user-border)' }}>
-                        <td className="py-2.5 pr-4">
-                          <p className="text-[11px] font-semibold capitalize" style={{ color: 'var(--user-title)' }}>
-                            {inv.title || 'Untitled Invoice'}
-                          </p>
-                          <span className="inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded bg-neutral-900 border border-neutral-800 text-[9px] font-mono" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
-                            {inv.invoice_number}
-                          </span>
-                        </td>
-                        <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
-                        <td className="py-2.5 pr-4 text-[11px] font-medium text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
-                        <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>
-                          {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </td>
-                        <td className="py-2.5 pr-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded border ${STATUS_STYLES[inv.status] ?? ''}`}>
-                            {STATUS_LABELS[inv.status] ?? inv.status}
-                          </span>
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <Link href={`/invoices/${inv.id}`} className="text-[10px] hover:underline" style={{ color: 'var(--user-accent)' }}>
-                            Details
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
 
         {/* 5. Recent Reminder Activity */}
         <div
-          className="border p-6"
+          className="border p-6 mt-8"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
@@ -567,10 +556,9 @@ export default function DashboardVisualCustomizer({ data, firstName, today }: Cu
             )}
           </div>
         </div>
-
       </div>
-
-
+    </div>
+    </div>
     </div>
   )
 }

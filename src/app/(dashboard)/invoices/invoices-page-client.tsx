@@ -29,6 +29,7 @@ interface Invoice {
   title: string | null
   description: string | null
   amount: number
+  amount_paid: number
   currency: string
   status: string
   due_date: string
@@ -48,13 +49,16 @@ interface InvoicesPageClientProps {
   clients: Client[]
 }
 
-const STATUS_FILTERS = ['all', 'draft', 'sent', 'due_soon', 'overdue', 'paid', 'archived'] as const
+const STATUS_FILTERS = ['all', 'draft', 'sent', 'due_soon', 'overdue', 'promised', 'paused', 'partial', 'paid', 'archived'] as const
 const STATUS_LABELS: Record<string, string> = {
   all: 'All',
   draft: 'Draft',
   sent: 'Sent',
   due_soon: 'Due Soon',
   overdue: 'Overdue',
+  promised: 'Promised',
+  paused: 'Paused',
+  partial: 'Partial',
   paid: 'Paid',
   archived: 'Archived',
 }
@@ -201,8 +205,7 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
             setEditingInvoice(null)
             setFormOpen(true)
           }}
-          disabled={clients.length === 0}
-          className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer w-fit"
         >
           + New Invoice
         </Button>
@@ -367,6 +370,15 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
                               View Details
                             </Link>
                           </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <a
+                              href={`/api/invoices/${invoice.id}/pdf`}
+                              download
+                              className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer w-full text-left"
+                            >
+                              Download PDF
+                            </a>
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleEdit(invoice)}
                             className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer"
@@ -377,7 +389,7 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
                             onClick={() => handleDelete(invoice.id)}
                             className="text-red-400 focus:bg-red-950/50 focus:text-red-300 cursor-pointer"
                           >
-                            Delete
+                            Move to Trash
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

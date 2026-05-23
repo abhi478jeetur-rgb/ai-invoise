@@ -81,6 +81,7 @@ export async function getClientsAction() {
       .from('clients')
       .select('*')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .order('client_name', { ascending: true })
 
     if (error) {
@@ -168,6 +169,106 @@ export async function deleteClientAction(clientId: string) {
       return { error: 'You must be authenticated.' }
     }
 
+    const deletedAt = new Date().toISOString()
+
+    const { error } = await supabase
+      .from('clients')
+      .update({ deleted_at: deletedAt })
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+
+    if (!error) {
+      // Cascade soft delete to invoices
+      await supabase
+        .from('invoices')
+        .update({ deleted_at: deletedAt })
+        .eq('client_id', clientId)
+        .eq('user_id', user.id)
+    }
+
+    if (error) {
+      return { error: sanitizeDatabaseError(error) }
+    }
+
+    revalidatePath('/clients')
+    revalidatePath('/invoices')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function getDeletedClientsAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { error: 'You must be authenticated.' }
+    }
+
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false })
+
+    if (error) {
+      return { error: sanitizeDatabaseError(error) }
+    }
+
+    return { success: true, data }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function restoreClientAction(clientId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { error: 'You must be authenticated.' }
+    }
+
+    const { error } = await supabase
+      .from('clients')
+      .update({ deleted_at: null })
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+
+    if (!error) {
+      // Also restore their invoices (note: this might restore invoices that were individually soft deleted before the client was deleted, but it's acceptable for now)
+      await supabase
+        .from('invoices')
+        .update({ deleted_at: null })
+        .eq('client_id', clientId)
+        .eq('user_id', user.id)
+    }
+
+    if (error) {
+      return { error: sanitizeDatabaseError(error) }
+    }
+
+    revalidatePath('/clients')
+    revalidatePath('/invoices')
+    revalidatePath('/dashboard')
+    revalidatePath('/trash')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function hardDeleteClientAction(clientId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return { error: 'You must be authenticated.' }
+    }
+
     const { error } = await supabase
       .from('clients')
       .delete()
@@ -178,7 +279,7 @@ export async function deleteClientAction(clientId: string) {
       return { error: sanitizeDatabaseError(error) }
     }
 
-    revalidatePath('/clients')
+    revalidatePath('/trash')
     return { success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }

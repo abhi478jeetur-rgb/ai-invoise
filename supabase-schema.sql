@@ -21,7 +21,10 @@ create type public.invoice_status as enum (
   'due_soon',
   'overdue',
   'paid',
-  'archived'
+  'archived',
+  'promised',
+  'paused',
+  'partial'
 );
 
 create type public.reminder_tone as enum (
@@ -56,6 +59,9 @@ create table public.profiles (
   profession text,
   primary_problem text,
   discovery_source text,
+  use_case text,
+  role text,
+  setup_preference text,
   credits_balance integer not null default 5,
   timezone text,
   default_currency text not null default 'USD',
@@ -104,6 +110,7 @@ create table public.invoices (
   amount numeric(12,2) not null,
   currency text not null default 'USD',
   status public.invoice_status not null default 'sent',
+  amount_paid numeric(12,2) not null default 0,
   due_date date not null,
   paid_date date,
   reminder_count integer not null default 0,

@@ -29,9 +29,10 @@ const navItems: NavItem[] = [
 interface SidebarProps {
   initials: string
   email: string
+  name?: string
 }
 
-export default function Sidebar({ initials, email }: SidebarProps) {
+export default function Sidebar({ initials, email, name }: SidebarProps) {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -61,7 +62,7 @@ export default function Sidebar({ initials, email }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col items-start gap-0.5 my-6 w-full px-2">
+      <nav id="tour-nav" className="flex-1 flex flex-col items-start gap-0.5 my-6 w-full px-2">
         {navItems.map((item) => (
           <Link key={`${item.href}-${item.label}`} href={item.href} title={item.title} className="w-full">
             <div

@@ -136,3 +136,79 @@ next-devtools-portal,
     @apply font-sans;
     }
 }
+
+/* Driver.js Custom Glassmorphic Popover */
+.glass-tour-popover {
+  background: rgba(10, 10, 10, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid #262626 !important;
+  color: #e5e5e5 !important;
+  border-radius: 12px !important;
+  font-family: var(--font-sans) !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.glass-tour-popover .driver-popover-title {
+  color: #f5f5f5 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+
+.glass-tour-popover .driver-popover-description {
+  color: #a3a3a3 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.glass-tour-popover .driver-popover-footer {
+  margin-top: 16px !important;
+}
+
+.glass-tour-popover .driver-popover-progress-text {
+  color: #737373 !important;
+  font-size: 12px !important;
+}
+
+.glass-tour-popover button.driver-popover-btn {
+  background: #171717 !important;
+  border: 1px solid #262626 !important;
+  color: #d4d4d4 !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.glass-tour-popover button.driver-popover-btn:hover {
+  background: #262626 !important;
+  color: #fff !important;
+}
+
+.glass-tour-popover .driver-popover-arrow {
+  border-color: #262626 !important;
+}
+
+/* Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}

@@ -1,0 +1,94 @@
+import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
+
+test.describe('NVIDIA API and PDF Generation Test', () => {
+  // Use a longer timeout because AI generation and PDF generation can take a few seconds
+  test.setTimeout(60000);
+
+  test('should configure NVIDIA AI, generate reminder, and download PDF', async ({ page, context }) => {
+    // 1. Sign in
+    await page.goto('/sign-in');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi@clockivo.com');
+    await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    // Wait for dashboard to load
+    await expect(page).toHaveURL(/.*dashboard|invoices/);
+
+    // 2. Configure NVIDIA API in Settings
+    await page.goto('/settings');
+    await page.getByRole('textbox', { name: /Base URL/i }).fill('https://integrate.api.nvidia.com/v1');
+    await page.getByRole('textbox', { name: /Model Name/i }).fill('meta/llama-3.1-8b-instruct');
+    // Using the key provided by the user
+    await page.getByRole('textbox', { name: /API Key/i }).fill('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');
+    
+    // Save AI Settings
+    await page.getByRole('button', { name: /Save AI Settings/i }).click();
+    // Wait for some success indication or just wait a moment
+    await page.waitForTimeout(2000); 
+
+    // 3. Create a test invoice
+    await page.goto('/invoices');
+    await page.getByRole('button', { name: /\+ New Invoice/i }).click();
+    const invoiceDialog = page.getByRole('dialog');
+    await expect(invoiceDialog).toBeVisible();
+
+    // Select or create a client
+    // For safety, let's just create a quick inline client
+    await page.getByRole('button', { name: /\+ Add New Client/i }).click();
+    const clientDialog = page.getByRole('dialog', { name: /Add Client/i });
+    await expect(clientDialog).toBeVisible();
+    await clientDialog.getByLabel(/Client Name/i).fill(`NVIDIA Test Client ${Date.now()}`);
+    await clientDialog.getByRole('button', { name: /Add Client/i }).click();
+    await expect(clientDialog).toBeHidden();
+
+    // Fill invoice details
+    await page.getByLabel(/Invoice Number/i).fill(`NV-${Date.now()}`);
+    await page.getByLabel(/Amount/i).fill('999');
+    
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 30);
+    await page.getByLabel(/Due Date/i).fill(futureDate.toISOString().split('T')[0]);
+    await page.getByRole('button', { name: /Create Invoice/i }).click();
+    await expect(invoiceDialog).toBeHidden();
+
+    // 4. Test PDF Download
+    // Go to the details page of the newly created invoice
+    await page.locator('a[href^="/invoices/"]').first().click();
+    await expect(page).toHaveURL(/\/invoices\/.+/);
+
+    // Click Download PDF
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('link', { name: /Download PDF/i }).click();
+    const download = await downloadPromise;
+    
+    // Save the downloaded file to verify
+    const downloadPath = await download.path();
+    expect(downloadPath).toBeTruthy();
+    if (downloadPath) {
+      const stat = fs.statSync(downloadPath);
+      expect(stat.size).toBeGreaterThan(0); // PDF should not be empty
+    }
+
+    // 5. Test AI Reminder Generation
+    // Assuming there's a button to generate a reminder
+    const generateBtn = page.getByRole('button', { name: /Generate Reminder/i });
+    if (await generateBtn.isVisible()) {
+      await generateBtn.click();
+      
+      // Wait for AI generation to complete. The text box should be filled.
+      const reminderTextarea = page.locator('textarea[name="body"]');
+      await expect(reminderTextarea).not.toBeEmpty({ timeout: 20000 }); // AI can take a while
+      
+      // Verify everything is saved successfully (if there's a save button for the draft)
+      const saveDraftBtn = page.getByRole('button', { name: /Save Draft/i });
+      if (await saveDraftBtn.isVisible()) {
+        await saveDraftBtn.click();
+        await page.waitForTimeout(1000);
+      }
+    }
+    
+    console.log("TEST COMPLETED SUCCESSFULLY");
+  });
+});

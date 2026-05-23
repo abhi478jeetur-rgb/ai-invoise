@@ -6,6 +6,7 @@
 # testing
 /coverage
 /test-results/
+tests/test-results/
 /playwright-report/
 /blob-report/
 /.playwright/
@@ -21,6 +22,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Reference projects
+.invoify-ref/
 
 # local env files
 .env
@@ -46,3 +50,20 @@ graphify-out/
 .DS_Store
 Thumbs.db
 *.local
+
+# Sentry Config File
+.env.sentry-build-plugin
+.sentryclirc
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generic Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
