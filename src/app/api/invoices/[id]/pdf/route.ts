@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/db/server";
-import chromium from "@sparticuz/chromium";
-import { InvoicePdfTemplate } from "@/components/invoices/invoice-pdf-template";
+import { renderToStream } from "@react-pdf/renderer";
+import { InvoicePdfDocument } from "@/components/invoices/invoice-pdf-document";
 
-// We need to render the component to static markup dynamically to avoid build errors
-
-// We use edge or nodejs? Puppeteer requires Nodejs
+// We use edge or nodejs? React-PDF requires Nodejs
 export const runtime = "nodejs";
-// Vercel max duration for hobby plan is 10s, but we can set 60s for pro just in case
 export const maxDuration = 60;
 
 export async function GET(
@@ -58,79 +55,20 @@ export async function GET(
       return new NextResponse("Profile not found", { status: 404 });
     }
 
-    // Render React component to HTML
-    const ReactDOMServer = (await import("react-dom/server")).default;
-    const htmlContent = ReactDOMServer.renderToStaticMarkup(
-      InvoicePdfTemplate({ invoice, client, profile })
+    // Render React component to PDF stream
+    const stream = await renderToStream(
+      InvoicePdfDocument({ invoice, client, profile })
     );
 
-    let browser;
-    let page;
-
-    try {
-      if (process.env.NODE_ENV === "production") {
-        const puppeteer = (await import("puppeteer-core")).default;
-        browser = await puppeteer.launch({
-          args: [...chromium.args, "--disable-dev-shm-usage", "--ignore-certificate-errors"],
-          executablePath: await chromium.executablePath(),
-          headless: true,
-        });
-      } else {
-        const puppeteer = (await import("puppeteer")).default;
-        browser = await puppeteer.launch({
-          args: ["--no-sandbox", "--disable-setuid-sandbox"],
-          headless: true,
-        });
-      }
-
-      if (!browser) {
-        throw new Error("Failed to launch browser");
-      }
-
-      page = await browser.newPage();
-      await page.setContent(htmlContent, {
-        waitUntil: ["load", "domcontentloaded"],
-        timeout: 30000,
-      });
-
-      // Inject Tailwind CSS via CDN for styling
-      await page.addStyleTag({
-        url: "https://cdn.tailwindcss.com",
-      });
-
-      const pdf = await page.pdf({
-        format: "a4",
-        printBackground: true,
-        preferCSSPageSize: true,
-      });
-
-      return new NextResponse(Buffer.from(pdf), {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=invoice_${invoice.invoice_number}.pdf`,
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-        status: 200,
-      });
-    } finally {
-      if (page) {
-        try {
-          await page.close();
-        } catch (e) {
-          console.error("Error closing page:", e);
-        }
-      }
-      if (browser) {
-        try {
-          const pages = await browser.pages();
-          await Promise.all(pages.map((p) => p.close()));
-          await browser.close();
-        } catch (e) {
-          console.error("Error closing browser:", e);
-        }
-      }
-    }
+    return new NextResponse(stream as unknown as ReadableStream, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename=invoice_${invoice.invoice_number}.pdf`,
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
+      status: 200,
+    });
   } catch (error: any) {
     console.error("PDF Generation Error:", error);
     return new NextResponse(

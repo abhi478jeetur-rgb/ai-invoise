@@ -94,6 +94,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const router = useRouter()
 
   // Profile state
+  const [p] = useState(initialData.profile)
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -114,6 +115,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   // AI state
+  const [aiSettings] = useState(initialData.aiSettings)
   const [aiSaving, setAiSaving] = useState(false)
   const [aiSuccess, setAiSuccess] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
@@ -219,7 +221,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     } catch { setAccountError('An unexpected error occurred.'); setAccountDeleting(false) }
   }
 
-  const p = initialData.profile
 
   return (
     <div className="space-y-6">
@@ -380,7 +381,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                       onClick={() => logoInputRef.current?.click()}
                       className="relative w-20 h-20 rounded-xl border-2 border-dashed border-neutral-700 bg-neutral-950 flex items-center justify-center cursor-pointer hover:border-neutral-500 transition-colors overflow-hidden">
                       {logoPreview ? (
-                        <img src={logoPreview} alt="Business logo" className="w-full h-full object-contain p-1" />
+                        <img src={logoPreview} alt="Business logo" className="w-full h-full object-contain p-1" onError={() => setLogoPreview(null)} />
                       ) : (
                         <div className="text-center">
                           <div className="text-2xl mb-1">🏢</div>
@@ -394,7 +395,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-neutral-400">JPG, PNG, WebP or SVG · Max 2MB</p>
+                      <p className="text-xs text-neutral-400">JPG, PNG, or WebP · Max 2MB</p>
                       <p className="text-xs text-neutral-600 mt-1">This logo will appear on your PDF invoices.</p>
                       {logoPreview && (
                         <button type="button" onClick={() => { setLogoPreview(null); setLogoUrl('') }}
@@ -404,7 +405,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                       )}
                     </div>
                   </div>
-                  <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp"
                     className="hidden" onChange={handleLogoChange} />
                   <input type="hidden" name="logo_url" value={logoUrl} />
                 </div>
@@ -573,34 +574,34 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="providerLabel">Provider Label</Label>
-                  <Input id="providerLabel" name="providerLabel" defaultValue={initialData.aiSettings?.provider_label ?? ''}
+                  <Input id="providerLabel" name="providerLabel" defaultValue={aiSettings?.provider_label ?? ''}
                     placeholder="NVIDIA NIM / Google AI Studio"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="baseUrl">Base URL <span className="text-red-500">*</span></Label>
-                  <Input id="baseUrl" name="baseUrl" required defaultValue={initialData.aiSettings?.base_url ?? ''}
+                  <Input id="baseUrl" name="baseUrl" required defaultValue={aiSettings?.base_url ?? ''}
                     placeholder="https://integrate.api.nvidia.com/v1"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="modelName">Model Name <span className="text-red-500">*</span></Label>
-                  <Input id="modelName" name="modelName" required defaultValue={initialData.aiSettings?.model_name ?? ''}
+                  <Input id="modelName" name="modelName" required defaultValue={aiSettings?.model_name ?? ''}
                     placeholder="meta/llama-3.1-8b-instruct"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="apiKey">API Key <span className="text-red-500">*</span></Label>
-                  <Input id="apiKey" name="apiKey" type="password" defaultValue={initialData.aiSettings?.masked_api_key ?? ''}
+                  <Input id="apiKey" name="apiKey" type="password" defaultValue={aiSettings?.masked_api_key ?? ''}
                     placeholder="nvapi-..." autoComplete="off"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
-                  <input type="hidden" name="maskedApiKey" value={initialData.aiSettings?.masked_api_key ?? ''} />
-                  {initialData.aiSettings?.masked_api_key && (
+                  <input type="hidden" name="maskedApiKey" value={aiSettings?.masked_api_key ?? ''} />
+                  {aiSettings?.masked_api_key && (
                     <p className="text-[11px] text-neutral-600">
-                      Current: {initialData.aiSettings.masked_api_key} &mdash; leave unchanged to keep existing key.
+                      Current: {aiSettings.masked_api_key} &mdash; leave unchanged to keep existing key.
                     </p>
                   )}
                 </div>

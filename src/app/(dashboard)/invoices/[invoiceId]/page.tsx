@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { getInvoiceDetailAction } from '@/lib/invoices/actions'
 import { sanitizeHref } from '@/lib/utils/security'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InvoiceDetailActions } from './invoice-detail-actions'
 import { InvoiceReminderSection } from './invoice-reminder-section'
+import { LivePdfPreview } from '@/components/invoices/live-pdf-preview'
 
 interface InvoiceDetailPageProps {
   params: Promise<{ invoiceId: string }>
@@ -128,6 +130,13 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   const effectiveStatus = getInvoiceEffectiveStatus(invoice)
   const dueInfo = getDueInterpretation(invoice.due_date, effectiveStatus)
 
+  // Fetch profile for PDF preview
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email, company_name, company_address, company_website, tax_id, logo_url, bank_details, global_rules')
+    .eq('id', user.id)
+    .single()
+
   // Fetch activity events
   const { data: events } = await supabase
     .from('reminder_events')
@@ -207,8 +216,19 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Left: Invoice Particulars + Activity */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Invoice Details */}
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="bg-neutral-900/60 border border-neutral-800 p-1 flex-wrap h-auto gap-1 mb-4">
+              <TabsTrigger value="details" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+                Overview & Activity
+              </TabsTrigger>
+              <TabsTrigger value="preview" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+                Live PDF Preview
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details" className="space-y-4 m-0 focus-visible:outline-none">
+              {/* Invoice Details */}
+              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-neutral-300">Details</CardTitle>
             </CardHeader>
@@ -282,14 +302,47 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
               <CardTitle className="text-sm font-medium text-neutral-300">Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <InvoiceReminderSection
-                invoiceId={invoiceId}
-                invoiceNumber={invoice.invoice_number}
-                initialEvents={activities}
-                clientEmail={client?.email}
-              />
-            </CardContent>
-          </Card>
+                <InvoiceReminderSection
+                  invoiceId={invoiceId}
+                  invoiceNumber={invoice.invoice_number}
+                  initialEvents={activities}
+                  clientEmail={client?.email}
+                />
+              </CardContent>
+            </Card>
+            </TabsContent>
+
+            <TabsContent value="preview" className="m-0 focus-visible:outline-none">
+              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl overflow-hidden">
+                <CardContent className="p-0">
+                  {profile && client && (
+                    <LivePdfPreview 
+                      invoice={{
+                        ...invoice,
+                        po_number: invoice.po_number || null,
+                      }} 
+                      client={{
+                        client_name: client.client_name,
+                        email: client.email,
+                        company_name: client.company_name
+                      }} 
+                      profile={{
+                        full_name: profile.full_name,
+                        email: profile.email,
+                        company_name: profile.company_name,
+                        company_address: profile.company_address,
+                        company_website: profile.company_website,
+                        tax_id: profile.tax_id,
+                        logo_url: profile.logo_url,
+                        bank_details: profile.bank_details,
+                        global_rules: profile.global_rules
+                      }} 
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Right: Client + Generate Reminder CTA */}
