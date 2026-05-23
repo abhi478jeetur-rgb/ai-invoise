@@ -22,6 +22,17 @@ interface ReminderModalProps {
   invoiceId: string
   invoiceNumber: string
   clientEmail?: string | null
+  amount: number
+  currency: string
+}
+
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency || 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount)
 }
 
 function buildEmailUrl(
@@ -67,7 +78,7 @@ const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
   },
 ]
 
-export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail }: ReminderModalProps) {
+export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail, amount, currency }: ReminderModalProps) {
   const [tone, setTone] = useState<Tone>('professional')
   const [customInstructions, setCustomInstructions] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -216,6 +227,20 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
         ) : (
           /* Draft Display */
           <div className="space-y-4 pt-2">
+            {/* Prominent Amount & Currency Banner */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-blue-900/50 bg-blue-950/20">
+              <div>
+                <p className="text-xs text-blue-400 font-medium mb-1">Total Outstanding</p>
+                <p className="text-2xl font-bold text-white">
+                  {formatCurrency(amount, currency)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-neutral-500 mb-1">Invoice</p>
+                <p className="text-sm font-medium text-neutral-300">{invoiceNumber}</p>
+              </div>
+            </div>
+
             {/* Subject */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">

@@ -22,6 +22,8 @@ interface InvoiceReminderSectionProps {
   initialEvents: ActivityEvent[]
   variant?: 'timeline' | 'cta'
   clientEmail?: string | null
+  amount: number
+  currency: string
 }
 
 export function InvoiceReminderSection({
@@ -30,6 +32,8 @@ export function InvoiceReminderSection({
   initialEvents,
   variant = 'timeline',
   clientEmail,
+  amount,
+  currency,
 }: InvoiceReminderSectionProps) {
   const searchParams = useSearchParams()
   const autoReminder = searchParams?.get('reminder') === 'true'
@@ -68,6 +72,8 @@ export function InvoiceReminderSection({
           invoiceId={invoiceId}
           invoiceNumber={invoiceNumber}
           clientEmail={clientEmail}
+          amount={amount}
+          currency={currency}
         />
       </>
     )
@@ -94,6 +100,8 @@ export function InvoiceReminderSection({
         invoiceId={invoiceId}
         invoiceNumber={invoiceNumber}
         clientEmail={clientEmail}
+        amount={amount}
+        currency={currency}
       />
     </>
   )
