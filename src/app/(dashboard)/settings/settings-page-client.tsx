@@ -16,6 +16,8 @@ import {
   deleteAccountAction,
   saveBusinessProfileAction,
   uploadBusinessLogoAction,
+  uploadKnowledgeBaseDocumentAction,
+  deleteKnowledgeBaseDocumentAction,
 } from '@/lib/settings/actions'
 import { updateReminderSettingsAction } from '@/lib/profile/actions'
 
@@ -70,6 +72,13 @@ interface SettingsData {
     temperature: number
     masked_api_key: string
   } | null
+  knowledgeBaseDocuments: {
+    id: string
+    file_name: string
+    file_size: number
+    file_type: string
+    created_at: string
+  }[]
 }
 
 interface SettingsPageClientProps {
@@ -532,6 +541,27 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     defaultValue={p.global_rules?.terms_and_conditions ?? ''} rows={4}
                     placeholder="e.g., All work remains property of the client upon full payment. Disputes governed by the laws of India..."
                     className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-neutral-400">Knowledge Base Documents</Label>
+                  <div className="space-y-2">
+                    {kbDocs.map((doc: any) => (
+                      <div key={doc.id} className="flex items-center justify-between p-2 rounded border border-neutral-800 bg-neutral-950">
+                        <span className="text-sm text-neutral-300 truncate max-w-[200px]">{doc.file_name}</span>
+                        <button type="button" onClick={() => handleDeleteDocument(doc.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                      </div>
+                    ))}
+                    <div className="pt-2">
+                      <input ref={docInputRef} type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={handleUploadDocument} />
+                      <Button type="button" variant="outline" size="sm" onClick={() => docInputRef.current?.click()} disabled={docUploading}
+                        className="h-8 text-xs border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800">
+                        {docUploading ? 'Uploading...' : 'Upload Document'}
+                      </Button>
+                      {docUploadError && <p className="text-xs text-red-400 mt-2">{docUploadError}</p>}
+                      {docUploadSuccess && <p className="text-xs text-green-400 mt-2">Document uploaded successfully!</p>}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">

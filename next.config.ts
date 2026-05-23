@@ -6,8 +6,9 @@ const cspHeader = `
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.posthog.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data:;
-  font-src 'self';
-  object-src 'none';
+  font-src 'self' data:;
+  object-src 'self' blob: data:;
+  frame-src 'self' blob: data:;
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
@@ -21,7 +22,7 @@ const securityHeaders = [
   },
   {
     key: "X-Frame-Options",
-    value: "DENY",
+    value: "SAMEORIGIN",
   },
   {
     key: "X-Content-Type-Options",

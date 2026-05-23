@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { encryptKey, decryptKey, maskApiKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+import pdfParse from 'pdf-parse'
 
 export async function getSettingsAction() {
   try {
@@ -73,6 +74,13 @@ export async function getSettingsAction() {
       }
     }
 
+    // Fetch knowledge base documents
+    const { data: kbDocs } = await supabase
+      .from('user_knowledge_base')
+      .select('id, file_name, file_size, file_type, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
     return {
       success: true,
       data: {
@@ -105,6 +113,7 @@ export async function getSettingsAction() {
               masked_api_key: maskedApiKey,
             }
           : null,
+        knowledgeBaseDocuments: kbDocs || [],
       },
     }
   } catch (e) {
@@ -357,6 +366,141 @@ export async function saveAiSettingsAction(formData: FormData) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
+
+// ==============================================================================
+// AI Knowledge Base Actions
+// ==============================================================================
+
+export async function getKnowledgeBaseDocumentsAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { data, error } = await supabase
+      .from('user_knowledge_base')
+      .select('id, file_name, file_size, file_type, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) return { error: sanitizeDatabaseError(error) }
+
+    return { success: true, data }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
+  try {
+    const file = formData.get('document') as File | null
+    if (!file || file.size === 0) return { error: 'No file provided.' }
+
+    // Security: Validate file type & size (max 5MB)
+    const ALLOWED_TYPES = ['application/pdf', 'text/plain']
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { error: 'Only PDF and TXT files are allowed.' }
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: 'Document must be smaller than 5MB.' }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    // 1. Extract text from file
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    let extractedText = ''
+
+    if (file.type === 'application/pdf') {
+      try {
+        const parsed = await pdfParse(buffer)
+        extractedText = parsed.text
+      } catch (parseError) {
+        return { error: 'Failed to extract text from PDF. The file may be encrypted, scanned without OCR, or corrupted.' }
+      }
+    } else if (file.type === 'text/plain') {
+      extractedText = buffer.toString('utf-8')
+    }
+
+    // Limit extracted text to roughly 5000 words to prevent blowing up the LLM context (approx 30,000 chars)
+    if (extractedText.length > 30000) {
+      extractedText = extractedText.substring(0, 30000) + '\n\n[...TEXT TRUNCATED DUE TO LENGTH LIMIT...]'
+    }
+
+    // 2. Upload original file to Storage for backup/reference
+    const fileExt = file.type === 'application/pdf' ? 'pdf' : 'txt'
+    const fileName = file.name || `document.${fileExt}`
+    const storagePath = `${user.id}/${Date.now()}-${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('ai-knowledge-base')
+      .upload(storagePath, file, { contentType: file.type })
+
+    if (uploadError) return { error: 'Failed to upload document to storage.' }
+
+    // 3. Save to database
+    const { error: dbError } = await supabase
+      .from('user_knowledge_base')
+      .insert({
+        user_id: user.id,
+        file_name: fileName,
+        file_size: file.size,
+        file_type: file.type,
+        storage_path: storagePath,
+        extracted_text: extractedText.trim()
+      })
+
+    if (dbError) {
+      // Rollback storage upload if DB fails
+      await supabase.storage.from('ai-knowledge-base').remove([storagePath])
+      return { error: sanitizeDatabaseError(dbError) }
+    }
+
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function deleteKnowledgeBaseDocumentAction(documentId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    // Get the storage path first
+    const { data: doc, error: fetchError } = await supabase
+      .from('user_knowledge_base')
+      .select('storage_path')
+      .eq('id', documentId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !doc) return { error: 'Document not found.' }
+
+    // Delete from DB
+    const { error: deleteError } = await supabase
+      .from('user_knowledge_base')
+      .delete()
+      .eq('id', documentId)
+      .eq('user_id', user.id)
+
+    if (deleteError) return { error: sanitizeDatabaseError(deleteError) }
+
+    // Delete from Storage
+    await supabase.storage.from('ai-knowledge-base').remove([doc.storage_path])
+
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
 
 export async function testAiConnectionAction(formData: FormData) {
   try {

@@ -60,11 +60,19 @@ export async function GET(
       InvoicePdfDocument({ invoice, client, profile })
     );
 
-    return new NextResponse(stream as unknown as ReadableStream, {
+    // Convert Node stream to Buffer to set Content-Length and avoid chunked transfer errors (which trigger "Virus scan failed" in Chrome)
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    const pdfBuffer = Buffer.concat(chunks);
+
+    return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=invoice_${invoice.invoice_number}.pdf`,
-        "Cache-Control": "no-cache",
+        "Content-Length": pdfBuffer.length.toString(),
+        "Content-Disposition": `attachment; filename="invoice_${invoice.invoice_number}.pdf"`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
       },
       status: 200,

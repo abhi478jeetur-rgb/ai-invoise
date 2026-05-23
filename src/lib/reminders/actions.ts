@@ -58,6 +58,17 @@ export async function generateReminderAction(
       .eq('id', user.id)
       .single()
 
+    // Fetch AI Knowledge Base Documents
+    const { data: kbDocs } = await supabase
+      .from('user_knowledge_base')
+      .select('extracted_text')
+      .eq('user_id', user.id)
+
+    const kbText = kbDocs?.map(d => d.extracted_text).join('\n\n---\n\n') || ''
+    const kbSection = kbText 
+      ? `\nUSER KNOWLEDGE BASE (Strictly adhere to these custom guidelines from the user's uploaded documents):\n${kbText}\n`
+      : ''
+
     // Fetch AI settings
     const { data: aiSettings, error: settingsError } = await supabase
       .from('user_ai_settings')
@@ -140,6 +151,7 @@ Tone Guidelines: ${toneDescriptions[tone]}
 
 ${invoice.reminder_count > 0 ? `This is reminder #${invoice.reminder_count + 1}. Previous reminders have already been sent.` : 'This is the first reminder for this invoice.'}
 ${customInstructions ? `\nCUSTOM INSTRUCTIONS FROM SENDER:\n${customInstructions}` : ''}
+${kbSection}
 
 IMPORTANT RULES:
 - Write as if you are ${senderName} sending to ${clientName}.
