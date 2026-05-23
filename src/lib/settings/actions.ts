@@ -15,7 +15,7 @@ export async function getSettingsAction() {
     // Fetch profile
     let { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('full_name, email, default_currency')
+      .select('full_name, email, default_currency, reminder_enabled, reminder_day, reminder_time')
       .eq('id', user.id)
       .single()
 
@@ -30,7 +30,7 @@ export async function getSettingsAction() {
             full_name: user.user_metadata?.full_name || '',
             default_currency: 'USD'
           })
-          .select('full_name, email, default_currency')
+          .select('full_name, email, default_currency, reminder_enabled, reminder_day, reminder_time')
           .single()
 
         if (!insertError && newProfile) {
@@ -68,6 +68,9 @@ export async function getSettingsAction() {
           full_name: profile?.full_name ?? '',
           email: profile?.email ?? user.email ?? '',
           default_currency: profile?.default_currency ?? 'USD',
+          reminder_enabled: profile?.reminder_enabled ?? false,
+          reminder_day: profile?.reminder_day ?? 'Monday',
+          reminder_time: profile?.reminder_time ?? 'Morning',
         },
         aiSettings: aiSettings
           ? {
@@ -270,6 +273,33 @@ export async function testAiConnectionAction(formData: FormData) {
     if (e instanceof Error && e.name === 'TimeoutError') {
       return { error: 'Connection timed out after 15 seconds. Check your base URL and network.' }
     }
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function deleteAccountAction(confirmationText: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    // Hardcoded security check
+    if (confirmationText !== 'delete my account') {
+      return { error: 'Confirmation text does not match exactly.' }
+    }
+
+    // Call the RPC function to delete the user account
+    const { error } = await supabase.rpc('delete_user_account')
+
+    if (error) {
+      return { error: sanitizeDatabaseError(error, 'Failed to delete account.') }
+    }
+
+    // Sign out to clear the session locally
+    await supabase.auth.signOut()
+
+    return { success: true }
+  } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }

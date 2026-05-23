@@ -79,6 +79,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
           </p>
         </div>
         <Button
+          id="tour-add-client"
           onClick={() => {
             setEditingClient(null)
             setFormOpen(true)
@@ -199,7 +200,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                           onClick={() => handleDelete(client.id)}
                           className="text-red-400 focus:bg-red-950/50 focus:text-red-300 cursor-pointer"
                         >
-                          Delete
+                          Move to Trash
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

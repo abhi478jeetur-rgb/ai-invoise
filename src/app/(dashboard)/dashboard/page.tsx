@@ -13,6 +13,14 @@ export default async function DashboardPage() {
 
   const fullName = (user.user_metadata?.full_name as string) || 'there'
   const firstName = fullName.split(' ')[0]
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('setup_preference')
+    .eq('id', user.id)
+    .single()
+  
+  const setupPreference = profile?.setup_preference || 'explore_myself'
   
   const result = await getDashboardDataAction()
 
@@ -33,9 +41,8 @@ export default async function DashboardPage() {
 
   return (
     <DashboardVisualCustomizer 
-      data={result.data!} 
-      firstName={firstName} 
-      today={today} 
+      initialData={result.data!} 
+      setupPreference={setupPreference}
     />
   )
 }

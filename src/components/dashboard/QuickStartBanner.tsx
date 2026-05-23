@@ -12,7 +12,7 @@ import { buttonVariants } from "@/components/ui/button"
 
 export function QuickStartBanner() {
   return (
-    <Card className="bg-white/5 backdrop-blur-md border-white/10">
+    <Card id="tour-getting-started" className="bg-white/5 backdrop-blur-md border-white/10">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-white">
           Welcome to ChaseFree AI! Let&apos;s get you paid.

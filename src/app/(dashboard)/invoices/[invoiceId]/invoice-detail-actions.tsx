@@ -4,7 +4,10 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { InvoiceForm } from '@/components/invoices/invoice-form'
-import { deleteInvoiceAction, markInvoicePaidAction } from '@/lib/invoices/actions'
+import { deleteInvoiceAction, markInvoicePaidAction, updateInvoiceStatusAction } from '@/lib/invoices/actions'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface InvoiceDetailActionsProps {
   invoice: {
@@ -27,6 +30,10 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [markingPaid, setMarkingPaid] = useState(false)
+  const [statusOpen, setStatusOpen] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState(invoice.status)
+  const [amountPaid, setAmountPaid] = useState('0')
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
   async function handleDelete() {
     if (!confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
@@ -50,6 +57,18 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
     setMarkingPaid(false)
   }
 
+  async function handleUpdateStatus() {
+    setUpdatingStatus(true)
+    const result = await updateInvoiceStatusAction(invoice.id, selectedStatus, parseFloat(amountPaid) || 0)
+    if (result.success) {
+      setStatusOpen(false)
+      router.refresh()
+    } else {
+      alert(result.error)
+    }
+    setUpdatingStatus(false)
+  }
+
   const isPaid = invoice.status === 'paid'
   const isArchived = invoice.status === 'archived'
 
@@ -66,6 +85,32 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
             {markingPaid ? 'Marking...' : 'Mark Paid'}
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setSelectedStatus(invoice.status)
+            setStatusOpen(true)
+          }}
+          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer text-xs"
+        >
+          Change Status
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            const link = document.createElement('a');
+            link.href = `/api/invoices/${invoice.id}/pdf`;
+            link.download = `invoice_${invoice.invoice_number}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer text-xs"
+        >
+          Download PDF
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -97,6 +142,57 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
         invoice={invoice}
         onSaved={() => router.refresh()}
       />
+
+      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-neutral-950 border-neutral-800 text-neutral-200">
+          <DialogHeader>
+            <DialogTitle>Change Status</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200"
+              >
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="due_soon">Due Soon</option>
+                <option value="overdue">Overdue</option>
+                <option value="promised">Promised to Pay</option>
+                <option value="partial">Partial Payment</option>
+                <option value="paused">Paused</option>
+                <option value="paid">Paid</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            
+            {selectedStatus === 'partial' && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="amountPaid">Amount Paid</Label>
+                <Input
+                  id="amountPaid"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  className="bg-neutral-900 border-neutral-800"
+                  placeholder="e.g. 500"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStatusOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateStatus} disabled={updatingStatus} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {updatingStatus ? 'Saving...' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

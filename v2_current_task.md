@@ -1,30 +1,39 @@
-# Current Task: Version 2 - Inline Client Creation
+# Current Task: Version 2 - Feature 10 (Advanced Invoice Statuses)
 
 **Status:** Not Started
 
 ## Context
-Right now, if a user is creating an invoice and realizes they haven't added the client yet, they have to abandon the invoice, go to the Clients page, add the client, and come back. This is terrible UX.
-We need to add a small "+ Add New Client" button directly inside the `InvoiceForm` that opens the `ClientForm` modal. When the client is created, it should automatically be selected in the invoice form.
+Currently, if a client promises to pay an invoice, it still looks 'Overdue' in the system. We want to give users more granular control over invoice statuses, specifically allowing them to mark an invoice as "Promised to Pay" (promised), "Paused" (paused), or "Partial Payment" (partial).
+
+## Objective
+Update the invoice status system to support the new advanced statuses: `promised`, `paused`, and `partial`. 
+Additionally, add support for tracking `amount_paid` for partial payments.
+
+## Database Changes Required (Supabase)
+We need to update the `invoice_status` ENUM and add a new column to the `invoices` table.
+Since updating an ENUM in Postgres directly can be tricky, please provide the exact SQL snippet to run in Supabase.
+SQL should do:
+- `ALTER TYPE public.invoice_status ADD VALUE IF NOT EXISTS 'promised';`
+- `ALTER TYPE public.invoice_status ADD VALUE IF NOT EXISTS 'paused';`
+- `ALTER TYPE public.invoice_status ADD VALUE IF NOT EXISTS 'partial';`
+- `ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS amount_paid numeric default 0;`
 
 ## Strict Checklist for Open Claude
 
-### 1. Update `ClientForm` (`src/components/clients/client-form.tsx`)
-- [x] In `ClientFormProps`, update the `onSaved` type to accept the returned client: `onSaved?: (client?: any) => void`.
-- [x] In the `handleSubmit` function of `ClientForm`, when `createClientAction` or `updateClientAction` succeeds, pass the `result.data` to `onSaved`. Example: `onSaved?.(result.data)`.
+### 1. Database Schema & Types
+- [ ] Write a SQL migration file (e.g. `supabase-migration-advanced-statuses.sql`) containing the `ALTER TYPE` and `ALTER TABLE` commands mentioned above.
+- [ ] Update the application types (e.g., in `schema.ts`, database types, or Zod schemas) where `invoice_status` is defined to include `'promised'`, `'paused'`, and `'partial'`.
+- [ ] Update `supabase-schema.sql` locally to reflect these additions for future setups.
 
-### 2. Update `InvoiceForm` (`src/components/invoices/invoice-form.tsx`)
-- [x] Import `ClientForm` from `@/components/clients/client-form`.
-- [x] Add a new state for the modal: `const [showClientModal, setShowClientModal] = useState(false)`.
-- [x] Since `clients` is passed as a prop, we need local state to append newly created clients without refreshing the page. Add: `const [localClients, setLocalClients] = useState(clients)`. Update the `Select` dropdown to map over `localClients` instead of `clients`.
-- [x] In the "Client" section, add a small, subtle button `+ Add New Client` aligned to the right of the Label. Clicking it sets `showClientModal` to true.
-- [x] Render `<ClientForm>` at the bottom of the component (outside the `form` tags to avoid nested form submissions, but it can be inside the top-level Dialog wrapper or adjacent).
-- [x] In `<ClientForm>`'s `onSaved` callback:
-  1. Receive the `newClient`.
-  2. If `newClient` exists, append it to `localClients`.
-  3. Set `selectedClientId` to `newClient.id`.
+### 2. UI Updates (Invoice Details / Status Change)
+- [ ] In the Invoice page/details UI, allow the user to manually change the status to `promised`, `paused`, or `partial` via a Dropdown or action buttons.
+- [ ] If `partial` is selected, provide a way for the user to enter/save the `amount_paid`.
+- [ ] Ensure the Server Action responsible for updating invoices handles `amount_paid` and the new statuses correctly.
 
-### 3. Version Control
-- [x] Run `git add .`
-- [x] Run `git commit -m "feat(v2): add inline client creation to invoice form"`
+### 3. Styling and Badge Colors
+- [ ] Update the Invoice Status badge component to support the new statuses with distinct, premium colors (e.g. 'promised' -> blue/indigo, 'paused' -> gray/slate, 'partial' -> orange/amber).
 
-**Note for Open Claude:** Make sure the "+ Add New Client" button looks clean and premium (e.g., `variant="link"` or `variant="ghost"`, small text, `text-neutral-400 hover:text-white`). Check [x] as you complete each step.
+### 4. Final Reporting
+- [ ] Update this file (`v2_current_task.md`) to mark checkboxes as `[x]` as you complete them.
+- [ ] Provide the SQL snippet to the user to run in their Supabase SQL editor at the end.
+- [ ] Wait for user validation.

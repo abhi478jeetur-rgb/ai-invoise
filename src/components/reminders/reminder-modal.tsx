@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -20,6 +21,27 @@ interface ReminderModalProps {
   onOpenChange: (open: boolean) => void
   invoiceId: string
   invoiceNumber: string
+  clientEmail?: string | null
+}
+
+function buildEmailUrl(
+  provider: 'gmail' | 'outlook' | 'default',
+  to: string,
+  subject: string,
+  body: string
+): string {
+  const encTo = encodeURIComponent(to)
+  const encSubject = encodeURIComponent(subject)
+  const encBody = encodeURIComponent(body)
+
+  switch (provider) {
+    case 'gmail':
+      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encTo}&su=${encSubject}&body=${encBody}`
+    case 'outlook':
+      return `https://outlook.live.com/mail/0/deeplink/compose?to=${encTo}&subject=${encSubject}&body=${encBody}`
+    case 'default':
+      return `mailto:${encTo}?subject=${encSubject}&body=${encBody}`
+  }
 }
 
 const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
@@ -45,7 +67,7 @@ const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
   },
 ]
 
-export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber }: ReminderModalProps) {
+export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail }: ReminderModalProps) {
   const [tone, setTone] = useState<Tone>('professional')
   const [customInstructions, setCustomInstructions] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -274,6 +296,36 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber }: 
                 New Draft
               </Button>
             </div>
+
+            {/* Send Email via... */}
+            {clientEmail && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-neutral-500">Send Email via...</p>
+                <div className="flex gap-2">
+                  {[
+                    { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
+                    { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
+                    { key: 'default' as const, label: 'Mail App', color: 'hover:border-neutral-500/40 hover:bg-neutral-500/10' },
+                  ].map((provider) => (
+                    <a
+                      key={provider.key}
+                      href={buildEmailUrl(
+                        provider.key,
+                        clientEmail,
+                        draft.subject,
+                        editMode ? editedBody : draft.body
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/50 px-3 py-2.5 text-xs font-medium text-neutral-300 transition-colors ${provider.color}`}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {provider.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

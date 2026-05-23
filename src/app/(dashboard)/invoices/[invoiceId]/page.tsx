@@ -18,6 +18,9 @@ const STATUS_LABELS: Record<string, string> = {
   overdue: 'Overdue',
   paid: 'Paid',
   archived: 'Archived',
+  promised: 'Promised',
+  paused: 'Paused',
+  partial: 'Partial',
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -27,6 +30,9 @@ const STATUS_STYLES: Record<string, string> = {
   overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
   paid: 'bg-green-950/40 text-green-400 border-green-900/50',
   archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
+  promised: 'bg-indigo-950/40 text-indigo-400 border-indigo-900/50',
+  paused: 'bg-slate-950/40 text-slate-400 border-slate-900/50',
+  partial: 'bg-amber-950/40 text-amber-400 border-amber-900/50',
 }
 
 function formatCurrency(amount: number, currency: string) {
@@ -55,7 +61,7 @@ function formatDate(dateStr: string) {
 }
 
 function getInvoiceEffectiveStatus(inv: { status: string; due_date: string }): string {
-  if (inv.status === 'paid' || inv.status === 'archived' || inv.status === 'draft') {
+  if (['paid', 'archived', 'draft', 'promised', 'paused', 'partial'].includes(inv.status)) {
     return inv.status
   }
   
@@ -80,6 +86,9 @@ function getInvoiceEffectiveStatus(inv: { status: string; due_date: string }): s
 
 function getDueInterpretation(dueDate: string, status: string): { text: string; className: string } {
   if (status === 'paid') return { text: 'Paid', className: 'text-green-400' }
+  if (status === 'promised') return { text: 'Promised', className: 'text-indigo-400' }
+  if (status === 'paused') return { text: 'Paused', className: 'text-slate-400' }
+  if (status === 'partial') return { text: 'Partial', className: 'text-amber-400' }
   const now = new Date(); now.setHours(0, 0, 0, 0)
   const due = new Date(dueDate + 'T00:00:00'); due.setHours(0, 0, 0, 0)
   const diff = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
@@ -277,6 +286,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                 invoiceId={invoiceId}
                 invoiceNumber={invoice.invoice_number}
                 initialEvents={activities}
+                clientEmail={client?.email}
               />
             </CardContent>
           </Card>
@@ -332,6 +342,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
             invoiceNumber={invoice.invoice_number}
             initialEvents={activities}
             variant="cta"
+            clientEmail={client?.email}
           />
         </div>
       </div>

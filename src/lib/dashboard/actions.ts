@@ -74,12 +74,14 @@ export async function getDashboardDataAction() {
 
     const statusPriority: Record<string, number> = {
       overdue: 0,
-      due_soon: 1,
-      sent: 2,
+      partial: 1,
+      due_soon: 2,
+      sent: 3,
+      promised: 4,
     }
 
     const chaseInvoices = invoices.filter((inv) => {
-      if (inv.status === 'paid' || inv.status === 'archived' || inv.status === 'draft') return false
+      if (['paid', 'archived', 'draft', 'paused'].includes(inv.status)) return false
       const due = new Date(inv.due_date + 'T00:00:00')
       return due <= threeDaysLater
     })

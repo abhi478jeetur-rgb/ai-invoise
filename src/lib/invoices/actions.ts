@@ -24,6 +24,17 @@ export async function createInvoiceAction(formData: FormData) {
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (!dueDate) return { error: 'Due date is required.' }
+
+    const dueTime = new Date(dueDate).getTime()
+    if (isNaN(dueTime)) return { error: 'Invalid due date format.' }
+    
+    const now = new Date()
+    const oneYearPast = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime()
+    const oneYearFuture = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()).getTime()
+    
+    if (dueTime < oneYearPast) return { error: 'Due date cannot be more than 1 year in the past.' }
+    if (dueTime > oneYearFuture) return { error: 'Due date cannot be more than 1 year in the future.' }
+
     if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
     if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
     if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
@@ -111,6 +122,7 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
       .from('invoices')
       .select('*, clients (client_name, email, company_name)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
 
     if (filters?.status) {
       query = query.eq('status', filters.status)
@@ -172,6 +184,17 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (!dueDate) return { error: 'Due date is required.' }
+
+    const dueTime = new Date(dueDate).getTime()
+    if (isNaN(dueTime)) return { error: 'Invalid due date format.' }
+    
+    const now = new Date()
+    const oneYearPast = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).getTime()
+    const oneYearFuture = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()).getTime()
+    
+    if (dueTime < oneYearPast) return { error: 'Due date cannot be more than 1 year in the past.' }
+    if (dueTime > oneYearFuture) return { error: 'Due date cannot be more than 1 year in the future.' }
+
     if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
     if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
     if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
@@ -229,7 +252,7 @@ export async function deleteInvoiceAction(invoiceId: string) {
 
     const { error } = await supabase
       .from('invoices')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', invoiceId)
       .eq('user_id', user.id)
 
@@ -237,6 +260,71 @@ export async function deleteInvoiceAction(invoiceId: string) {
 
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function getDeletedInvoicesAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*, clients (client_name, email, company_name)')
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false })
+
+    if (error) return { error: sanitizeDatabaseError(error) }
+
+    return { success: true, data }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function restoreInvoiceAction(invoiceId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { error } = await supabase
+      .from('invoices')
+      .update({ deleted_at: null })
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+
+    if (error) return { error: sanitizeDatabaseError(error) }
+
+    revalidatePath('/invoices')
+    revalidatePath('/dashboard')
+    revalidatePath('/trash')
+    return { success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function hardDeleteInvoiceAction(invoiceId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { error } = await supabase
+      .from('invoices')
+      .delete()
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+
+    if (error) return { error: sanitizeDatabaseError(error) }
+
+    revalidatePath('/trash')
     return { success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
@@ -272,6 +360,53 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
         invoice_id: invoiceId,
         event_type: 'status_changed',
         description: 'Invoice marked as paid',
+      })
+
+    if (eventError) {
+      // Non-fatal: invoice was already updated, just log the event failure
+      console.error('Failed to log status_changed event:', eventError.message)
+    }
+
+    revalidatePath('/invoices')
+    revalidatePath(`/invoices/${invoiceId}`)
+    revalidatePath('/dashboard')
+    return { success: true, data: invoice }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function updateInvoiceStatusAction(invoiceId: string, status: string, amountPaid: number = 0) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const updateData: any = { status }
+    if (status === 'partial') {
+      updateData.amount_paid = amountPaid
+    } else if (status === 'paid') {
+      updateData.paid_date = new Date().toISOString().split('T')[0]
+    }
+
+    const { data: invoice, error: updateError } = await supabase
+      .from('invoices')
+      .update(updateData)
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (updateError) return { error: sanitizeDatabaseError(updateError) }
+
+    // Log status change event
+    const { error: eventError } = await supabase
+      .from('reminder_events')
+      .insert({
+        user_id: user.id,
+        invoice_id: invoiceId,
+        event_type: 'status_changed',
+        description: `Invoice status changed to ${status}`,
       })
 
     if (eventError) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Search, AlertCircle, Check, Clock, ArrowRight, Copy, Send, Sparkles, Loader2, FileText, MessageSquare } from 'lucide-react'
+import { Search, AlertCircle, Check, Clock, ArrowRight, Copy, Send, Sparkles, Loader2, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 import { getReminderHistoryAction, generateMultipleDraftsAction, logReminderEventAction } from '@/lib/reminders/actions'
 
 interface Invoice {
@@ -141,6 +141,26 @@ function extractShortSms(body: string): string {
   const contentLines = lines.filter((l) => !/^(hi|hello|dear|hey)\b/i.test(l.trim()))
   const text = contentLines.join(' ').trim()
   return text.length > 200 ? text.slice(0, 197) + '...' : text
+}
+
+function buildEmailUrl(
+  provider: 'gmail' | 'outlook' | 'default',
+  to: string,
+  subject: string,
+  body: string
+): string {
+  const encTo = encodeURIComponent(to)
+  const encSubject = encodeURIComponent(subject)
+  const encBody = encodeURIComponent(body)
+
+  switch (provider) {
+    case 'gmail':
+      return `https://mail.google.com/mail/?view=cm&fs=1&to=${encTo}&su=${encSubject}&body=${encBody}`
+    case 'outlook':
+      return `https://outlook.live.com/mail/0/deeplink/compose?to=${encTo}&subject=${encSubject}&body=${encBody}`
+    case 'default':
+      return `mailto:${encTo}?subject=${encSubject}&body=${encBody}`
+  }
 }
 
 export function RemindersPageClient({ initialInvoices, initialSettings }: RemindersPageClientProps) {
@@ -769,6 +789,36 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                       </div>
                     )}
                   </div>
+
+                  {/* Send Email via... */}
+                  {selectedInvoice?.clients?.email && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-zinc-400">Send Email via...</p>
+                      <div className="flex gap-2">
+                        {[
+                          { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
+                          { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
+                          { key: 'default' as const, label: 'Mail App', color: 'hover:border-zinc-500/40 hover:bg-zinc-500/10' },
+                        ].map((provider) => (
+                          <a
+                            key={provider.key}
+                            href={buildEmailUrl(
+                              provider.key,
+                              selectedInvoice.clients!.email!,
+                              editSubject,
+                              editBody
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-xs font-medium text-zinc-300 transition-colors ${provider.color}`}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            {provider.label}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

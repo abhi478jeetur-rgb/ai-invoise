@@ -52,6 +52,9 @@ const STATUS_STYLES: Record<string, string> = {
   sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
   due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
   overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
+  promised: 'bg-indigo-950/40 text-indigo-400 border-indigo-900/50',
+  paused: 'bg-slate-950/40 text-slate-400 border-slate-900/50',
+  partial: 'bg-amber-950/40 text-amber-400 border-amber-900/50',
 }
 
 export function ChaseCard({ invoice }: ChaseCardProps) {
@@ -78,7 +81,7 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
             <p className="text-sm font-medium text-neutral-200 truncate">
               {invoice.client_name}
             </p>
-            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border ${STATUS_STYLES[invoice.status] ?? ''}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border ${STATUS_STYLES[invoice.status] ?? 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
               {invoice.status === 'due_soon' ? 'Due Soon' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
             </span>
           </div>
