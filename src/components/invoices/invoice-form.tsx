@@ -42,6 +42,13 @@ interface Invoice {
   due_date: string
   notes: string | null
   payment_link: string | null
+  po_number?: string | null
+}
+
+interface DefaultProfile {
+  default_currency?: string
+  payment_link_default?: string
+  default_payment_terms?: string
 }
 
 interface InvoiceFormProps {
@@ -50,9 +57,15 @@ interface InvoiceFormProps {
   onSaved?: () => void
   clients: Client[]
   invoice?: Invoice | null
+  defaultProfile?: DefaultProfile
 }
 
-export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: InvoiceFormProps) {
+const CURRENCIES = [
+  'USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR'
+]
+
+export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, defaultProfile }: InvoiceFormProps) {
+
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -73,7 +86,9 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
         setDueDate(invoice.due_date)
         setPaymentTerm('custom')
       } else {
-        handleTermChange('net_30')
+        // Use default payment terms from profile
+        const defaultTerms = defaultProfile?.default_payment_terms || 'net_30'
+        handleTermChange(defaultTerms)
       }
       if (!isEditing) {
         getNextInvoiceNumberAction().then((res) => {
@@ -250,13 +265,13 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
               <Label className="text-neutral-400" htmlFor="currency">
                 Currency
               </Label>
-              <Input
+              <select
                 id="currency"
                 name="currency"
-                defaultValue={invoice?.currency ?? 'USD'}
-                placeholder="USD"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
-              />
+                defaultValue={invoice?.currency ?? defaultProfile?.default_currency ?? 'USD'}
+                className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
           </div>
 
@@ -264,7 +279,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-neutral-400">Payment Terms</Label>
-              <Select value={paymentTerm} onValueChange={handleTermChange}>
+              <Select value={paymentTerm} onValueChange={(val) => handleTermChange(val ?? 'custom')}>
                 <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
                   <SelectValue />
                 </SelectTrigger>
@@ -310,6 +325,20 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
             />
           </div>
 
+          {/* PO Number */}
+          <div className="space-y-1.5">
+            <Label className="text-neutral-400" htmlFor="poNumber">
+              PO Number <span className="text-neutral-600 text-xs">(optional)</span>
+            </Label>
+            <Input
+              id="poNumber"
+              name="poNumber"
+              defaultValue={invoice?.po_number ?? ''}
+              placeholder="PO-2024-001"
+              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+            />
+          </div>
+
           {/* Payment Link */}
           <div className="space-y-1.5">
             <Label className="text-neutral-400" htmlFor="paymentLink">
@@ -319,7 +348,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice }: I
               id="paymentLink"
               name="paymentLink"
               type="url"
-              defaultValue={invoice?.payment_link ?? ''}
+              defaultValue={invoice?.payment_link ?? (defaultProfile?.payment_link_default ?? '')}
               placeholder="https://stripe.com/pay/..."
               className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
             />

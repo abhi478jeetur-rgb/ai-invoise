@@ -47,6 +47,11 @@ interface Invoice {
 interface InvoicesPageClientProps {
   invoices: Invoice[]
   clients: Client[]
+  defaultProfile?: {
+    default_currency?: string
+    payment_link_default?: string
+    default_payment_terms?: string
+  }
 }
 
 const STATUS_FILTERS = ['all', 'draft', 'sent', 'due_soon', 'overdue', 'promised', 'paused', 'partial', 'paid', 'archived'] as const
@@ -133,7 +138,7 @@ function getInvoiceEffectiveStatus(inv: { status: string; due_date: string }): s
   return 'sent'
 }
 
-export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProps) {
+export function InvoicesPageClient({ invoices, clients, defaultProfile }: InvoicesPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const autoNew = searchParams?.get('new') === 'true'
@@ -417,6 +422,7 @@ export function InvoicesPageClient({ invoices, clients }: InvoicesPageClientProp
         clients={clients}
         invoice={editingInvoice}
         onSaved={() => router.refresh()}
+        defaultProfile={defaultProfile}
       />
     </div>
   )

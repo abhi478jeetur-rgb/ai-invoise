@@ -51,10 +51,10 @@ export async function generateReminderAction(
 
     if (invoiceError || !invoice) return { error: 'Invoice not found.' }
 
-    // Fetch user profile
+    // Fetch user profile (includes global business rules for AI context)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name')
+      .select('full_name, company_name, global_rules')
       .eq('id', user.id)
       .single()
 
@@ -91,9 +91,20 @@ export async function generateReminderAction(
 
     const client = invoice.clients as { client_name: string; email: string | null; company_name: string | null } | null
     const senderName = profile?.full_name || 'the service provider'
+    const senderCompany = profile?.company_name || ''
     const clientName = client?.client_name || 'Client'
     const companyName = client?.company_name || ''
     const currency = invoice.currency || 'USD'
+
+    // Build business rules section from global_rules
+    const globalRules = (profile?.global_rules ?? {}) as Record<string, string>
+    const rulesLines: string[] = []
+    if (globalRules.communication_style) rulesLines.push(`Communication Style: ${globalRules.communication_style}`)
+    if (globalRules.late_payment_policy) rulesLines.push(`Late Payment Policy: ${globalRules.late_payment_policy}`)
+    if (globalRules.refund_policy) rulesLines.push(`Refund Policy: ${globalRules.refund_policy}`)
+    const rulesSection = rulesLines.length > 0
+      ? `\nBUSINESS RULES (follow these when writing the email):\n${rulesLines.join('\n')}\n`
+      : ''
 
     const toneDescriptions: Record<string, string> = {
       friendly: 'Soft, warm, and polite. Assume the client simply forgot. Be understanding and gentle. Use casual professional language.',
@@ -108,6 +119,7 @@ Generate a payment reminder email with the following context:
 
 SENDER:
 - Name: ${senderName}
+${senderCompany ? `- Company: ${senderCompany}` : ''}
 
 RECIPIENT:
 - Client Name: ${clientName}
@@ -122,7 +134,7 @@ ${invoice.title ? `- Title: ${invoice.title}` : ''}
 - Days ${daysOverdue > 0 ? 'Overdue' : 'Until Due'}: ${daysOverdue > 0 ? daysOverdue : Math.abs(daysOverdue)}
 ${invoice.payment_link ? `- Payment Link: ${invoice.payment_link}` : ''}
 ${invoice.description ? `- Description: ${invoice.description}` : ''}
-
+${rulesSection}
 TONE: ${tone}
 Tone Guidelines: ${toneDescriptions[tone]}
 
@@ -294,10 +306,10 @@ export async function generateMultipleDraftsAction(
 
     if (invoiceError || !invoice) return { error: 'Invoice not found.' }
 
-    // Fetch user profile
+    // Fetch user profile (includes global business rules for AI context)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name')
+      .select('full_name, company_name, global_rules')
       .eq('id', user.id)
       .single()
 
@@ -334,9 +346,18 @@ export async function generateMultipleDraftsAction(
 
     const client = invoice.clients as { client_name: string; email: string | null; company_name: string | null } | null
     const senderName = profile?.full_name || 'the service provider'
+    const senderCompany = profile?.company_name || ''
     const clientName = client?.client_name || 'Client'
     const companyName = client?.company_name || ''
     const currency = invoice.currency || 'USD'
+
+    const globalRules2 = (profile?.global_rules ?? {}) as Record<string, string>
+    const rulesLines2: string[] = []
+    if (globalRules2.communication_style) rulesLines2.push(`Communication Style: ${globalRules2.communication_style}`)
+    if (globalRules2.late_payment_policy) rulesLines2.push(`Late Payment Policy: ${globalRules2.late_payment_policy}`)
+    const rulesSection2 = rulesLines2.length > 0
+      ? `\nBUSINESS RULES:\n${rulesLines2.join('\n')}\n`
+      : ''
 
     const toneDescriptions: Record<string, string> = {
       friendly: 'Soft, warm, and polite. Assume the client simply forgot. Be understanding and gentle. Use casual professional language.',
@@ -357,6 +378,7 @@ Generate a payment reminder email with the following context:
 
 SENDER:
 - Name: ${senderName}
+${senderCompany ? `- Company: ${senderCompany}` : ''}
 
 RECIPIENT:
 - Client Name: ${clientName}
@@ -371,7 +393,7 @@ ${invoice.title ? `- Title: ${invoice.title}` : ''}
 - Days ${daysOverdue > 0 ? 'Overdue' : 'Until Due'}: ${daysOverdue > 0 ? daysOverdue : Math.abs(daysOverdue)}
 ${invoice.payment_link ? `- Payment Link: ${invoice.payment_link}` : ''}
 ${invoice.description ? `- Description: ${invoice.description}` : ''}
-
+${rulesSection2}
 TONE: ${tone}
 Tone Guidelines: ${toneDescriptions[tone]}
 

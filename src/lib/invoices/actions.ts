@@ -15,6 +15,7 @@ export async function createInvoiceAction(formData: FormData) {
     const dueDate = formData.get('dueDate') as string
     const notes = formData.get('notes') as string
     const paymentLink = formData.get('paymentLink') as string
+    const poNumber = formData.get('poNumber') as string
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
@@ -38,6 +39,7 @@ export async function createInvoiceAction(formData: FormData) {
     if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
     if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
     if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
+    if (poNumber && poNumber.trim().length > 100) return { error: 'PO Number must be 100 characters or less.' }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -69,6 +71,7 @@ export async function createInvoiceAction(formData: FormData) {
         due_date: dueDate,
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
+        po_number: poNumber?.trim() || null,
       })
       .select()
       .single()
