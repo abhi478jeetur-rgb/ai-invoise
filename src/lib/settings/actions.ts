@@ -248,9 +248,9 @@ export async function uploadBusinessLogoAction(formData: FormData) {
     if (!file || file.size === 0) return { error: 'No file provided.' }
 
     // Security: only allow image types
-    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return { error: 'Only JPG, PNG, WebP, and SVG images are allowed.' }
+      return { error: 'Only JPG, PNG, and WebP images are allowed.' }
     }
     // 2MB limit
     if (file.size > 2 * 1024 * 1024) {
@@ -261,8 +261,7 @@ export async function uploadBusinessLogoAction(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const ext = file.type === 'image/svg+xml' ? 'svg'
-      : file.type === 'image/webp' ? 'webp'
+    const ext = file.type === 'image/webp' ? 'webp'
       : file.type === 'image/png' ? 'png' : 'jpg'
 
     // Store under user's own folder: {user_id}/logo.{ext}
