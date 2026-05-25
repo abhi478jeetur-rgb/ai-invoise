@@ -92,7 +92,7 @@ function StatusMessage({ success, error }: { success?: boolean; error?: string |
     </div>
   )
   if (error) return (
-    <div className="p-3 text-xs font-medium bg-red-950/30 border border-red-900/50 text-red-400 rounded-lg text-center">
+    <div className="p-3 text-xs font-medium bg-red-500/[0.1] border border-red-500/[0.2] text-red-400 rounded-lg text-center backdrop-blur-md">
       {error}
     </div>
   )
@@ -631,10 +631,10 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 {aiSuccess && <StatusMessage success />}
                 {aiError && <StatusMessage error={aiError} />}
                 {testResult && (
-                  <div className={`p-3 text-xs font-medium rounded-lg text-center ${
+                  <div className={`p-3 text-xs font-medium rounded-lg text-center backdrop-blur-md ${
                     testResult.type === 'success'
-                      ? 'bg-green-950/30 border border-green-900/50 text-green-400'
-                      : 'bg-red-950/30 border border-red-900/50 text-red-400'
+                      ? 'bg-green-500/[0.1] border border-green-500/[0.2] text-green-400'
+                      : 'bg-red-500/[0.1] border border-red-500/[0.2] text-red-400'
                   }`}>{testResult.message}</div>
                 )}
 

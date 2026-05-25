@@ -73,7 +73,7 @@ function StatusBadge({ status }: { status: string }) {
     draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
     sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
     due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-    overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
+    overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
     paid: 'bg-green-950/40 text-green-400 border-green-900/50',
     archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
   }
@@ -289,7 +289,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
             return (
               <Card
                 key={invoice.id}
-                className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl hover:bg-neutral-900/60 transition-colors"
+                className="border-white/[0.06] bg-neutral-900/40 backdrop-blur-xl hover:bg-white/[0.02] transition-colors"
               >
                 <CardContent className="py-3.5 px-5">
                   <div className="flex items-center justify-between gap-4">

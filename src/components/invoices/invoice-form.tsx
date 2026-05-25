@@ -170,7 +170,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 text-xs font-medium bg-red-950/30 border border-red-900/50 text-red-400 rounded-lg text-center">
+            <div className="p-3 text-xs font-medium bg-red-500/[0.1] border border-red-500/[0.2] text-red-400 rounded-lg text-center backdrop-blur-md">
               {error}
             </div>
           )}
