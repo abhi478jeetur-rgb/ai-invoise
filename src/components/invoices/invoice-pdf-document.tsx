@@ -194,6 +194,7 @@ interface InvoiceData {
   payment_link: string | null;
   created_at: string;
   po_number?: string | null;
+  line_items?: any[];
 }
 
 interface ClientData {
@@ -295,28 +296,62 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
           </View>
         </View>
 
-        {/* Invoice Item */}
+        {/* Invoice Items */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <View style={styles.colDesc}>
               <Text style={styles.tableHeaderCell}>Description</Text>
             </View>
+            <View style={{ width: 50, textAlign: 'right', paddingRight: 10 }}>
+              <Text style={styles.tableHeaderCell}>Qty</Text>
+            </View>
+            <View style={{ width: 60, textAlign: 'right', paddingRight: 10 }}>
+              <Text style={styles.tableHeaderCell}>Rate</Text>
+            </View>
             <View style={styles.colAmount}>
-              <Text style={styles.tableHeaderCell}>Amount</Text>
+              <Text style={styles.tableHeaderCell}>Total</Text>
             </View>
           </View>
           
-          <View style={styles.tableRow}>
-            <View style={styles.colDesc}>
-              <Text style={styles.itemTitle}>{invoice.title || 'Professional Services'}</Text>
-              {invoice.description && (
-                <Text style={styles.itemDesc}>{invoice.description}</Text>
-              )}
+          {invoice.line_items && invoice.line_items.length > 0 ? (
+            invoice.line_items.map((item, idx) => (
+              <View key={idx} style={styles.tableRow}>
+                <View style={styles.colDesc}>
+                  <Text style={styles.itemTitle}>{item.name || 'Item'}</Text>
+                  {item.description && (
+                    <Text style={styles.itemDesc}>{item.description}</Text>
+                  )}
+                </View>
+                <View style={{ width: 50, textAlign: 'right', paddingRight: 10 }}>
+                  <Text style={styles.itemAmount}>{item.quantity}</Text>
+                </View>
+                <View style={{ width: 60, textAlign: 'right', paddingRight: 10 }}>
+                  <Text style={styles.itemAmount}>{new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyStr }).format(item.rate)}</Text>
+                </View>
+                <View style={styles.colAmount}>
+                  <Text style={styles.itemAmount}>{new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyStr }).format(item.total)}</Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={styles.tableRow}>
+              <View style={styles.colDesc}>
+                <Text style={styles.itemTitle}>{invoice.title || 'Professional Services'}</Text>
+                {invoice.description && (
+                  <Text style={styles.itemDesc}>{invoice.description}</Text>
+                )}
+              </View>
+              <View style={{ width: 50, textAlign: 'right', paddingRight: 10 }}>
+                <Text style={styles.itemAmount}>1</Text>
+              </View>
+              <View style={{ width: 60, textAlign: 'right', paddingRight: 10 }}>
+                <Text style={styles.itemAmount}>{formattedAmount}</Text>
+              </View>
+              <View style={styles.colAmount}>
+                <Text style={styles.itemAmount}>{formattedAmount}</Text>
+              </View>
             </View>
-            <View style={styles.colAmount}>
-              <Text style={styles.itemAmount}>{formattedAmount}</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Totals */}

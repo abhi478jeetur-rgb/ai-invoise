@@ -186,13 +186,13 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                 <p className="text-xs font-mono text-neutral-500">{invoice.invoice_number}</p>
               )}
               <div className="flex items-center gap-4 flex-wrap">
-                <p className="text-2xl font-bold text-neutral-100">
+                <p className="text-2xl font-bold text-neutral-100 font-mono">
                   {formatCurrency(invoice.amount, invoice.currency)}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className={`text-sm font-medium ${dueInfo.className}`}>{dueInfo.text}</span>
                   <span className="text-neutral-700">&middot;</span>
-                  <span className="text-sm text-neutral-500">{formatDate(invoice.due_date)}</span>
+                  <span className="text-sm text-neutral-500 font-mono">{formatDate(invoice.due_date)}</span>
                 </div>
               </div>
               {invoice.reminder_count > 0 && (
@@ -236,7 +236,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Amount</p>
-                  <p className="text-lg font-semibold text-neutral-100">
+                  <p className="text-lg font-semibold text-neutral-100 font-mono">
                     {formatCurrency(invoice.amount, invoice.currency)}
                   </p>
                 </div>
@@ -252,16 +252,16 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Due Date</p>
-                  <p className="text-sm text-neutral-300">{formatDate(invoice.due_date)}</p>
+                  <p className="text-sm text-neutral-300 font-mono">{formatDate(invoice.due_date)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Created</p>
-                  <p className="text-sm text-neutral-300">{formatDate(invoice.created_at)}</p>
+                  <p className="text-sm text-neutral-300 font-mono">{formatDate(invoice.created_at)}</p>
                 </div>
                 {invoice.paid_date && (
                   <div>
                     <p className="text-xs text-neutral-500 mb-1">Paid Date</p>
-                    <p className="text-sm text-green-400">{formatDate(invoice.paid_date)}</p>
+                    <p className="text-sm text-green-400 font-mono">{formatDate(invoice.paid_date)}</p>
                   </div>
                 )}
               </div>

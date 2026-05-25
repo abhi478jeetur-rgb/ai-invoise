@@ -16,6 +16,11 @@ export async function createInvoiceAction(formData: FormData) {
     const notes = formData.get('notes') as string
     const paymentLink = formData.get('paymentLink') as string
     const poNumber = formData.get('poNumber') as string
+    const lineItemsRaw = formData.get('lineItems') as string
+    let lineItems = []
+    if (lineItemsRaw) {
+      try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
+    }
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
@@ -72,6 +77,7 @@ export async function createInvoiceAction(formData: FormData) {
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
         po_number: poNumber?.trim() || null,
+        line_items: lineItems,
       })
       .select()
       .single()
@@ -178,6 +184,11 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     const dueDate = formData.get('dueDate') as string
     const notes = formData.get('notes') as string
     const paymentLink = formData.get('paymentLink') as string
+    const lineItemsRaw = formData.get('lineItems') as string
+    let lineItems = []
+    if (lineItemsRaw) {
+      try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
+    }
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
@@ -230,6 +241,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
         due_date: dueDate,
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
+        line_items: lineItems,
       })
       .eq('id', invoiceId)
       .eq('user_id', user.id)

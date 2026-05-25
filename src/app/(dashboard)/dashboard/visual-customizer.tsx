@@ -285,7 +285,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
-            <p className="text-xl font-semibold tracking-tight mt-2" style={{ color: 'var(--user-title)' }}>
+            <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
               {(stats as any).totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
             </p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
@@ -299,7 +299,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
-            <p className="text-xl font-semibold tracking-tight mt-2 text-rose-500">
+            <p className="text-xl font-semibold tracking-tight mt-2 text-rose-500 font-mono">
               {(stats as any).totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
             </p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
@@ -313,7 +313,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due This Week</p>
-            <p className="text-xl font-semibold tracking-tight mt-2" style={{ color: 'var(--user-title)' }}>
+            <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
               {formatDueThisWeekAmount()}
             </p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
@@ -401,7 +401,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border ${urgency.color}`}>
                               {urgency.text}
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900/60 border border-neutral-800/60 text-[10px]" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900/60 border border-neutral-800/60 text-[10px] font-mono" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
                               {new Date(invoice.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900/40 border border-neutral-800/40 text-[10px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
@@ -411,7 +411,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0 ml-4">
-                        <p className="text-base font-bold" style={{ color: 'var(--user-title)' }}>
+                        <p className="text-base font-bold font-mono" style={{ color: 'var(--user-title)' }}>
                           {formatCurrencyWithCode(invoice.amount, invoice.currency)}
                         </p>
                         <div className="flex items-center gap-1.5">
@@ -474,8 +474,8 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                   {recentInvoices.map((inv: any) => (
                     <tr key={inv.id} className="transition-colors hover:opacity-80">
                       <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
-                      <td className="py-2.5 pr-4 text-[11px] font-medium text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
-                      <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>
+                      <td className="py-2.5 pr-4 text-[11px] font-medium font-mono text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
+                      <td className="py-2.5 pr-4 text-[11px] font-mono" style={{ color: 'var(--user-text)' }}>
                         {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </td>
                       <td className="py-2.5 pr-4">
@@ -546,7 +546,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                           </span>
                         )}
                       </div>
-                      <p className="text-[9px] mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
+                      <p className="text-[9px] mt-0.5 font-mono" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
                         {formatRelativeTime(activity.created_at)}
                       </p>
                     </div>

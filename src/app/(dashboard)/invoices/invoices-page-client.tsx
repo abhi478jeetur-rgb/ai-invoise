@@ -331,7 +331,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
 
                               {/* Amount */}
                               <div className="shrink-0 text-right hidden sm:block">
-                                <p className="text-sm font-bold text-neutral-100">
+                                <p className="text-sm font-bold text-neutral-100 font-mono">
                                   {formatCurrency(invoice.amount, invoice.currency)}
                                 </p>
                                 <p className={`text-[11px] mt-0.5 ${due.className}`}>
@@ -404,7 +404,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                   {/* Mobile amount row */}
                   <div className="flex items-center justify-between mt-2 sm:hidden">
                     <p className={`text-xs ${due.className}`}>{due.text}</p>
-                    <p className="text-sm font-bold text-neutral-100">
+                    <p className="text-sm font-bold text-neutral-100 font-mono">
                       {formatCurrency(invoice.amount, invoice.currency)}
                     </p>
                   </div>
