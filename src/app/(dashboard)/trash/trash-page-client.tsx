@@ -94,10 +94,10 @@ export function TrashPageClient({
       </div>
 
       {message && (
-        <div className={`p-3 text-sm font-medium rounded-lg border ${
+        <div className={`p-3 text-sm font-medium rounded-lg border backdrop-blur-md ${
           message.type === 'success' 
-            ? 'bg-green-950/30 border-green-900/50 text-green-400' 
-            : 'bg-red-950/30 border-red-900/50 text-red-400'
+            ? 'bg-green-500/[0.1] border-green-500/[0.2] text-green-400' 
+            : 'bg-red-500/[0.1] border-red-500/[0.2] text-red-400'
         }`}>
           {message.text}
         </div>

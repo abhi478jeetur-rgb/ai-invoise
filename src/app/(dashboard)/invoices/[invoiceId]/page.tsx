@@ -29,7 +29,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
   sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
   due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-  overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
+  overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
   paid: 'bg-green-950/40 text-green-400 border-green-900/50',
   archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
   promised: 'bg-indigo-950/40 text-indigo-400 border-indigo-900/50',

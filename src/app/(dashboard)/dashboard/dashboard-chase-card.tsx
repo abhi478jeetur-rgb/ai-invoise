@@ -51,7 +51,7 @@ function formatCurrency(amount: number) {
 const STATUS_STYLES: Record<string, string> = {
   sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
   due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-  overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
+  overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
   promised: 'bg-indigo-950/40 text-indigo-400 border-indigo-900/50',
   paused: 'bg-slate-950/40 text-slate-400 border-slate-900/50',
   partial: 'bg-amber-950/40 text-amber-400 border-amber-900/50',

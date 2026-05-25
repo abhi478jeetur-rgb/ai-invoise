@@ -134,7 +134,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
           {filtered.map((client) => (
             <Card
               key={client.id}
-              className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl hover:bg-neutral-900/60 transition-colors"
+              className="border-white/[0.06] bg-neutral-900/40 backdrop-blur-xl hover:bg-white/[0.02] transition-colors"
             >
               <CardContent className="py-3.5 px-5">
                 <div className="flex items-center justify-between">

@@ -65,7 +65,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-zinc-700/50 text-zinc-400',
   sent: 'bg-blue-500/15 text-blue-400',
   due_soon: 'bg-amber-500/15 text-amber-400',
-  overdue: 'bg-red-500/15 text-red-400',
+  overdue: 'bg-red-500/[0.1] text-red-400',
   paid: 'bg-emerald-500/15 text-emerald-400',
   archived: 'bg-zinc-700/50 text-zinc-500',
 }
@@ -344,7 +344,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
       </div>
 
       {needsSetup && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <div className="rounded-lg border border-amber-500/[0.2] bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-400 backdrop-blur-md">
           AI settings not configured.{' '}
           <a href="/settings" className="underline hover:text-amber-200">
             Set up your API key in Settings
@@ -402,7 +402,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                         <button
                           type="button"
                           onClick={() => setSelectedInvoiceId(invoice.id)}
-                          className={`flex w-full flex-col gap-1 px-4 py-3 text-left transition-colors ${
+                          className={`flex w-full flex-col gap-1 px-4 py-4 text-left transition-colors ${
                             isSelected ? 'bg-zinc-800/80' : 'hover:bg-zinc-800/40'
                           }`}
                         >

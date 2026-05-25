@@ -140,19 +140,19 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                     <th className="pb-2 font-medium text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-white/[0.06]">
                   {invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-neutral-900/10">
-                      <td className="py-3 font-mono text-xs text-neutral-400">{inv.invoice_number}</td>
-                      <td className="py-3 text-xs text-neutral-200 truncate max-w-[200px]">{inv.title || 'Untitled'}</td>
-                      <td className="py-3 text-xs font-semibold text-right text-neutral-200">{formatCurrency(inv.amount, inv.currency)}</td>
-                      <td className="py-3 text-xs text-neutral-400">{formatDate(inv.due_date)}</td>
-                      <td className="py-3">
+                    <tr key={inv.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-4 font-mono text-xs text-neutral-400">{inv.invoice_number}</td>
+                      <td className="py-4 text-xs text-neutral-200 truncate max-w-[200px]">{inv.title || 'Untitled'}</td>
+                      <td className="py-4 text-xs font-semibold text-right text-neutral-200">{formatCurrency(inv.amount, inv.currency)}</td>
+                      <td className="py-4 text-xs text-neutral-400">{formatDate(inv.due_date)}</td>
+                      <td className="py-4">
                         <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded border ${STATUS_STYLES[inv.status] ?? ''}`}>
                           {STATUS_LABELS[inv.status] ?? inv.status}
                         </span>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-4 text-right">
                         <Link href={`/invoices/${inv.id}`} className="text-xs text-emerald-500 hover:underline">
                           View details
                         </Link>
@@ -206,7 +206,7 @@ const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
   sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
   due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-  overdue: 'bg-red-950/40 text-red-400 border-red-900/50',
+  overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
   paid: 'bg-green-950/40 text-green-400 border-green-900/50',
   archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
 }
