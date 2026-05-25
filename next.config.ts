@@ -5,10 +5,11 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.posthog.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data:;
-  font-src 'self' data:;
+  img-src 'self' blob: data: https://*.supabase.co;
+  font-src 'self' data: https://fonts.gstatic.com;
   object-src 'self' blob: data:;
   frame-src 'self' blob: data:;
+  worker-src 'self' blob:;
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';

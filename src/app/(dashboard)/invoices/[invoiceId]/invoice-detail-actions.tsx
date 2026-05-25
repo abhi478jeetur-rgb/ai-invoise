@@ -75,6 +75,13 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
   return (
     <>
       <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() => router.push(`/invoices/${invoice.id}/builder`)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs cursor-pointer"
+        >
+          Open Smart Builder
+        </Button>
         {!isPaid && !isArchived && (
           <Button
             size="sm"

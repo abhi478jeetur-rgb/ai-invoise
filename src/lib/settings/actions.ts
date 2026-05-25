@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache'
 import { encryptKey, decryptKey, maskApiKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
-import pdfParse from 'pdf-parse'
 
 export async function getSettingsAction() {
   try {
@@ -416,7 +415,8 @@ export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
 
     if (file.type === 'application/pdf') {
       try {
-        const parsed = await pdfParse(buffer)
+        const pdfParse = (await import('pdf-parse')).default || await import('pdf-parse');
+        const parsed = await (pdfParse as any)(buffer)
         extractedText = parsed.text
       } catch (parseError) {
         return { error: 'Failed to extract text from PDF. The file may be encrypted, scanned without OCR, or corrupted.' }

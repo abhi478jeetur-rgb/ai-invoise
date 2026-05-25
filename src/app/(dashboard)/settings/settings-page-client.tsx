@@ -102,6 +102,13 @@ function StatusMessage({ success, error }: { success?: boolean; error?: string |
 export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const router = useRouter()
 
+  // Knowledge Base state
+  const [kbDocs, setKbDocs] = useState<any[]>(initialData.knowledgeBaseDocuments || [])
+  const [docUploading, setDocUploading] = useState(false)
+  const [docUploadError, setDocUploadError] = useState<string | null>(null)
+  const [docUploadSuccess, setDocUploadSuccess] = useState(false)
+  const docInputRef = useRef<HTMLInputElement>(null)
+
   // Profile state
   const [p] = useState(initialData.profile)
   const [profileSaving, setProfileSaving] = useState(false)
@@ -145,6 +152,35 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     const result = await saveProfileSettingsAction(formData)
     if (result.error) { setProfileError(result.error) } else { setProfileSuccess(true); router.refresh() }
     setProfileSaving(false)
+  }
+
+  async function handleUploadDocument(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setDocUploading(true)
+    setDocUploadError(null)
+    setDocUploadSuccess(false)
+    const fd = new FormData()
+    fd.append('document', file)
+    const result = await uploadKnowledgeBaseDocumentAction(fd)
+    if (result.error) {
+      setDocUploadError(result.error)
+    } else {
+      setDocUploadSuccess(true)
+      // Optimistic update would be better, but we can just reload for now
+      window.location.reload()
+    }
+    setDocUploading(false)
+    if (docInputRef.current) docInputRef.current.value = ''
+  }
+
+  async function handleDeleteDocument(id: string) {
+    const result = await deleteKnowledgeBaseDocumentAction(id)
+    if (!result.error) {
+      setKbDocs(docs => docs.filter(d => d.id !== id))
+      router.refresh()
+    }
   }
 
   async function handleReminderSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -631,7 +667,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                   <input type="hidden" name="maskedApiKey" value={aiSettings?.masked_api_key ?? ''} />
                   {aiSettings?.masked_api_key && (
                     <p className="text-[11px] text-neutral-600">
-                      Current: {aiSettings.masked_api_key} &mdash; leave unchanged to keep existing key.
+                      Current: <span className="font-mono">{aiSettings.masked_api_key}</span> &mdash; leave unchanged to keep existing key.
                     </p>
                   )}
                 </div>
