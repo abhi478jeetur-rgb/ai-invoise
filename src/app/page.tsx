@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import AnimatedPreview from '@/components/shared/AnimatedPreview'
+import AnimatedHeaderLogo from '@/components/shared/AnimatedHeaderLogo'
+import AnimatedHeroBackground from '@/components/shared/AnimatedHeroBackground'
+import AnimatedFooterCta from '@/components/shared/AnimatedFooterCta'
 import {
   Shield,
   Copy,
@@ -25,14 +28,7 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-neutral-950/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-neutral-900 border border-neutral-800">
-                <span className="text-xs font-bold text-white">C</span>
-              </div>
-              <span className="text-sm font-semibold text-neutral-200 tracking-tight">
-                ChaseFree AI
-              </span>
-            </Link>
+            <AnimatedHeaderLogo />
 
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">
@@ -77,6 +73,7 @@ export default async function LandingPage() {
         {/* Background effects */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.12),transparent)] pointer-events-none" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-neutral-800/10 rounded-full blur-[120px] pointer-events-none" />
+        <AnimatedHeroBackground />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 sm:pt-28 sm:pb-24">
           <div className="text-center max-w-3xl mx-auto">
@@ -295,8 +292,8 @@ export default async function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="border-t border-neutral-900/80">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+      <section className="border-t border-neutral-900/80 py-20 px-4 sm:px-6 lg:px-8">
+        <AnimatedFooterCta>
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-100">
             Ready to stop chasing?
           </h2>
@@ -312,21 +309,14 @@ export default async function LandingPage() {
               </Button>
             </Link>
           </div>
-        </div>
+        </AnimatedFooterCta>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-neutral-900/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="inline-flex items-center justify-center w-5 h-5 rounded bg-neutral-900 border border-neutral-800">
-                <span className="text-[8px] font-bold text-white">C</span>
-              </div>
-              <span className="text-[11px] text-neutral-500">
-                ChaseFree AI
-              </span>
-            </div>
+            <AnimatedHeaderLogo />
             <p className="text-[11px] text-neutral-600">
               &copy; {new Date().getFullYear()} ChaseFree AI. Built for freelancers who deserve to get paid.
             </p>
