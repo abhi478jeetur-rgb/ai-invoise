@@ -415,7 +415,8 @@ export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
 
     if (file.type === 'application/pdf') {
       try {
-        const pdfParse = (await import('pdf-parse')).default || await import('pdf-parse');
+        const pdfParseModule: any = await import('pdf-parse');
+        const pdfParse = pdfParseModule.default || pdfParseModule;
         const parsed = await (pdfParse as any)(buffer)
         extractedText = parsed.text
       } catch (parseError) {
