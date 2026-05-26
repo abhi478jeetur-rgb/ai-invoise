@@ -2,6 +2,7 @@ import { createClient } from '@/lib/db/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import AnimatedPreview from '@/components/shared/AnimatedPreview'
 import {
   Shield,
   Copy,
@@ -113,60 +114,7 @@ export default async function LandingPage() {
           </div>
 
           {/* Dashboard Mockup Preview */}
-          <div className="mt-14 max-w-3xl mx-auto">
-            <div className="rounded-xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-4 sm:p-5 shadow-2xl shadow-black/40">
-              {/* Mock header bar */}
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-neutral-800/50">
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-800" />
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-800" />
-                <div className="w-2.5 h-2.5 rounded-full bg-neutral-800" />
-                <span className="text-[10px] text-neutral-600 ml-2 font-mono">dashboard</span>
-              </div>
-
-              {/* Mock stat cards */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="rounded-lg border border-neutral-800/60 bg-neutral-900/50 p-3">
-                  <p className="text-[10px] text-neutral-500">Outstanding</p>
-                  <p className="text-lg font-semibold text-neutral-200">$12,400</p>
-                  <p className="text-[10px] text-neutral-500">7 invoices</p>
-                </div>
-                <div className="rounded-lg border border-red-900/30 bg-red-950/20 p-3">
-                  <p className="text-[10px] text-red-400/70">Overdue</p>
-                  <p className="text-lg font-semibold text-red-400">$4,500</p>
-                  <p className="text-[10px] text-red-400/60">2 invoices</p>
-                </div>
-                <div className="rounded-lg border border-green-900/30 bg-green-950/20 p-3">
-                  <p className="text-[10px] text-green-400/70">Paid</p>
-                  <p className="text-lg font-semibold text-green-400">$28,900</p>
-                  <p className="text-[10px] text-green-400/60">14 invoices</p>
-                </div>
-              </div>
-
-              {/* Mock chase card */}
-              <div className="rounded-lg border border-neutral-800/60 bg-neutral-900/50 p-3">
-                <p className="text-[10px] text-neutral-500 mb-2 font-medium">Who to Chase Today</p>
-                <div className="flex items-center justify-between p-2.5 rounded-md border border-red-900/40 bg-red-950/10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-1 h-8 rounded-full bg-red-500" />
-                    <div>
-                      <p className="text-xs font-medium text-neutral-200">Acme Corp</p>
-                      <p className="text-[10px] text-neutral-500">
-                        <span className="font-mono">INV-0042</span>
-                        <span className="text-neutral-700 mx-1">&middot;</span>
-                        <span className="text-neutral-300">$4,500</span>
-                        <span className="text-neutral-700 mx-1">&middot;</span>
-                        <span className="text-red-400">5 days overdue</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <span className="px-2 py-0.5 text-[9px] font-medium rounded bg-green-950/40 text-green-400 border border-green-900/50">Paid</span>
-                    <span className="px-2 py-0.5 text-[9px] font-medium rounded bg-neutral-800 text-neutral-400 border border-neutral-700">Chase</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AnimatedPreview />
         </div>
       </section>
 

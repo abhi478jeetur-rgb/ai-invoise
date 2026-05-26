@@ -61,7 +61,7 @@ export async function GET(
     );
 
     // Convert Node stream to Buffer to set Content-Length and avoid chunked transfer errors (which trigger "Virus scan failed" in Chrome)
-    const chunks: Uint8Array[] = [];
+    const chunks: any[] = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
     }
