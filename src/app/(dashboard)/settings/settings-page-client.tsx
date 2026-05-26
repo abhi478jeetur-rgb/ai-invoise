@@ -2,13 +2,13 @@
 
 import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from 'sonner'
 import {
   saveProfileSettingsAction,
   saveAiSettingsAction,
@@ -85,46 +85,24 @@ interface SettingsPageClientProps {
   initialData: SettingsData
 }
 
-function StatusMessage({ success, error }: { success?: boolean; error?: string | null }) {
-  if (success) return (
-    <div className="p-3 text-xs font-medium bg-green-950/30 border border-green-900/50 text-green-400 rounded-lg text-center">
-      Saved successfully.
-    </div>
-  )
-  if (error) return (
-    <div className="p-3 text-xs font-medium bg-red-500/[0.1] border border-red-500/[0.2] text-red-400 rounded-lg text-center backdrop-blur-md">
-      {error}
-    </div>
-  )
-  return null
-}
-
 export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const router = useRouter()
 
   // Knowledge Base state
   const [kbDocs, setKbDocs] = useState<any[]>(initialData.knowledgeBaseDocuments || [])
   const [docUploading, setDocUploading] = useState(false)
-  const [docUploadError, setDocUploadError] = useState<string | null>(null)
-  const [docUploadSuccess, setDocUploadSuccess] = useState(false)
   const docInputRef = useRef<HTMLInputElement>(null)
 
   // Profile state
   const [p] = useState(initialData.profile)
   const [profileSaving, setProfileSaving] = useState(false)
-  const [profileSuccess, setProfileSuccess] = useState(false)
-  const [profileError, setProfileError] = useState<string | null>(null)
 
   // Reminder state
   const [reminderSaving, setReminderSaving] = useState(false)
-  const [reminderSuccess, setReminderSuccess] = useState(false)
-  const [reminderError, setReminderError] = useState<string | null>(null)
   const [reminderEnabled, setReminderEnabled] = useState(initialData.profile.reminder_enabled)
 
   // Business Profile state
   const [bizSaving, setBizSaving] = useState(false)
-  const [bizSuccess, setBizSuccess] = useState(false)
-  const [bizError, setBizError] = useState<string | null>(null)
   const [logoUrl, setLogoUrl] = useState(initialData.profile.logo_url || '')
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData.profile.logo_url || null)
@@ -133,24 +111,23 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   // AI state
   const [aiSettings] = useState(initialData.aiSettings)
   const [aiSaving, setAiSaving] = useState(false)
-  const [aiSuccess, setAiSuccess] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // Account state
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [accountDeleting, setAccountDeleting] = useState(false)
-  const [accountError, setAccountError] = useState<string | null>(null)
 
   async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setProfileSaving(true)
-    setProfileSuccess(false)
-    setProfileError(null)
     const formData = new FormData(e.currentTarget)
     const result = await saveProfileSettingsAction(formData)
-    if (result.error) { setProfileError(result.error) } else { setProfileSuccess(true); router.refresh() }
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Profile settings saved successfully!')
+      router.refresh()
+    }
     setProfileSaving(false)
   }
 
@@ -159,16 +136,13 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     if (!file) return
 
     setDocUploading(true)
-    setDocUploadError(null)
-    setDocUploadSuccess(false)
     const fd = new FormData()
     fd.append('document', file)
     const result = await uploadKnowledgeBaseDocumentAction(fd)
     if (result.error) {
-      setDocUploadError(result.error)
+      toast.error(result.error)
     } else {
-      setDocUploadSuccess(true)
-      // Optimistic update would be better, but we can just reload for now
+      toast.success('Document uploaded successfully!')
       window.location.reload()
     }
     setDocUploading(false)
@@ -179,30 +153,39 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     const result = await deleteKnowledgeBaseDocumentAction(id)
     if (!result.error) {
       setKbDocs(docs => docs.filter(d => d.id !== id))
+      toast.success('Document deleted successfully!')
       router.refresh()
+    } else {
+      toast.error(result.error || 'Failed to delete document')
     }
   }
 
   async function handleReminderSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setReminderSaving(true)
-    setReminderSuccess(false)
-    setReminderError(null)
     const formData = new FormData(e.currentTarget)
     formData.set('reminder_enabled', reminderEnabled ? 'true' : 'false')
     const result = await updateReminderSettingsAction(formData)
-    if (result.error) { setReminderError(result.error) } else { setReminderSuccess(true); router.refresh() }
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Reminder schedule saved successfully!')
+      router.refresh()
+    }
     setReminderSaving(false)
   }
 
   async function handleBizSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setBizSaving(true)
-    setBizSuccess(false)
-    setBizError(null)
     const formData = new FormData(e.currentTarget)
     const result = await saveBusinessProfileAction(formData)
-    if (result.error) { setBizError(result.error) } else { setBizSuccess(true); router.refresh() }
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Business profile saved successfully!')
+      router.refresh()
+    }
     setBizSaving(false)
   }
 
@@ -216,15 +199,15 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     reader.readAsDataURL(file)
 
     setLogoUploading(true)
-    setBizError(null)
     const fd = new FormData()
     fd.append('logo', file)
     const result = await uploadBusinessLogoAction(fd)
     if (result.error) {
-      setBizError(result.error)
+      toast.error(result.error)
       setLogoPreview(initialData.profile.logo_url || null)
     } else if (result.url) {
       setLogoUrl(result.url)
+      toast.success('Logo uploaded successfully!')
     }
     setLogoUploading(false)
   }
@@ -232,40 +215,51 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   async function handleAiSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setAiSaving(true)
-    setAiSuccess(false)
-    setAiError(null)
     const formData = new FormData(e.currentTarget)
     const result = await saveAiSettingsAction(formData)
-    if (result.error) { setAiError(result.error) } else { setAiSuccess(true); router.refresh() }
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('AI settings saved successfully!')
+      router.refresh()
+    }
     setAiSaving(false)
   }
 
   async function handleTestConnection() {
     setTesting(true)
-    setTestResult(null)
     const form = document.getElementById('ai-settings-form') as HTMLFormElement
     const formData = new FormData(form)
     const result = await testAiConnectionAction(formData)
-    if (result.error) { setTestResult({ type: 'error', message: result.error }) }
-    else { setTestResult({ type: 'success', message: result.message ?? 'Connection successful!' }) }
+    if (result.error) {
+      toast.error(`Connection failed: ${result.error}`)
+    } else {
+      toast.success(result.message ?? 'Connection successful!')
+    }
     setTesting(false)
   }
 
   const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setAccountError(null)
     if (deleteConfirmation !== 'delete my account') {
-      setAccountError('Please type the exact confirmation sentence.')
+      toast.error('Please type the exact confirmation sentence.')
       return
     }
     setAccountDeleting(true)
     try {
       const result = await deleteAccountAction(deleteConfirmation)
-      if (result.error) { setAccountError(result.error); setAccountDeleting(false) }
-      else { router.push('/sign-in') }
-    } catch { setAccountError('An unexpected error occurred.'); setAccountDeleting(false) }
+      if (result.error) {
+        toast.error(result.error)
+        setAccountDeleting(false)
+      } else {
+        toast.success('Account deleted successfully.')
+        router.push('/sign-in')
+      }
+    } catch {
+      toast.error('An unexpected error occurred.')
+      setAccountDeleting(false)
+    }
   }
-
 
   return (
     <div className="space-y-6">
@@ -303,8 +297,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileSubmit} className="space-y-4">
-                <StatusMessage success={profileSuccess} error={profileError} />
-
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="fullName">Full Name</Label>
                   <Input id="fullName" name="fullName" defaultValue={p.full_name}
@@ -343,8 +335,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleReminderSubmit} className="space-y-4">
-                <StatusMessage success={reminderSuccess} error={reminderError} />
-
                 <div className="flex items-center justify-between">
                   <Label className="text-neutral-400" htmlFor="reminderEnabled">Enable Weekly Reminders</Label>
                   <input type="checkbox" id="reminderEnabled" checked={reminderEnabled}
@@ -407,8 +397,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           </div>
 
           <form onSubmit={handleBizSubmit} className="space-y-6 max-w-2xl">
-            <StatusMessage success={bizSuccess} error={bizError} />
-
             {/* ── Business Identity ── */}
             <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
               <CardHeader>
@@ -594,8 +582,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                         className="h-8 text-xs border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800">
                         {docUploading ? 'Uploading...' : 'Upload Document'}
                       </Button>
-                      {docUploadError && <p className="text-xs text-red-400 mt-2">{docUploadError}</p>}
-                      {docUploadSuccess && <p className="text-xs text-green-400 mt-2">Document uploaded successfully!</p>}
                     </div>
                   </div>
                 </div>
@@ -628,16 +614,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             </CardHeader>
             <CardContent>
               <form id="ai-settings-form" onSubmit={handleAiSubmit} className="space-y-4">
-                {aiSuccess && <StatusMessage success />}
-                {aiError && <StatusMessage error={aiError} />}
-                {testResult && (
-                  <div className={`p-3 text-xs font-medium rounded-lg text-center backdrop-blur-md ${
-                    testResult.type === 'success'
-                      ? 'bg-green-500/[0.1] border border-green-500/[0.2] text-green-400'
-                      : 'bg-red-500/[0.1] border border-red-500/[0.2] text-red-400'
-                  }`}>{testResult.message}</div>
-                )}
-
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="providerLabel">Provider Label</Label>
                   <Input id="providerLabel" name="providerLabel" defaultValue={aiSettings?.provider_label ?? ''}
@@ -703,7 +679,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleDeleteAccount} className="space-y-4">
-                {accountError && <StatusMessage error={accountError} />}
                 <div className="space-y-2 p-4 bg-red-950/20 border border-red-900/30 rounded-md">
                   <p className="text-sm text-neutral-300">
                     To verify, type <strong className="text-red-400 select-all">delete my account</strong> below:
