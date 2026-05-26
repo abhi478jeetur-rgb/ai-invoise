@@ -3,7 +3,6 @@
 import { useRef } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
-import { MessageSquare, Sparkles } from 'lucide-react'
 
 gsap.registerPlugin(useGSAP)
 
@@ -12,10 +11,10 @@ export default function AskLLMSection() {
 
   useGSAP(
     () => {
-      // Gentle floating animation for LLM buttons
+      // Gentle floating animation for LLM buttons to make the UI feel responsive and alive
       gsap.to('.llm-btn', {
         y: -4,
-        duration: 2,
+        duration: 2.2,
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
@@ -25,8 +24,11 @@ export default function AskLLMSection() {
     { scope: containerRef }
   )
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>, brandColor: string) => {
+  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>, brandColor: string, id: string) => {
     const target = e.currentTarget
+    const icon = target.querySelector('.llm-icon')
+
+    // 1. Premium Button Aura & Border scale
     gsap.to(target, {
       scale: 1.05,
       borderColor: brandColor,
@@ -34,10 +36,51 @@ export default function AskLLMSection() {
       duration: 0.4,
       ease: 'power2.out',
     })
+
+    // 2. Individual Outstanding Logo Animations
+    if (icon) {
+      if (id === 'chatgpt') {
+        // Smooth 180 deg rotation
+        gsap.to(icon, {
+          rotation: '+=180',
+          duration: 0.6,
+          ease: 'power2.out',
+        })
+      } else if (id === 'claude') {
+        // Playful vertical springy bounce
+        gsap.to(icon, {
+          y: -5,
+          duration: 0.2,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power1.out',
+        })
+      } else if (id === 'perplexity') {
+        // Expanding pulse scale effect
+        gsap.to(icon, {
+          scale: 1.25,
+          duration: 0.2,
+          yoyo: true,
+          repeat: 1,
+          ease: 'power2.out',
+        })
+      } else if (id === 'gemini') {
+        // Radiant rotation and springy scale expand
+        gsap.to(icon, {
+          rotation: '+=360',
+          scale: 1.25,
+          duration: 0.8,
+          ease: 'back.out(1.6)',
+        })
+      }
+    }
   }
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const target = e.currentTarget
+    const icon = target.querySelector('.llm-icon')
+
+    // Reset button style
     gsap.to(target, {
       scale: 1,
       borderColor: 'rgba(38, 38, 38, 0.8)',
@@ -45,47 +88,47 @@ export default function AskLLMSection() {
       duration: 0.4,
       ease: 'power2.out',
     })
+
+    // Reset icon style
+    if (icon) {
+      gsap.to(icon, {
+        rotation: 0,
+        scale: 1,
+        y: 0,
+        duration: 0.4,
+        ease: 'power2.out',
+      })
+    }
   }
 
   const llms = [
     {
+      id: 'chatgpt',
       name: 'Ask ChatGPT',
       color: '#10b981', // Emerald green
       url: 'https://chatgpt.com',
-      icon: (
-        <svg className="w-4 h-4 text-emerald-400 object-contain" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M21.74 12.06c.07-.37.11-.75.11-1.14 0-1.66-.67-3.22-1.89-4.32.22-.64.33-1.3.33-1.97 0-3.31-2.69-6-6-6-.67 0-1.33.11-1.97.33C11.22.67 9.66 0 8 0 4.69 0 2 2.69 2 6c0 .39.04.77.11 1.14C.89 8.24.22 9.8.22 11.46c0 .67.11 1.33.33 1.97C.33 14.07.22 14.73.22 15.4c0 3.31 2.69 6 6 6 .67 0 1.33-.11 1.97-.33 1.1.55 2.66 1.22 4.32 1.22 3.31 0 6-2.69 6-6 0-.39-.04-.77-.11-1.14 1.22-1.1 1.89-2.66 1.89-4.32 0-.67-.11-1.33-.33-1.97.22-.64.33-1.3.33-1.97 0-.39-.04-.77-.11-1.14z" opacity="0.15" />
-          <path d="M20.5 12.06c.07-.37.11-.75.11-1.14 0-1.66-.67-3.22-1.89-4.32.22-.64.33-1.3.33-1.97 0-3.31-2.69-6-6-6-.67 0-1.33.11-1.97.33C10.22.67 8.66 0 7 0 3.69 0 1 2.69 1 6c0 .39.04.77.11 1.14C.09 8.24-.58 9.8-.58 11.46c0 .67.11 1.33.33 1.97-.22.64-.33 1.3-.33 1.97 0 3.31 2.69 6 6 6 .67 0 1.33-.11 1.97-.33 1.1.55 2.66 1.22 4.32 1.22 3.31 0 6-2.69 6-6 0-.39-.04-.77-.11-1.14 1.22-1.1 1.89-2.66 1.89-4.32 0-.67-.11-1.33-.33-1.97.22-.64.33-1.3.33-1.97z M12.5 20.32c-.52-.08-1.04-.26-1.5-.54.34-.33.82-.54 1.34-.54h1.66v1.08z" />
-        </svg>
-      ),
+      iconSrc: '/chatgpt.svg',
     },
     {
+      id: 'claude',
       name: 'Ask Claude',
       color: '#f97316', // Orange
       url: 'https://claude.ai',
-      icon: (
-        <svg className="w-4 h-4 text-orange-400 object-contain" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5h-2v-2h2v2zm0-3.5h-2V7h2v6z" />
-        </svg>
-      ),
+      iconSrc: '/claude.svg',
     },
     {
+      id: 'perplexity',
       name: 'Ask Perplexity',
       color: '#06b6d4', // Cyan
       url: 'https://perplexity.ai',
-      icon: (
-        <svg className="w-4 h-4 text-cyan-400 object-contain" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 1.93-.68 3.7-1.8 5.1z" />
-        </svg>
-      ),
+      iconSrc: '/perplexity.svg',
     },
     {
+      id: 'gemini',
       name: 'Ask Gemini',
       color: '#6366f1', // Indigo
       url: 'https://gemini.google.com',
-      icon: (
-        <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-      ),
+      iconSrc: '/gemeni.svg', // Exact matching filename in public directory
     },
   ]
 
@@ -101,19 +144,23 @@ export default function AskLLMSection() {
         Check out what your favorite LLM has to say about us, then make an informed decision.
       </p>
 
-      {/* Grid of Interactive Buttons */}
+      {/* Grid of Interactive Buttons with real SVGs */}
       <div className="flex flex-wrap items-center justify-center gap-3.5 relative z-10">
-        {llms.map((llm, idx) => (
+        {llms.map((llm) => (
           <a
-            key={idx}
+            key={llm.id}
             href={llm.url}
             target="_blank"
             rel="noopener noreferrer"
-            onMouseEnter={(e) => handleMouseEnter(e, llm.color)}
+            onMouseEnter={(e) => handleMouseEnter(e, llm.color, llm.id)}
             onMouseLeave={handleMouseLeave}
             className="llm-btn flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-neutral-900 bg-neutral-950/60 backdrop-blur-md text-xs font-semibold text-neutral-300 hover:text-white transition-colors duration-300 shadow-md cursor-pointer select-none"
           >
-            {llm.icon}
+            <img
+              src={llm.iconSrc}
+              alt={llm.name}
+              className="w-4 h-4 object-contain llm-icon shrink-0"
+            />
             <span>{llm.name}</span>
           </a>
         ))}
