@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
 };
 
+import { Toaster } from "@/components/ui/sonner"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,6 +36,11 @@ export default function RootLayout({
           <SuspendedPostHogPageview />
           {children}
         </PHProvider>
+        <Toaster 
+          toastOptions={{
+            className: "bg-zinc-950 border border-white/[0.08] text-zinc-100 font-sans",
+          }}
+        />
       </body>
     </html>
   );

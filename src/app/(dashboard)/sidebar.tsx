@@ -7,9 +7,10 @@ import {
   FileText,
   Mail,
   BookOpen,
-  Settings,
+  Settings
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import Image from 'next/image'
 
 interface NavItem {
   href: string
@@ -44,20 +45,16 @@ export default function Sidebar({ initials, email, name }: SidebarProps) {
       }`}
     >
       {/* Top Logo */}
-      <div className="flex items-center w-14 justify-center shrink-0">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white hover:bg-neutral-900 cursor-pointer transition-colors">
-          <svg
-            className="w-7 h-7 text-neutral-400 hover:text-white transition-colors"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-          </svg>
+      <div className={`flex items-center ${expanded ? 'w-full px-3' : 'w-14 justify-center'} shrink-0`}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white hover:bg-neutral-900 cursor-pointer transition-colors shrink-0">
+            <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain" />
+          </div>
+          <span className={`font-sans font-bold text-lg tracking-tight text-white whitespace-nowrap transition-all duration-150 ${
+            expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
+          }`}>
+            ChaseFree AI
+          </span>
         </div>
       </div>
 
