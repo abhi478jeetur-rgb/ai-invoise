@@ -6,6 +6,16 @@ import { decryptKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
 
+function sanitizeInput(input?: string): string {
+  if (!input) return '';
+  let clean = input.replace(/(.)\1{4,}/g, '$1$1');
+  clean = clean.replace(/[^\w\s\u0900-\u097F.,!?@'":;()\-]/g, '');
+  const words = clean.split(/\s+/);
+  const isGibberish = words.some(word => word.length > 30 && !word.startsWith('http'));
+  if (isGibberish) return '';
+  return clean.trim();
+}
+
 interface ReminderResult {
   success?: boolean
   data?: {
@@ -124,6 +134,8 @@ export async function generateReminderAction(
       final_notice: 'Extremely direct final warning. State this is the last notice before further action. Professional but unyielding. Create urgency.',
     }
 
+    const sanitizedInstructions = sanitizeInput(customInstructions)
+
     const prompt = `You are an expert email writer specializing in payment follow-up reminders for freelancers.
 
 Generate a payment reminder email with the following context:
@@ -150,7 +162,7 @@ TONE: ${tone}
 Tone Guidelines: ${toneDescriptions[tone]}
 
 ${invoice.reminder_count > 0 ? `This is reminder #${invoice.reminder_count + 1}. Previous reminders have already been sent.` : 'This is the first reminder for this invoice.'}
-${customInstructions ? `\nCUSTOM INSTRUCTIONS FROM SENDER:\n${customInstructions}` : ''}
+${sanitizedInstructions ? `\nCUSTOM INSTRUCTIONS FROM SENDER:\n${sanitizedInstructions}` : ''}
 ${kbSection}
 
 IMPORTANT RULES:
@@ -177,7 +189,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
       body: JSON.stringify({
         model: aiSettings.model_name,
         messages: [
-          { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, no markdown formatting or code fences.' },
+          { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, using this strict schema: {"subject": "string", "body": "string"}. No markdown formatting or code fences.' },
           { role: 'user', content: prompt },
         ],
         temperature: 0.4,
@@ -195,37 +207,28 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
     const rawContent = data.choices?.[0]?.message?.content?.trim() ?? ''
 
     // Parse the response
-    let subject: string
-    let body: string
+    let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
+    let body: string = ''
 
     try {
-      // Try to extract JSON from the response
+      let jsonStr = rawContent
       const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        const jsonStr = jsonMatch[0]
-        try {
-          const parsed = JSON.parse(jsonStr)
-          subject = parsed.subject || `Payment Reminder - Invoice ${invoice.invoice_number}`
-          body = parsed.body || rawContent
-        } catch {
-          // Robust regex extraction fallback for malformed JSON with literal newlines
-          const subjectMatch = jsonStr.match(/"subject"\s*:\s*"([\s\S]*?)"\s*(?:,|\})/i)
-          const bodyMatch = jsonStr.match(/"body"\s*:\s*"([\s\S]*?)"\s*\}/i) || jsonStr.match(/"body"\s*:\s*"([\s\S]*?)"\s*$/i)
-
-          subject = subjectMatch ? subjectMatch[1].trim() : `Payment Reminder - Invoice ${invoice.invoice_number}`
-          body = bodyMatch ? bodyMatch[1].trim() : rawContent
-
-          // Unescape newlines or quotes if they were escaped
-          body = body.replace(/\\n/g, '\n').replace(/\\"/g, '"')
-          subject = subject.replace(/\\"/g, '"')
-        }
-      } else {
-        throw new Error('No JSON found')
+        jsonStr = jsonMatch[0]
       }
-    } catch {
-      // Fallback: use raw content as body, generate subject
-      subject = `Payment Reminder - Invoice ${invoice.invoice_number}`
-      body = rawContent
+      
+      const parsed = JSON.parse(jsonStr)
+      if (parsed.subject) subject = parsed.subject
+      if (parsed.body) body = parsed.body
+      else throw new Error('JSON parsed but missing body')
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', e)
+      // Prevent raw JSON string from dumping into the UI
+      if (rawContent.includes('{') || rawContent.includes('}')) {
+        body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+      } else {
+        body = rawContent || 'Please find the payment reminder details enclosed.'
+      }
     }
 
     // Insert the draft
@@ -437,7 +440,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
         body: JSON.stringify({
           model: aiSettings.model_name,
           messages: [
-            { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, no markdown formatting or code fences.' },
+            { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, using this strict schema: {"subject": "string", "body": "string"}. No markdown formatting or code fences.' },
             { role: 'user', content: buildPrompt(styleInstruction) },
           ],
           temperature: 0.4,
@@ -454,20 +457,26 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
       const data = await response.json()
       const rawContent = data.choices?.[0]?.message?.content?.trim() ?? ''
 
-      let subject: string
-      let body: string
+      let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
+      let body: string = ''
       try {
+        let jsonStr = rawContent
         const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
-          subject = parsed.subject || `Payment Reminder - Invoice ${invoice.invoice_number}`
-          body = parsed.body || rawContent
-        } else {
-          throw new Error('No JSON found')
+          jsonStr = jsonMatch[0]
         }
-      } catch {
-        subject = `Payment Reminder - Invoice ${invoice.invoice_number}`
-        body = rawContent
+        
+        const parsed = JSON.parse(jsonStr)
+        if (parsed.subject) subject = parsed.subject
+        if (parsed.body) body = parsed.body
+        else throw new Error('JSON parsed but missing body')
+      } catch (e) {
+        console.error('Failed to parse AI response as JSON:', e)
+        if (rawContent.includes('{') || rawContent.includes('}')) {
+          body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+        } else {
+          body = rawContent || 'Please find the payment reminder details enclosed.'
+        }
       }
 
       return { subject, body }
