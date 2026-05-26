@@ -6,6 +6,7 @@ import AnimatedPreview from '@/components/shared/AnimatedPreview'
 import AnimatedHeaderLogo from '@/components/shared/AnimatedHeaderLogo'
 import AnimatedHeroBackground from '@/components/shared/AnimatedHeroBackground'
 import AnimatedFooterCta from '@/components/shared/AnimatedFooterCta'
+import AskLLMSection from '@/components/shared/AskLLMSection'
 import {
   Shield,
   Copy,
@@ -311,6 +312,9 @@ export default async function LandingPage() {
           </div>
         </AnimatedFooterCta>
       </section>
+
+      {/* Ask LLM Section */}
+      <AskLLMSection />
 
       {/* Footer */}
       <footer className="border-t border-neutral-900/80">
