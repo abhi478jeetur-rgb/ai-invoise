@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { createInvoiceAction, updateInvoiceAction, getNextInvoiceNumberAction } from '@/lib/invoices/actions'
 import { ClientForm } from '@/components/clients/client-form'
+import { toast } from 'sonner'
 
 interface Client {
   id: string
@@ -149,6 +150,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
       setError(result.error)
       setLoading(false)
     } else {
+      toast.success(isEditing ? 'Invoice saved successfully!' : 'Invoice created successfully!')
       onOpenChange(false)
       onSaved?.()
     }

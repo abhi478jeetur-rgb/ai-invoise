@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Search, AlertCircle, Check, Clock, ArrowRight, Copy, Send, Sparkles, Loader2, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 import { getReminderHistoryAction, generateMultipleDraftsAction, logReminderEventAction } from '@/lib/reminders/actions'
+import { toast } from 'sonner'
 
 interface Invoice {
   id: string
@@ -310,6 +311,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   async function handleCopy() {
     const text = `Subject: ${editSubject}\n\n${editBody}`
     await navigator.clipboard.writeText(text)
+    toast.success('AI Reminder draft copied to clipboard!')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
 

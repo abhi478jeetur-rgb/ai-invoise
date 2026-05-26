@@ -13,6 +13,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { generateReminderAction, logReminderEventAction } from '@/lib/reminders/actions'
+import { toast } from 'sonner'
 
 type Tone = 'friendly' | 'professional' | 'firm' | 'final_notice'
 
@@ -121,6 +122,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
 
   async function handleCopy(field: 'subject' | 'body', text: string) {
     await navigator.clipboard.writeText(text)
+    toast.success('AI Reminder draft copied to clipboard!')
     setCopiedField(field)
     setTimeout(() => setCopiedField(null), 2000)
 

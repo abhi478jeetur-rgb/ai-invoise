@@ -8,6 +8,7 @@ import { deleteInvoiceAction, markInvoicePaidAction, updateInvoiceStatusAction }
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
 
 interface InvoiceDetailActionsProps {
   invoice: {
@@ -52,6 +53,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
     setMarkingPaid(true)
     const result = await markInvoicePaidAction(invoice.id)
     if (result.success) {
+      toast.success('Invoice marked as paid!')
       router.refresh()
     }
     setMarkingPaid(false)
@@ -61,6 +63,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
     setUpdatingStatus(true)
     const result = await updateInvoiceStatusAction(invoice.id, selectedStatus, parseFloat(amountPaid) || 0)
     if (result.success) {
+      toast.success('Invoice status updated successfully!')
       setStatusOpen(false)
       router.refresh()
     } else {
