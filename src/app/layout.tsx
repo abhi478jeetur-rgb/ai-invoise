@@ -23,7 +23,7 @@ import { Toaster } from "@/components/ui/sonner"
 import ConnectivityMonitor from "@/components/shared/ConnectivityMonitor"
 import dynamic from 'next/dynamic'
 
-const AgentationDevTool = dynamic(() => import('@/components/dev/AgentationWrapper'), { ssr: false })
+const AgentationDevTool = dynamic(() => import('@/components/dev/AgentationWrapper'))
 
 export default function RootLayout({
   children,
