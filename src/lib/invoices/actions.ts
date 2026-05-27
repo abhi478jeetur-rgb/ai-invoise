@@ -22,13 +22,27 @@ export async function createInvoiceAction(formData: FormData) {
       try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
     }
 
+    const taxRate = parseFloat(formData.get('taxRate') as string) || 0
+    const taxLabel = (formData.get('taxLabel') as string) || 'Tax'
+    const discountAmount = parseFloat(formData.get('discountAmount') as string) || 0
+    const discountType = (formData.get('discountType') as string) || 'flat'
+    const status = (formData.get('status') as string) || 'sent'
+
+    // Server-side Gap Enforcement: calculate expected next sequential number
+    const nextSeqRes = await getNextInvoiceNumberAction()
+    const finalInvoiceNumber = (nextSeqRes.success && nextSeqRes.data) ? nextSeqRes.data : (invoiceNumber?.trim() || 'INV-001')
+
     if (!clientId) return { error: 'Client is required.' }
-    if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
-    if (invoiceNumber.trim().length > 50) return { error: 'Invoice number must be 50 characters or less.' }
+    if (!finalInvoiceNumber || finalInvoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
+    if (finalInvoiceNumber.trim().length > 50) return { error: 'Invoice number must be 50 characters or less.' }
     if (title && title.trim().length > 150) return { error: 'Title must be 150 characters or less.' }
     if (description && description.trim().length > 1000) return { error: 'Description must be 1000 characters or less.' }
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
+    if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
+    if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
+    if (status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
 
     const dueTime = new Date(dueDate).getTime()
@@ -67,17 +81,21 @@ export async function createInvoiceAction(formData: FormData) {
       .insert({
         user_id: user.id,
         client_id: clientId,
-        invoice_number: invoiceNumber.trim(),
+        invoice_number: finalInvoiceNumber.trim(),
         title: title?.trim() || null,
         description: description?.trim() || null,
         amount,
         currency,
-        status: 'sent',
+        status: status as any,
         due_date: dueDate,
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
         po_number: poNumber?.trim() || null,
         line_items: lineItems,
+        tax_rate: taxRate,
+        tax_label: taxLabel.trim() || 'Tax',
+        discount_amount: discountAmount,
+        discount_type: discountType,
       })
       .select()
       .single()
@@ -98,24 +116,44 @@ export async function getNextInvoiceNumberAction() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const { data, error } = await supabase
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('global_rules')
+      .eq('id', user.id)
+      .single()
+
+    const prefix = profile?.global_rules?.invoice_prefix?.trim() || 'INV-'
+    const format = profile?.global_rules?.invoice_format || 'PREFIX-[SEQUENCE]'
+
+    // Fetch highest invoice number created by this user (including soft deleted to prevent gaps!)
+    const { data: lastInvoice } = await supabase
       .from('invoices')
       .select('invoice_number')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
-    if (error || !data) return { success: true, data: 'INV-001' }
+    const yearStr = new Date().getFullYear().toString()
+    let nextSeq = 1
 
-    const match = data.invoice_number.match(/^([A-Za-z]+-)(\d+)$/)
-    if (!match) return { success: true, data: 'INV-001' }
+    if (lastInvoice?.invoice_number) {
+      const numMatch = lastInvoice.invoice_number.match(/(\d+)$/)
+      if (numMatch) {
+        nextSeq = parseInt(numMatch[1], 10) + 1
+      }
+    }
 
-    const prefix = match[1]
-    const num = parseInt(match[2], 10) + 1
-    const next = prefix + String(num).padStart(match[2].length, '0')
+    const seqPad = String(nextSeq).padStart(3, '0')
 
-    return { success: true, data: next }
+    let nextNumber = ''
+    if (format === 'PREFIX-[YEAR]-[SEQUENCE]') {
+      nextNumber = `${prefix}${yearStr}-${seqPad}`
+    } else {
+      nextNumber = `${prefix}${seqPad}`
+    }
+
+    return { success: true, data: nextNumber }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
@@ -190,6 +228,12 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
       try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
     }
 
+    const taxRate = parseFloat(formData.get('taxRate') as string) || 0
+    const taxLabel = (formData.get('taxLabel') as string) || 'Tax'
+    const discountAmount = parseFloat(formData.get('discountAmount') as string) || 0
+    const discountType = (formData.get('discountType') as string) || 'flat'
+    const status = formData.get('status') as string | null
+
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
     if (invoiceNumber.trim().length > 50) return { error: 'Invoice number must be 50 characters or less.' }
@@ -197,6 +241,10 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     if (description && description.trim().length > 1000) return { error: 'Description must be 1000 characters or less.' }
     if (isNaN(amount) || amount < 0) return { error: 'Amount must be 0 or greater.' }
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
+    if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
+    if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
+    if (status && status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
 
     const dueTime = new Date(dueDate).getTime()
@@ -242,6 +290,11 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
         line_items: lineItems,
+        tax_rate: taxRate,
+        tax_label: taxLabel.trim() || 'Tax',
+        discount_amount: discountAmount,
+        discount_type: discountType,
+        ...(status ? { status: status as any } : {}),
       })
       .eq('id', invoiceId)
       .eq('user_id', user.id)

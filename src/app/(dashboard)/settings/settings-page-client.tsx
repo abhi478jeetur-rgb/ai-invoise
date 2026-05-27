@@ -120,15 +120,23 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setProfileSaving(true)
-    const formData = new FormData(e.currentTarget)
-    const result = await saveProfileSettingsAction(formData)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Profile settings saved successfully!')
-      router.refresh()
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await saveProfileSettingsAction(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Profile settings saved successfully!')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to save profile settings. Please check your internet connection and try again.'
+      })
+    } finally {
+      setProfileSaving(false)
     }
-    setProfileSaving(false)
   }
 
   async function handleUploadDocument(e: React.ChangeEvent<HTMLInputElement>) {
@@ -136,57 +144,88 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     if (!file) return
 
     setDocUploading(true)
-    const fd = new FormData()
-    fd.append('document', file)
-    const result = await uploadKnowledgeBaseDocumentAction(fd)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Document uploaded successfully!')
-      window.location.reload()
+    try {
+      const fd = new FormData()
+      fd.append('document', file)
+      const result = await uploadKnowledgeBaseDocumentAction(fd)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Document uploaded successfully!')
+        window.location.reload()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to upload document. Please check your internet connection.'
+      })
+    } finally {
+      setDocUploading(false)
+      if (docInputRef.current) docInputRef.current.value = ''
     }
-    setDocUploading(false)
-    if (docInputRef.current) docInputRef.current.value = ''
   }
 
   async function handleDeleteDocument(id: string) {
-    const result = await deleteKnowledgeBaseDocumentAction(id)
-    if (!result.error) {
-      setKbDocs(docs => docs.filter(d => d.id !== id))
-      toast.success('Document deleted successfully!')
-      router.refresh()
-    } else {
-      toast.error(result.error || 'Failed to delete document')
+    try {
+      const result = await deleteKnowledgeBaseDocumentAction(id)
+      if (!result.error) {
+        setKbDocs(docs => docs.filter(d => d.id !== id))
+        toast.success('Document deleted successfully!')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to delete document')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to delete document. Please check your internet connection.'
+      })
     }
   }
 
   async function handleReminderSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setReminderSaving(true)
-    const formData = new FormData(e.currentTarget)
-    formData.set('reminder_enabled', reminderEnabled ? 'true' : 'false')
-    const result = await updateReminderSettingsAction(formData)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Reminder schedule saved successfully!')
-      router.refresh()
+    try {
+      const formData = new FormData(e.currentTarget)
+      formData.set('reminder_enabled', reminderEnabled ? 'true' : 'false')
+      const result = await updateReminderSettingsAction(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Reminder schedule saved successfully!')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to save reminder schedule. Please check your internet connection.'
+      })
+    } finally {
+      setReminderSaving(false)
     }
-    setReminderSaving(false)
   }
 
   async function handleBizSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setBizSaving(true)
-    const formData = new FormData(e.currentTarget)
-    const result = await saveBusinessProfileAction(formData)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Business profile saved successfully!')
-      router.refresh()
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await saveBusinessProfileAction(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Business profile saved successfully!')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to save business profile. Please check your internet connection.'
+      })
+    } finally {
+      setBizSaving(false)
     }
-    setBizSaving(false)
   }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -199,44 +238,69 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     reader.readAsDataURL(file)
 
     setLogoUploading(true)
-    const fd = new FormData()
-    fd.append('logo', file)
-    const result = await uploadBusinessLogoAction(fd)
-    if (result.error) {
-      toast.error(result.error)
+    try {
+      const fd = new FormData()
+      fd.append('logo', file)
+      const result = await uploadBusinessLogoAction(fd)
+      if (result.error) {
+        toast.error(result.error)
+        setLogoPreview(initialData.profile.logo_url || null)
+      } else if (result.url) {
+        setLogoUrl(result.url)
+        toast.success('Logo uploaded successfully!')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to upload logo. Please check your internet connection.'
+      })
       setLogoPreview(initialData.profile.logo_url || null)
-    } else if (result.url) {
-      setLogoUrl(result.url)
-      toast.success('Logo uploaded successfully!')
+    } finally {
+      setLogoUploading(false)
     }
-    setLogoUploading(false)
   }
 
   async function handleAiSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setAiSaving(true)
-    const formData = new FormData(e.currentTarget)
-    const result = await saveAiSettingsAction(formData)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('AI settings saved successfully!')
-      router.refresh()
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await saveAiSettingsAction(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('AI settings saved successfully!')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to save AI settings. Please check your internet connection.'
+      })
+    } finally {
+      setAiSaving(false)
     }
-    setAiSaving(false)
   }
 
   async function handleTestConnection() {
     setTesting(true)
-    const form = document.getElementById('ai-settings-form') as HTMLFormElement
-    const formData = new FormData(form)
-    const result = await testAiConnectionAction(formData)
-    if (result.error) {
-      toast.error(`Connection failed: ${result.error}`)
-    } else {
-      toast.success(result.message ?? 'Connection successful!')
+    try {
+      const form = document.getElementById('ai-settings-form') as HTMLFormElement
+      const formData = new FormData(form)
+      const result = await testAiConnectionAction(formData)
+      if (result.error) {
+        toast.error(`Connection failed: ${result.error}`)
+      } else {
+        toast.success(result.message ?? 'Connection successful!')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to test connection. Please check your internet connection.'
+      })
+    } finally {
+      setTesting(false)
     }
-    setTesting(false)
   }
 
   const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -477,12 +541,45 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             {/* ── Invoice Defaults ── */}
             <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-base font-medium text-neutral-200">Invoice Defaults</CardTitle>
+                <CardTitle className="text-base font-medium text-neutral-200">Invoice Defaults & Formatting</CardTitle>
                 <CardDescription className="text-sm text-neutral-500">
-                  These values will auto-fill when you create a new invoice.
+                  Configure default options and pattern numbering logic for your invoices.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-neutral-400" htmlFor="invoicePrefix">Invoice Prefix</Label>
+                      <div className="group relative inline-block">
+                        <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                          The starting letters for your invoice numbers (e.g., "INV-" or "CF-").
+                        </span>
+                      </div>
+                    </div>
+                    <Input id="invoicePrefix" name="invoicePrefix" defaultValue={p.global_rules?.invoice_prefix ?? 'INV-'}
+                      placeholder="INV-"
+                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Label className="text-neutral-400" htmlFor="invoiceFormat">Invoice Format</Label>
+                      <div className="group relative inline-block">
+                        <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                          Sequential pattern structure. Either simple sequence (INV-001) or including the current calendar year (INV-2026-001).
+                        </span>
+                      </div>
+                    </div>
+                    <select id="invoiceFormat" name="invoiceFormat" defaultValue={p.global_rules?.invoice_format ?? 'PREFIX-[SEQUENCE]'}
+                      className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                      <option value="PREFIX-[SEQUENCE]">PREFIX-[SEQUENCE] (e.g. INV-001)</option>
+                      <option value="PREFIX-[YEAR]-[SEQUENCE]">PREFIX-[YEAR]-[SEQUENCE] (e.g. INV-2026-001)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-neutral-400" htmlFor="biz_defaultCurrency">Default Currency</Label>
@@ -622,21 +719,45 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="baseUrl">Base URL <span className="text-red-500">*</span></Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-neutral-400" htmlFor="baseUrl">Base URL <span className="text-red-500">*</span></Label>
+                    <div className="group relative inline-block">
+                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                        The API endpoint URL for your AI model inference service (e.g., https://api.openai.com/v1 or local LLM servers).
+                      </span>
+                    </div>
+                  </div>
                   <Input id="baseUrl" name="baseUrl" required defaultValue={aiSettings?.base_url ?? ''}
                     placeholder="https://integrate.api.nvidia.com/v1"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="modelName">Model Name <span className="text-red-500">*</span></Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-neutral-400" htmlFor="modelName">Model Name <span className="text-red-500">*</span></Label>
+                    <div className="group relative inline-block">
+                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                        The specific LLM name you want to use (e.g., gpt-4o, claude-3-5-sonnet, or meta/llama-3.1-8b-instruct).
+                      </span>
+                    </div>
+                  </div>
                   <Input id="modelName" name="modelName" required defaultValue={aiSettings?.model_name ?? ''}
                     placeholder="meta/llama-3.1-8b-instruct"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="apiKey">API Key <span className="text-red-500">*</span></Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label className="text-neutral-400" htmlFor="apiKey">API Key <span className="text-red-500">*</span></Label>
+                    <div className="group relative inline-block">
+                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                        Your unique security key for authenticating requests with your AI provider. Stored encrypted on the server.
+                      </span>
+                    </div>
+                  </div>
                   <Input id="apiKey" name="apiKey" type="password" defaultValue={aiSettings?.masked_api_key ?? ''}
                     placeholder="nvapi-..." autoComplete="off"
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />

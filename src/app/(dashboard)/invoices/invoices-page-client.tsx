@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { InvoiceForm } from '@/components/invoices/invoice-form'
 import { deleteInvoiceAction } from '@/lib/invoices/actions'
+import { toast } from 'sonner'
 
 interface Client {
   id: string
@@ -180,11 +181,16 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
   }
 
   async function handleDelete(invoiceId: string) {
-    const result = await deleteInvoiceAction(invoiceId)
-    if (result.success) {
-      router.refresh()
-    } else {
-      console.error('[Invoice Deletion Failed]', result.error)
+    try {
+      const result = await deleteInvoiceAction(invoiceId)
+      if (result.success) {
+        toast.success('Invoice moved to trash!')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to delete invoice')
+      }
+    } catch {
+      toast.error('Network Error. Failed to delete invoice.')
     }
   }
 
@@ -375,10 +381,16 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                               View Details
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
+                           <DropdownMenuItem asChild>
                             <a
                               href={`/api/invoices/${invoice.id}/pdf`}
                               download
+                              onClick={() => {
+                                toast.info("Preparing PDF download...", {
+                                  description: `Downloading invoice #${invoice.invoice_number} as PDF.`,
+                                  duration: 3000,
+                                });
+                              }}
                               className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer w-full text-left"
                             >
                               Download PDF

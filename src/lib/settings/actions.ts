@@ -174,6 +174,8 @@ export async function saveBusinessProfileAction(formData: FormData) {
     const defaultTaxRateRaw = formData.get('defaultTaxRate') as string
     const defaultPaymentTerms = formData.get('defaultPaymentTerms') as string
     const defaultCurrency = formData.get('defaultCurrency') as string
+    const invoicePrefix   = formData.get('invoicePrefix') as string
+    const invoiceFormat   = formData.get('invoiceFormat') as string
 
     // Late Payment Policy and T&C rules
     const latePolicyText = formData.get('rule_late_payment') as string
@@ -190,6 +192,10 @@ export async function saveBusinessProfileAction(formData: FormData) {
       return { error: 'Bank details must be 2000 characters or less.' }
     if (taxId && taxId.trim().length > 50)
       return { error: 'Tax ID must be 50 characters or less.' }
+    if (invoicePrefix && invoicePrefix.trim().length > 20)
+      return { error: 'Invoice prefix must be 20 characters or less.' }
+    if (invoiceFormat && invoiceFormat !== 'PREFIX-[SEQUENCE]' && invoiceFormat !== 'PREFIX-[YEAR]-[SEQUENCE]')
+      return { error: 'Invalid invoice format selection.' }
     if (companyWebsite && companyWebsite.trim().length > 0) {
       if (!/^https?:\/\//i.test(companyWebsite.trim()))
         return { error: 'Company website must start with http:// or https://' }
@@ -219,6 +225,10 @@ export async function saveBusinessProfileAction(formData: FormData) {
     if (tncText?.trim())        global_rules.terms_and_conditions  = tncText.trim().slice(0, 2000)
     if (commStyle?.trim())      global_rules.communication_style   = commStyle.trim().slice(0, 500)
     if (refundPolicy?.trim())   global_rules.refund_policy         = refundPolicy.trim().slice(0, 500)
+    
+    // Add custom invoice prefix and formatting pattern
+    global_rules.invoice_prefix = invoicePrefix?.trim() || 'INV-'
+    global_rules.invoice_format = invoiceFormat?.trim() || 'PREFIX-[SEQUENCE]'
 
     const updates: Record<string, unknown> = {
       company_name:          companyName?.trim() || null,

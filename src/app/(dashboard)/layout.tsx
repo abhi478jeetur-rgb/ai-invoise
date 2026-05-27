@@ -25,11 +25,12 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('onboarding_completed, full_name, setup_preference')
+    .select('onboarding_completed, full_name, setup_preference, company_name')
     .eq('id', user.id)
     .single()
 
   const displayName = profile?.full_name || fullName || ''
+  const companyName = profile?.company_name || displayName || 'My Workspace'
   const showOnboarding = profile?.onboarding_completed === false
 
   return (
@@ -47,7 +48,7 @@ export default async function DashboardLayout({
       } as React.CSSProperties}
     >
       {/* Sidebar */}
-      <Sidebar initials={initials} email={user.email ?? ''} name={displayName} />
+      <Sidebar initials={initials} email={user.email ?? ''} name={displayName} companyName={companyName} />
 
       {/* 2. Main Content Wrapper */}
       <div className="flex-1 flex flex-col min-w-0">

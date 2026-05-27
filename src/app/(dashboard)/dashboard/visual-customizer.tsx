@@ -74,7 +74,8 @@ const THEME_PRESETS = [
 ]
 
 export default function DashboardVisualCustomizer({ initialData, setupPreference }: CustomizerProps) {
-  const { stats, chaseList, recentActivities, recentInvoices } = initialData
+  const { stats, chaseList, recentActivities, recentInvoices, agingReport = {} } = initialData as any
+  const [selectedActivity, setSelectedActivity] = useState<any>(null)
 
   // Load styling configuration with a hydration-safe pattern
   const [config, setConfig] = useState(THEME_PRESETS[0])
@@ -513,7 +514,12 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             ) : (
               <div className="space-y-0">
                 {recentActivities.map((activity: any, idx: number) => (
-                  <div key={activity.id} className="flex gap-3">
+                  <div 
+                    key={activity.id} 
+                    className="flex gap-3 cursor-pointer hover:bg-white/[0.01] p-1.5 rounded-lg transition-all"
+                    onClick={() => setSelectedActivity(activity)}
+                    title="Click to view full archived reminder"
+                  >
                     <div className="flex flex-col items-center">
                       <div
                         className="w-6 h-6 rounded-full border flex items-center justify-center shrink-0"
@@ -557,7 +563,146 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Aging Report / Right Column Widget (Phase 3) */}
+      <div className="lg:col-span-1 space-y-8">
+        <div
+          className="border p-6"
+          style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
+        >
+          <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
+            <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase">
+              Outstanding Aging
+            </h3>
+          </div>
+
+          <div className="mt-6 space-y-8">
+            {Object.keys(agingReport).length === 0 ? (
+              <div className="py-8 text-center text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                No outstanding aging balances.
+              </div>
+            ) : (
+              Object.entries(agingReport).map(([cur, buckets]: any) => {
+                const total = buckets.current + buckets.bucket30 + buckets.bucket60 + buckets.bucket90 + buckets.bucket90Plus
+                if (total === 0) return null
+
+                const getPct = (val: number) => (total > 0 ? (val / total) * 105 : 0)
+
+                const list = [
+                  { label: 'Current (Not Overdue)', value: buckets.current, color: 'var(--user-accent)' },
+                  { label: '1 - 30 Days Overdue', value: buckets.bucket30, color: '#eab308' },
+                  { label: '31 - 60 Days Overdue', value: buckets.bucket60, color: '#f97316' },
+                  { label: '61 - 90 Days Overdue', value: buckets.bucket90, color: '#f43f5e' },
+                  { label: '90+ Days Overdue', value: buckets.bucket90Plus, color: '#ef4444' },
+                ]
+
+                return (
+                  <div key={cur} className="space-y-4">
+                    {Object.keys(agingReport).length > 1 && (
+                      <h4 className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">
+                        {cur} Aging Portfolio
+                      </h4>
+                    )}
+
+                    <div className="space-y-4">
+                      {list.map((b) => {
+                        const pct = getPct(b.value)
+                        return (
+                          <div key={b.label} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-zinc-500 font-medium text-[10px]">{b.label}</span>
+                              <span className="font-mono font-semibold text-[10px]" style={{ color: 'var(--user-title)' }}>
+                                {formatCurrencyWithCode(b.value, cur)}
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-zinc-950/80 overflow-hidden border border-white/[0.03]">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  backgroundColor: b.color,
+                                  width: `${Math.max(0, Math.min(100, pct))}%`
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      </div> {/* Closes the main 3-column grid (line 340) */}
+
+      {/* 6. Archived Reminder Detail Dialog (Phase 4) */}
+      {selectedActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none">
+          <div 
+            className="w-full max-w-lg border p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200"
+            style={{ 
+              backgroundColor: 'var(--user-card)', 
+              borderColor: 'var(--user-border)', 
+              borderRadius: 'var(--user-radius)',
+              color: 'var(--user-text)' 
+            }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: 'var(--user-border)' }}>
+              <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--user-title)' }}>
+                Reminder Audit Log Details
+              </h3>
+              <button 
+                onClick={() => setSelectedActivity(null)}
+                className="text-xs hover:opacity-80 px-2 py-1 rounded bg-neutral-900 border border-neutral-800 text-zinc-400 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="space-y-1">
+                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Activity Description</p>
+                <p className="text-xs" style={{ color: 'var(--user-title)' }}>{selectedActivity.description}</p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Event Type</p>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[10px] font-mono capitalize">
+                  {selectedActivity.event_type.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Timestamp</p>
+                <p className="text-xs font-mono">{new Date(selectedActivity.created_at).toLocaleString()}</p>
+              </div>
+
+              {selectedActivity.mail_subject ? (
+                <>
+                  <div className="space-y-1 pt-2 border-t" style={{ borderColor: 'var(--user-border)' }}>
+                    <p className="text-[10px] text-neutral-500 uppercase font-semibold">Archived Subject</p>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--user-title)' }}>{selectedActivity.mail_subject}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-neutral-500 uppercase font-semibold">Archived Body Text</p>
+                    <div className="p-4 bg-zinc-950/60 rounded-lg border border-white/[0.03] text-xs font-sans whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+                      {selectedActivity.mail_body}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-3 bg-blue-950/20 border border-blue-900/30 text-blue-400 rounded-lg text-xs leading-relaxed">
+                  ℹ️ This event does not contain an archived message body. AI message bodies are permanently archived for reminder drafts generated after v2.5.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
     </div>
   )

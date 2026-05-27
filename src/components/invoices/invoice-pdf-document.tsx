@@ -181,6 +181,20 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     textDecoration: 'none',
   },
+  totalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  totalsLabel: {
+    fontSize: 10,
+    color: '#64748b',
+  },
+  totalsValue: {
+    fontSize: 10,
+    color: '#0f172a',
+    fontFamily: 'Helvetica-Bold',
+  },
 });
 
 interface InvoiceData {
@@ -195,6 +209,10 @@ interface InvoiceData {
   created_at: string;
   po_number?: string | null;
   line_items?: any[];
+  tax_rate?: number;
+  tax_label?: string | null;
+  discount_amount?: number;
+  discount_type?: string | null;
 }
 
 interface ClientData {
@@ -239,10 +257,33 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
   });
 
   const currencyStr = invoice.currency || 'USD';
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyStr,
-  }).format(invoice.amount);
+  
+  const subtotal = invoice.line_items && invoice.line_items.length > 0
+    ? invoice.line_items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0)
+    : invoice.amount;
+
+  const discountAmount = parseFloat(invoice.discount_amount as any) || 0;
+  const discountType = invoice.discount_type || 'flat';
+  const discountVal = discountType === 'percentage'
+    ? (subtotal * discountAmount) / 100
+    : discountAmount;
+
+  const taxableAmount = Math.max(0, subtotal - discountVal);
+
+  const taxRate = parseFloat(invoice.tax_rate as any) || 0;
+  const taxLabel = invoice.tax_label || 'Tax';
+  const taxVal = (taxableAmount * taxRate) / 100;
+
+  const grandTotal = taxableAmount + taxVal;
+
+  const formatMoney = (val: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyStr,
+    }).format(val);
+  };
+
+  const formattedAmount = formatMoney(grandTotal);
 
   return (
     <Document>
@@ -357,9 +398,25 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
         {/* Totals */}
         <View style={styles.totals}>
           <View style={styles.totalsBox}>
-            <View style={styles.totalRow}>
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>Subtotal</Text>
+              <Text style={styles.totalsValue}>{formatMoney(subtotal)}</Text>
+            </View>
+            {discountVal > 0 && (
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Discount ({discountType === 'percentage' ? `${discountAmount}%` : 'Flat'})</Text>
+                <Text style={{ ...styles.totalsValue, color: '#16a34a' }}>-{formatMoney(discountVal)}</Text>
+              </View>
+            )}
+            {taxVal > 0 && (
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>{taxLabel} ({taxRate}%)</Text>
+                <Text style={styles.totalsValue}>+{formatMoney(taxVal)}</Text>
+              </View>
+            )}
+            <View style={{ ...styles.totalRow, marginTop: 6 }}>
               <Text style={styles.totalLabel}>Total Due</Text>
-              <Text style={styles.totalAmount}>{formattedAmount}</Text>
+              <Text style={styles.totalAmount}>{formatMoney(grandTotal)}</Text>
             </View>
           </View>
         </View>

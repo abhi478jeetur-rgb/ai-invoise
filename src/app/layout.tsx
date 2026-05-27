@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "@/components/ui/sonner"
+import ConnectivityMonitor from "@/components/shared/ConnectivityMonitor"
 
 export default function RootLayout({
   children,
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-[#000000] text-white min-h-full flex flex-col">
         <PHProvider>
           <SuspendedPostHogPageview />
+          <ConnectivityMonitor />
           {children}
         </PHProvider>
         <Toaster 

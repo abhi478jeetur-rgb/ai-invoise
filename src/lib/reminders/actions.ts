@@ -262,7 +262,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
     }
 
     // Log the event
-    const { error: eventError } = await supabase
+    let eventRes: any = await supabase
       .from('reminder_events')
       .insert({
         user_id: user.id,
@@ -270,10 +270,25 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
         draft_id: draft.id,
         event_type: 'draft_generated',
         description: `Generated ${tone} reminder for Invoice ${invoice.invoice_number}`,
+        mail_subject: subject,
+        mail_body: body,
       })
 
-    if (eventError) {
-      console.error('Failed to log draft_generated event:', eventError.message)
+    // Fallback if mail_subject or mail_body columns do not exist yet (undefined_column)
+    if (eventRes.error && (eventRes.error.code === '42703' || eventRes.error.message?.includes('mail_subject'))) {
+      eventRes = await supabase
+        .from('reminder_events')
+        .insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          draft_id: draft.id,
+          event_type: 'draft_generated',
+          description: `Generated ${tone} reminder for Invoice ${invoice.invoice_number}`,
+        })
+    }
+
+    if (eventRes.error) {
+      console.error('Failed to log draft_generated event:', eventRes.error.message)
     }
 
     revalidatePath('/invoices')
@@ -585,6 +600,8 @@ interface ReminderHistoryEvent {
   created_at: string
   tone: string | null
   draft_subject: string | null
+  mail_subject?: string | null
+  mail_body?: string | null
 }
 
 interface ReminderHistoryResult {
@@ -601,19 +618,32 @@ export async function getReminderHistoryAction(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const { data: events, error: eventsError } = await supabase
+    let queryResult: any = await supabase
       .from('reminder_events')
-      .select('id, event_type, description, created_at, draft_id')
+      .select('id, event_type, description, created_at, draft_id, mail_subject, mail_body')
       .eq('user_id', user.id)
       .eq('invoice_id', invoiceId)
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (eventsError) return { error: sanitizeDatabaseError(eventsError) }
+    // Fallback if mail_subject or mail_body columns do not exist yet (undefined_column)
+    if (queryResult.error && (queryResult.error.code === '42703' || queryResult.error.message?.includes('mail_subject'))) {
+      queryResult = await supabase
+        .from('reminder_events')
+        .select('id, event_type, description, created_at, draft_id')
+        .eq('user_id', user.id)
+        .eq('invoice_id', invoiceId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+    }
+
+    if (queryResult.error) return { error: sanitizeDatabaseError(queryResult.error) }
+
+    const events = queryResult.data ?? []
 
     // Collect draft_ids to fetch their tone and subject
     const draftIds = events
-      .map((e: { draft_id: string | null }) => e.draft_id)
+      .map((e: any) => e.draft_id)
       .filter((id: string | null): id is string => id !== null)
 
     let draftsMap: Record<string, { tone: string; subject: string }> = {}
@@ -632,13 +662,15 @@ export async function getReminderHistoryAction(
     }
 
     const data: ReminderHistoryEvent[] = events.map(
-      (e: { id: string; event_type: string; description: string | null; created_at: string; draft_id: string | null }) => ({
+      (e: any) => ({
         id: e.id,
         event_type: e.event_type,
         description: e.description,
         created_at: e.created_at,
         tone: e.draft_id ? draftsMap[e.draft_id]?.tone ?? null : null,
         draft_subject: e.draft_id ? draftsMap[e.draft_id]?.subject ?? null : null,
+        mail_subject: e.mail_subject ?? null,
+        mail_body: e.mail_body ?? null,
       })
     )
 

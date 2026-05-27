@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Plus, Trash2, Save, ArrowLeft } from 'lucide-react'
 import { updateInvoiceAction } from '@/lib/invoices/actions'
 import { LivePdfPreview } from '@/components/invoices/live-pdf-preview'
+import { toast } from 'sonner'
 
 const inputStyles = "bg-zinc-900/50 border border-white/[0.08] rounded-lg px-4 py-2.5 text-zinc-100 placeholder-zinc-500 transition-all focus-visible:ring-1 focus-visible:ring-white/[0.15] focus-visible:border-white/[0.1]"
 const cardStyles = "bg-zinc-950/40 backdrop-blur-md border border-white/[0.05] rounded-xl p-6 mb-6 shadow-2xl"
@@ -29,6 +30,10 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
     notes: invoice.notes || '',
     paymentLink: invoice.payment_link || '',
     poNumber: invoice.po_number || '',
+    taxRate: invoice.tax_rate !== undefined ? invoice.tax_rate : (profile?.default_tax_rate || 0),
+    taxLabel: invoice.tax_label || (profile?.default_tax_label || 'Tax'),
+    discountAmount: invoice.discount_amount || 0,
+    discountType: invoice.discount_type || 'flat',
     lineItems: invoice.line_items && invoice.line_items.length > 0 ? invoice.line_items : [
       { name: invoice.title || '', description: invoice.description || '', quantity: 1, rate: invoice.amount || 0, total: invoice.amount || 0 }
     ]
@@ -38,6 +43,28 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   // Profile is mostly static but let's allow passing it cleanly.
   const [localProfile] = useState(profile)
   const [localClient, setLocalClient] = useState(client)
+  const [paymentTerm, setPaymentTerm] = useState(profile?.default_payment_terms || 'net_30')
+
+  const handleTermChange = (term: string) => {
+    setPaymentTerm(term)
+    if (term === 'custom') return
+
+    const date = new Date()
+    if (term === 'receipt') {
+      // Due on receipt (today)
+    } else if (term === 'net_15') {
+      date.setDate(date.getDate() + 15)
+    } else if (term === 'net_30') {
+      date.setDate(date.getDate() + 30)
+    } else if (term === 'net_60') {
+      date.setDate(date.getDate() + 60)
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      dueDate: date.toISOString().split('T')[0]
+    }))
+  }
 
   const handleClientChange = (clientId: string) => {
     const selected = allClients.find((c: any) => c.id === clientId)
@@ -64,16 +91,39 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
       ...formData,
       lineItems: [...formData.lineItems, { name: '', description: '', quantity: 1, rate: 0, total: 0 }]
     })
+    toast.success("Line item added", { duration: 1500 })
   }
 
   const removeLineItem = (index: number) => {
     const newItems = formData.lineItems.filter((_: any, i: number) => i !== index)
     setFormData({ ...formData, lineItems: newItems })
+    toast.warning("Line item removed", { duration: 1500 })
   }
 
-  const totalAmount = useMemo(() => {
+  const subtotal = useMemo(() => {
     return formData.lineItems.reduce((sum: number, item: any) => sum + (parseFloat(item.total) || 0), 0)
   }, [formData.lineItems])
+
+  const discountVal = useMemo(() => {
+    const rate = parseFloat(formData.discountAmount as any) || 0
+    if (formData.discountType === 'percentage') {
+      return (subtotal * rate) / 100
+    }
+    return rate
+  }, [subtotal, formData.discountAmount, formData.discountType])
+
+  const taxableAmount = useMemo(() => {
+    return Math.max(0, subtotal - discountVal)
+  }, [subtotal, discountVal])
+
+  const taxVal = useMemo(() => {
+    const rate = parseFloat(formData.taxRate as any) || 0
+    return (taxableAmount * rate) / 100
+  }, [taxableAmount, formData.taxRate])
+
+  const grandTotal = useMemo(() => {
+    return taxableAmount + taxVal
+  }, [taxableAmount, taxVal])
 
   const uniqueClients = useMemo(() => {
     const seen = new Set();
@@ -87,42 +137,70 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
     });
   }, [allClients]);
 
-  const handleSave = async () => {
+  const handleSave = async (statusOverride?: 'draft' | 'sent') => {
     setIsSaving(true)
-    try {
-      const form = new FormData()
-      form.append('clientId', formData.clientId)
-      form.append('invoiceNumber', formData.invoiceNumber)
-      form.append('title', formData.title)
-      form.append('description', formData.description)
-      form.append('amount', totalAmount.toString())
-      form.append('currency', formData.currency)
-      form.append('dueDate', formData.dueDate)
-      form.append('notes', formData.notes)
-      form.append('paymentLink', formData.paymentLink)
-      form.append('poNumber', formData.poNumber)
-      form.append('lineItems', JSON.stringify(formData.lineItems))
+    
+    const statusToSave = statusOverride || invoice.status || 'sent'
+    
+    const savePromise = new Promise(async (resolve, reject) => {
+      try {
+        const form = new FormData()
+        form.append('clientId', formData.clientId)
+        form.append('invoiceNumber', formData.invoiceNumber)
+        form.append('title', formData.title)
+        form.append('description', formData.description)
+        form.append('amount', grandTotal.toString())
+        form.append('currency', formData.currency)
+        form.append('dueDate', formData.dueDate)
+        form.append('notes', formData.notes)
+        form.append('paymentLink', formData.paymentLink)
+        form.append('poNumber', formData.poNumber)
+        form.append('lineItems', JSON.stringify(formData.lineItems))
+        form.append('taxRate', formData.taxRate.toString())
+        form.append('taxLabel', formData.taxLabel)
+        form.append('discountAmount', formData.discountAmount.toString())
+        form.append('discountType', formData.discountType)
+        form.append('status', statusToSave)
 
-      const result = await updateInvoiceAction(invoice.id, form)
-      
-      if (result.error) {
-        alert(result.error)
-      } else {
-        alert('Invoice saved successfully!')
-        router.push(`/invoices/${invoice.id}`)
+        const result = await updateInvoiceAction(invoice.id, form)
+        
+        if (result.error) {
+          reject(new Error(result.error))
+        } else {
+          resolve(result)
+        }
+      } catch (e) {
+        reject(e)
       }
+    })
+
+    toast.promise(savePromise, {
+      loading: 'Saving invoice changes...',
+      success: () => {
+        setTimeout(() => router.push(`/invoices/${invoice.id}`), 600)
+        return 'Invoice saved successfully!'
+      },
+      error: (err) => err.message || 'An unexpected error occurred'
+    })
+
+    try {
+      await savePromise
     } catch (e) {
-      alert('An unexpected error occurred')
+      console.error(e)
     } finally {
       setIsSaving(false)
     }
   }
 
-  // Construct mocked invoice for PDF preview
   const previewInvoice = {
     ...invoice,
     ...formData,
-    amount: totalAmount,
+    amount: grandTotal,
+    subtotal: subtotal,
+    discount_amount: parseFloat(formData.discountAmount as any) || 0,
+    discount_type: formData.discountType,
+    tax_rate: parseFloat(formData.taxRate as any) || 0,
+    tax_label: formData.taxLabel || 'Tax',
     line_items: formData.lineItems
   }
 
@@ -132,14 +210,42 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
       {/* Left Pane - Form Builder */}
       <div className="w-full lg:w-1/2 flex flex-col gap-6 overflow-y-auto pb-20 scrollbar-hide scroll-smooth">
         
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2 w-full">
           <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}`)}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Details
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Invoice
-          </Button>
+          <div className="flex items-center gap-2">
+            {(invoice.status === 'draft' || !invoice.id) ? (
+              <>
+                <Button 
+                  onClick={() => handleSave('draft')} 
+                  disabled={isSaving} 
+                  variant="outline"
+                  className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 cursor-pointer h-9 px-3 text-xs"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                  Save as Draft
+                </Button>
+                <Button 
+                  onClick={() => handleSave('sent')} 
+                  disabled={isSaving} 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer h-9 px-3 text-xs"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                  Save & Mark as Sent
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={() => handleSave(invoice.status)} 
+                disabled={isSaving} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer h-9 px-3 text-xs"
+              >
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
+                Save Changes
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* FROM Section */}
@@ -203,7 +309,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
             <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">Invoice Details</h3>
           </div>
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-neutral-400 mb-1.5 block">Invoice Number</Label>
                 <Input 
@@ -221,21 +327,49 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                 />
               </div>
               <div>
+                <Label className="text-xs text-neutral-400 mb-1.5 block">Payment Terms</Label>
+                <Select value={paymentTerm} onValueChange={handleTermChange}>
+                  <SelectTrigger className={inputStyles}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg shadow-xl">
+                    <SelectItem value="receipt" className="text-zinc-200 focus:bg-zinc-800">Due on Receipt</SelectItem>
+                    <SelectItem value="net_15" className="text-zinc-200 focus:bg-zinc-800">Net 15</SelectItem>
+                    <SelectItem value="net_30" className="text-zinc-200 focus:bg-zinc-800">Net 30</SelectItem>
+                    <SelectItem value="net_60" className="text-zinc-200 focus:bg-zinc-800">Net 60</SelectItem>
+                    <SelectItem value="custom" className="text-zinc-200 focus:bg-zinc-800">Custom Date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-xs text-neutral-400 mb-1.5 block">Due Date</Label>
                 <Input 
                   type="date"
                   value={formData.dueDate} 
-                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})} 
+                  onChange={(e) => {
+                    setFormData({...formData, dueDate: e.target.value})
+                    setPaymentTerm('custom')
+                  }} 
                   className={inputStyles} 
                 />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <Label className="text-xs text-neutral-400 mb-1.5 block">Currency</Label>
-                <Input 
+                <Select 
                   value={formData.currency} 
-                  onChange={(e) => setFormData({...formData, currency: e.target.value})} 
-                  className={inputStyles} 
-                />
+                  onValueChange={(val) => setFormData({...formData, currency: val})}
+                >
+                  <SelectTrigger className={inputStyles}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg shadow-xl">
+                    {['USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR'].map((c) => (
+                      <SelectItem key={c} value={c} className="text-zinc-200 focus:bg-zinc-800 focus:text-white">
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
@@ -304,11 +438,83 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               <Plus className="w-4 h-4 mr-2" /> Add Item
             </Button>
             
-            <div className="flex justify-end pt-5 mt-5 border-t border-white/[0.05]">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-zinc-400">Total Due:</span>
-                <span className="font-mono text-xl text-white font-semibold tracking-tight">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(totalAmount)}
+            {/* Tax & Discount section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5 mt-5 border-t border-white/[0.05]">
+              {/* Discount inputs */}
+              <div className="space-y-3">
+                <Label className="text-xs text-neutral-400 block">Discount</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={formData.discountAmount || ''} 
+                    onChange={(e) => setFormData({...formData, discountAmount: parseFloat(e.target.value) || 0})}
+                    className={`${inputStyles} flex-1`}
+                  />
+                  <Select 
+                    value={formData.discountType} 
+                    onValueChange={(val) => setFormData({...formData, discountType: val})}
+                  >
+                    <SelectTrigger className="w-[100px] bg-zinc-900 border border-white/[0.08] text-zinc-200 rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg">
+                      <SelectItem value="flat" className="text-zinc-200 focus:bg-zinc-800">Flat</SelectItem>
+                      <SelectItem value="percentage" className="text-zinc-200 focus:bg-zinc-800">%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Tax inputs */}
+              <div className="space-y-3">
+                <Label className="text-xs text-neutral-400 block">Tax / GST / VAT</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Tax Label (e.g. GST)" 
+                    value={formData.taxLabel} 
+                    onChange={(e) => setFormData({...formData, taxLabel: e.target.value})}
+                    className={`${inputStyles} flex-1`}
+                  />
+                  <Input 
+                    type="number" 
+                    placeholder="Rate (%)" 
+                    value={formData.taxRate || ''} 
+                    onChange={(e) => setFormData({...formData, taxRate: parseFloat(e.target.value) || 0})}
+                    className={`${inputStyles} w-[100px]`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Calculations Breakdown */}
+            <div className="flex flex-col items-end gap-2 pt-4 mt-4 border-t border-white/[0.05]">
+              <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+                <span>Subtotal:</span>
+                <span className="font-mono text-zinc-200">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(subtotal)}
+                </span>
+              </div>
+              {discountVal > 0 && (
+                <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+                  <span>Discount ({formData.discountType === 'percentage' ? `${formData.discountAmount}%` : 'Flat'}):</span>
+                  <span className="font-mono text-emerald-400">
+                    -{new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(discountVal)}
+                  </span>
+                </div>
+              )}
+              {taxVal > 0 && (
+                <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+                  <span>{formData.taxLabel} ({formData.taxRate}%):</span>
+                  <span className="font-mono text-zinc-200">
+                    +{new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(taxVal)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between w-full sm:w-[300px] pt-2 border-t border-white/[0.08] text-base font-semibold text-white">
+                <span>Total Due:</span>
+                <span className="font-mono text-lg tracking-tight">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(grandTotal)}
                 </span>
               </div>
             </div>
