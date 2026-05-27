@@ -44,12 +44,18 @@ interface Invoice {
   notes: string | null
   payment_link: string | null
   po_number?: string | null
+  tax_rate?: number
+  tax_label?: string | null
+  discount_amount?: number
+  discount_type?: string | null
 }
 
 interface DefaultProfile {
   default_currency?: string
   payment_link_default?: string
   default_payment_terms?: string
+  default_tax_label?: string | null
+  default_tax_rate?: number | null
 }
 
 interface InvoiceFormProps {
@@ -273,6 +279,67 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 defaultValue={invoice?.currency ?? defaultProfile?.default_currency ?? 'USD'}
                 className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Tax Label & Rate */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label className="text-neutral-400" htmlFor="taxLabel">
+                Tax Label
+              </Label>
+              <Input
+                id="taxLabel"
+                name="taxLabel"
+                defaultValue={invoice?.tax_label ?? defaultProfile?.default_tax_label ?? 'Tax'}
+                placeholder="GST"
+                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-400" htmlFor="taxRate">
+                Tax Rate (%)
+              </Label>
+              <Input
+                id="taxRate"
+                name="taxRate"
+                type="number"
+                step="0.01"
+                defaultValue={invoice?.tax_rate ?? defaultProfile?.default_tax_rate ?? '0'}
+                placeholder="18"
+                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              />
+            </div>
+          </div>
+
+          {/* Discount Amount & Type */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label className="text-neutral-400" htmlFor="discountAmount">
+                Discount
+              </Label>
+              <Input
+                id="discountAmount"
+                name="discountAmount"
+                type="number"
+                step="0.01"
+                defaultValue={invoice?.discount_amount ?? '0'}
+                placeholder="100.00"
+                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-400" htmlFor="discountType">
+                Discount Type
+              </Label>
+              <select
+                id="discountType"
+                name="discountType"
+                defaultValue={invoice?.discount_type ?? 'flat'}
+                className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                <option value="flat">Flat</option>
+                <option value="percentage">Percentage (%)</option>
               </select>
             </div>
           </div>

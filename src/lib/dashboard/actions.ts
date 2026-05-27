@@ -111,17 +111,28 @@ export async function getDashboardDataAction() {
         }
       })
 
-    // Fetch recent activities
-    const { data: activities, error: activitiesError } = await supabase
+    // Fetch recent activities with safe column fallback
+    let activitiesRes: any = await supabase
       .from('reminder_events')
-      .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone)')
+      .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone), mail_subject, mail_body')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5)
 
-    if (activitiesError) return { error: sanitizeDatabaseError(activitiesError) }
+    if (activitiesRes.error && (activitiesRes.error.code === '42703' || activitiesRes.error.message?.includes('mail_subject'))) {
+      activitiesRes = await supabase
+        .from('reminder_events')
+        .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    }
 
-    const recentActivities = (activities ?? []).map((act) => {
+    if (activitiesRes.error) return { error: sanitizeDatabaseError(activitiesRes.error) }
+
+    const activities = activitiesRes.data ?? []
+
+    const recentActivities = (activities ?? []).map((act: any) => {
       const invoicesData = act.invoices as any
       const invoice = Array.isArray(invoicesData) ? invoicesData[0] : invoicesData
       const draftsData = act.reminder_drafts as any
@@ -134,6 +145,8 @@ export async function getDashboardDataAction() {
         invoice_number: invoice?.invoice_number ?? null,
         invoice_title: invoice?.title ?? null,
         tone: draft?.tone ?? null,
+        mail_subject: act.mail_subject ?? null,
+        mail_body: act.mail_body ?? null,
       }
     })
 
@@ -156,6 +169,35 @@ export async function getDashboardDataAction() {
         }
       })
 
+    // Build Aging Report grouped by currency for active unpaid invoices
+    const agingReport: Record<string, { current: number; bucket30: number; bucket60: number; bucket90: number; bucket90Plus: number }> = {}
+
+    activeInvoices.forEach((inv) => {
+      const cur = inv.currency || 'USD'
+      if (!agingReport[cur]) {
+        agingReport[cur] = { current: 0, bucket30: 0, bucket60: 0, bucket90: 0, bucket90Plus: 0 }
+      }
+
+      const parseStr = (inv.due_date.includes('T') || inv.due_date.includes(' ')) ? inv.due_date : inv.due_date + 'T00:00:00'
+      const due = new Date(parseStr)
+      due.setHours(0, 0, 0, 0)
+      const diffMs = now.getTime() - due.getTime()
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+      const amt = Number(inv.amount) || 0
+      if (diffDays <= 0) {
+        agingReport[cur].current += amt
+      } else if (diffDays <= 30) {
+        agingReport[cur].bucket30 += amt
+      } else if (diffDays <= 60) {
+        agingReport[cur].bucket60 += amt
+      } else if (diffDays <= 90) {
+        agingReport[cur].bucket90 += amt
+      } else {
+        agingReport[cur].bucket90Plus += amt
+      }
+    })
+
     return {
       success: true,
       data: {
@@ -175,6 +217,7 @@ export async function getDashboardDataAction() {
         chaseList,
         recentActivities,
         recentInvoices,
+        agingReport,
       },
     }
   } catch (e) {

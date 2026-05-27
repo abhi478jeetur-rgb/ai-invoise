@@ -41,35 +41,54 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
       return
     }
     setDeleting(true)
-    const result = await deleteInvoiceAction(invoice.id)
-    if (result.success) {
-      router.push('/invoices')
-    } else {
+    try {
+      const result = await deleteInvoiceAction(invoice.id)
+      if (result.success) {
+        toast.success('Invoice deleted successfully!')
+        router.push('/invoices')
+      } else {
+        toast.error(result.error || 'Failed to delete invoice')
+        setDeleting(false)
+      }
+    } catch {
+      toast.error('Network error occurred during deletion.')
       setDeleting(false)
     }
   }
 
   async function handleMarkPaid() {
     setMarkingPaid(true)
-    const result = await markInvoicePaidAction(invoice.id)
-    if (result.success) {
-      toast.success('Invoice marked as paid!')
-      router.refresh()
+    try {
+      const result = await markInvoicePaidAction(invoice.id)
+      if (result.success) {
+        toast.success('Invoice marked as paid!')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to mark invoice as paid')
+      }
+    } catch {
+      toast.error('Network connection issue. Failed to update status.')
+    } finally {
+      setMarkingPaid(false)
     }
-    setMarkingPaid(false)
   }
 
   async function handleUpdateStatus() {
     setUpdatingStatus(true)
-    const result = await updateInvoiceStatusAction(invoice.id, selectedStatus, parseFloat(amountPaid) || 0)
-    if (result.success) {
-      toast.success('Invoice status updated successfully!')
-      setStatusOpen(false)
-      router.refresh()
-    } else {
-      alert(result.error)
+    try {
+      const result = await updateInvoiceStatusAction(invoice.id, selectedStatus, parseFloat(amountPaid) || 0)
+      if (result.success) {
+        toast.success('Invoice status updated successfully!')
+        setStatusOpen(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to update status')
+      }
+    } catch {
+      toast.error('Network error. Failed to save changes.')
+    } finally {
+      setUpdatingStatus(false)
     }
-    setUpdatingStatus(false)
   }
 
   const isPaid = invoice.status === 'paid'
@@ -110,6 +129,10 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
           variant="ghost"
           size="sm"
           onClick={() => {
+            toast.info("Preparing PDF download...", {
+              description: `Downloading invoice #${invoice.invoice_number} as PDF.`,
+              duration: 3000,
+            });
             const link = document.createElement('a');
             link.href = `/api/invoices/${invoice.id}/pdf`;
             link.download = `invoice_${invoice.invoice_number}.pdf`;

@@ -34,9 +34,36 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     .select('id, invoice_number, title, amount, currency, status, due_date, paid_date')
     .eq('client_id', clientId)
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .order('due_date', { ascending: false })
 
   const invoices = invoicesData ?? []
+
+  // Group finances by currency
+  const financialSummaries: Record<string, { billed: number; paid: number; outstanding: number }> = {}
+
+  invoices.forEach((inv) => {
+    if (inv.status === 'archived') return
+    const cur = inv.currency || 'USD'
+    if (!financialSummaries[cur]) {
+      financialSummaries[cur] = { billed: 0, paid: 0, outstanding: 0 }
+    }
+
+    const amt = inv.amount || 0
+    if (inv.status !== 'draft') {
+      financialSummaries[cur].billed += amt
+    }
+    if (inv.status === 'paid') {
+      financialSummaries[cur].paid += amt
+    } else if (inv.status !== 'draft') {
+      financialSummaries[cur].outstanding += amt
+    }
+  })
+
+  // If no invoices exist or no active currency, add default USD summary to avoid empty layout
+  if (Object.keys(financialSummaries).length === 0) {
+    financialSummaries['USD'] = { billed: 0, paid: 0, outstanding: 0 }
+  }
 
   return (
     <div className="space-y-6">
@@ -61,6 +88,86 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
           )}
         </div>
         <ClientDetailActions client={client} />
+      </div>
+
+      {/* Financial Summary Widget */}
+      <div className="space-y-4">
+        {Object.entries(financialSummaries).map(([cur, summary]) => (
+          <div key={cur} className="space-y-2">
+            {Object.keys(financialSummaries).length > 1 && (
+              <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider font-mono px-1">
+                {cur} Balance Summary
+              </h3>
+            )}
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+              {/* Billed */}
+              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl relative overflow-hidden">
+                <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                    Total Billed
+                  </CardTitle>
+                  <span className="text-[9px] font-mono bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded border border-neutral-700">
+                    {cur}
+                  </span>
+                </CardHeader>
+                <CardContent className="pb-4 px-4">
+                  <p className="text-2xl font-bold tracking-tight text-neutral-100 font-mono">
+                    {formatCurrency(summary.billed, cur)}
+                  </p>
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    Excludes drafts & archives
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Paid */}
+              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl relative overflow-hidden">
+                <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                    Total Paid
+                  </CardTitle>
+                  <span className="text-[9px] font-mono bg-emerald-950/30 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-900/50">
+                    Received
+                  </span>
+                </CardHeader>
+                <CardContent className="pb-4 px-4">
+                  <p className="text-2xl font-bold tracking-tight text-emerald-400 font-mono">
+                    {formatCurrency(summary.paid, cur)}
+                  </p>
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    Settled transactions
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Outstanding */}
+              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl relative overflow-hidden">
+                <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                    Outstanding
+                  </CardTitle>
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                    summary.outstanding > 0 
+                      ? 'bg-rose-950/30 text-rose-400 border-rose-900/50' 
+                      : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                  }`}>
+                    Pending
+                  </span>
+                </CardHeader>
+                <CardContent className="pb-4 px-4">
+                  <p className={`text-2xl font-bold tracking-tight font-mono ${
+                    summary.outstanding > 0 ? 'text-rose-400' : 'text-neutral-100'
+                  }`}>
+                    {formatCurrency(summary.outstanding, cur)}
+                  </p>
+                  <p className="text-[10px] text-neutral-500 mt-1">
+                    Sent & unpaid invoices
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Client Info Cards */}

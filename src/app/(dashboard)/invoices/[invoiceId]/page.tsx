@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InvoiceDetailActions } from './invoice-detail-actions'
 import { InvoiceReminderSection } from './invoice-reminder-section'
 import { LivePdfPreview } from '@/components/invoices/live-pdf-preview'
+import { Button } from '@/components/ui/button'
 
 interface InvoiceDetailPageProps {
   params: Promise<{ invoiceId: string }>
@@ -118,9 +119,25 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
 
   if (!result.success || !result.data) {
     return (
-      <div className="p-8 text-white bg-red-900 rounded-md">
-        <h2>DEBUG 404 ERROR</h2>
-        <pre>{JSON.stringify({ invoiceId, result }, null, 2)}</pre>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="bg-zinc-950/40 backdrop-blur-md border border-white/[0.05] rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/[0.08] border border-red-500/[0.15] flex items-center justify-center text-red-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-zinc-100 tracking-tight">Invoice Not Found</h2>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              The invoice you are trying to access does not exist, has been deleted, or you do not have permission to view it.
+            </p>
+          </div>
+          <Link href="/invoices" className="w-full">
+            <Button className="w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-xl transition-all cursor-pointer">
+              Back to Invoices
+            </Button>
+          </Link>
+        </div>
       </div>
     )
   }

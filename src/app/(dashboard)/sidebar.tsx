@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   LayoutGrid,
   FileText,
@@ -31,10 +32,12 @@ interface SidebarProps {
   initials: string
   email: string
   name?: string
+  companyName?: string
 }
 
-export default function Sidebar({ initials, email, name }: SidebarProps) {
+export default function Sidebar({ initials, email, name, companyName = 'My Workspace' }: SidebarProps) {
   const [expanded, setExpanded] = useState(false)
+  const pathname = usePathname()
 
   return (
     <aside
@@ -59,40 +62,50 @@ export default function Sidebar({ initials, email, name }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav id="tour-nav" className="flex-1 flex flex-col items-start gap-0.5 my-6 w-full px-2">
-        {navItems.map((item) => (
-          <Link key={`${item.href}-${item.label}`} href={item.href} title={item.title} className="w-full">
-            <div
-              className="flex items-center gap-3 h-9 rounded-lg px-2.5 text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60 transition-all cursor-pointer"
-              style={{ width: expanded ? '100%' : '36px' }}
-            >
-              <item.icon size={16} strokeWidth={1.5} className="shrink-0" />
-              <span
-                className={`text-xs font-medium whitespace-nowrap transition-all duration-150 ${
-                  expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
+      <nav id="tour-nav" className="flex-1 flex flex-col items-start gap-1 my-6 w-full px-2">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+          return (
+            <Link key={`${item.href}-${item.label}`} href={item.href} title={item.title} className="w-full">
+              <div
+                className={`flex items-center gap-3 h-9 rounded-lg px-2.5 transition-all cursor-pointer border ${
+                  isActive
+                    ? 'text-neutral-100 bg-white/[0.06] border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
+                    : 'text-neutral-500 border-transparent hover:text-neutral-200 hover:bg-neutral-900/60'
                 }`}
+                style={{ width: expanded ? '100%' : '36px' }}
               >
-                {item.label}
-              </span>
-            </div>
-          </Link>
-        ))}
+                <item.icon size={16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+                <span
+                  className={`text-xs font-medium whitespace-nowrap transition-all duration-150 ${
+                    expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* Bottom Acme Tenant */}
+      {/* Bottom Tenant Switcher (Dynamic Workspace) */}
       <div className="flex flex-col items-center gap-3 w-full px-2">
-        <Link href="/settings" title="Acme Tenant Switcher" className="w-full">
+        <Link href="/settings" title="Workspace Settings" className="w-full">
           <div
-            className="flex items-center gap-3 rounded-md bg-neutral-900 border border-neutral-800 px-2.5 text-[9px] font-bold text-neutral-400 hover:text-white hover:border-neutral-700 transition-all cursor-pointer h-9"
+            className="flex items-center gap-3 rounded-md bg-neutral-900 border border-neutral-800 px-2.5 text-[10px] font-bold text-neutral-400 hover:text-white hover:border-neutral-700 transition-all cursor-pointer h-9"
             style={{ width: expanded ? '100%' : '36px' }}
           >
-            <span className="shrink-0 w-5 text-center">A</span>
+            <span className="shrink-0 w-5 h-5 flex items-center justify-center bg-neutral-800 rounded text-neutral-300 text-xs font-semibold uppercase">
+              {companyName ? companyName.trim().charAt(0) : 'W'}
+            </span>
             <span
-              className={`whitespace-nowrap transition-all duration-150 ${
+              className={`whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-150 ${
                 expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
               }`}
+              style={{ maxWidth: expanded ? '120px' : '0px' }}
             >
-              Acme
+              {companyName}
             </span>
           </div>
         </Link>
