@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 
 import { Toaster } from "@/components/ui/sonner"
 import ConnectivityMonitor from "@/components/shared/ConnectivityMonitor"
+import dynamic from 'next/dynamic'
+
+const AgentationDevTool = dynamic(() => import('@/components/dev/AgentationWrapper'), { ssr: false })
 
 export default function RootLayout({
   children,
@@ -38,6 +41,7 @@ export default function RootLayout({
           <ConnectivityMonitor />
           {children}
         </PHProvider>
+        <AgentationDevTool />
         <Toaster 
           toastOptions={{
             className: "bg-zinc-950 border border-white/[0.08] text-zinc-100 font-sans",
