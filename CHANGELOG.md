@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2026-05-28
+
+### Added
+- **Authentication:** Fully setup Google OAuth authentication with Supabase integration.
+- **E2E Tests:** Created end-to-end testing suites for Invoice Lifecycle and Trash/Recovery workflows using Playwright.
+
+### Fixed
+- **UI Tweaks:** Fixed UI issues reported via feedback, including Select dropdown overlapping and hover state contrast, Invoice Cancel button visibility, Settings Email field disabled background, Settings Tabs hover contrast, and Settings Upload Document button contrast.
+
 ## [2.0.1] - 2026-05-28
 
 ### Added

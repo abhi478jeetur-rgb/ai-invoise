@@ -27,6 +27,12 @@ jobs:
     - name: Run Small & Medium Tests (Vitest)
       run: npx vitest run
 
+    - name: Run Linter
+      run: npm run lint
+
+    - name: Type Checking
+      run: npx tsc --noEmit
+
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
