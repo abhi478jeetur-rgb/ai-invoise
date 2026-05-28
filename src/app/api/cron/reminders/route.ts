@@ -5,7 +5,13 @@ export async function GET(request: Request) {
   try {
     // 1. Verify authorization (optional but recommended for cron jobs)
     const authHeader = request.headers.get('authorization')
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    
+    // If CRON_SECRET is set, enforce it. If not set, we still enforce a check so it's not totally open.
+    if (!process.env.CRON_SECRET) {
+      return NextResponse.json({ error: 'Server configuration missing CRON_SECRET' }, { status: 401 })
+    }
+    
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

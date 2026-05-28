@@ -150,6 +150,7 @@ test.describe('VECTOR 1 — Row-Level Security (RLS) & Tenant Isolation', () => 
     const res = await request.post(`${SUPABASE_URL}/rest/v1/clients`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId, // Required by RLS INSERT policy
         client_name: `RLS Test Client ${Date.now()}`,
         email: `rls-test-${Date.now()}@example.com`,
       },
@@ -168,6 +169,7 @@ test.describe('VECTOR 1 — Row-Level Security (RLS) & Tenant Isolation', () => 
     const res = await request.post(`${SUPABASE_URL}/rest/v1/invoices`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId, // Required by RLS INSERT policy
         client_id: userAClientId,
         invoice_number: `RLS-TEST-${Date.now()}`,
         amount: 500,
@@ -229,12 +231,19 @@ test.describe('VECTOR 1 — Row-Level Security (RLS) & Tenant Isolation', () => 
         data: { amount: 1, title: 'HACKED' },
       }
     );
-    // PostgREST returns 200 with empty array when RLS blocks the update
-    const rows = await res.json();
-    expect(
-      rows.length,
-      'RLS BREACH: User B updated User A\'s invoice!'
-    ).toBe(0);
+    // PostgREST returns 200 with empty array OR 401 when RLS blocks
+    if (res.status() === 200) {
+      const rows = await res.json();
+      expect(
+        rows.length,
+        'RLS BREACH: User B updated User A\'s invoice!'
+      ).toBe(0);
+    } else {
+      expect(
+        [401, 403].includes(res.status()),
+        `Unexpected status: ${res.status()}`
+      ).toBeTruthy();
+    }
     console.log('[RLS PASS] User B cannot update User A\'s invoices');
   });
 
@@ -245,11 +254,19 @@ test.describe('VECTOR 1 — Row-Level Security (RLS) & Tenant Isolation', () => 
       `${SUPABASE_URL}/rest/v1/invoices?id=eq.${userAInvoiceId}`,
       { headers: pgRestHeaders(tokenB) }
     );
-    const rows = await res.json();
-    expect(
-      rows.length,
-      'RLS BREACH: User B deleted User A\'s invoice!'
-    ).toBe(0);
+    // PostgREST returns 200 with empty array OR 401 when RLS blocks
+    if (res.status() === 200) {
+      const rows = await res.json();
+      expect(
+        rows.length,
+        'RLS BREACH: User B deleted User A\'s invoice!'
+      ).toBe(0);
+    } else {
+      expect(
+        [401, 403].includes(res.status()),
+        `Unexpected status: ${res.status()}`
+      ).toBeTruthy();
+    }
     console.log('[RLS PASS] User B cannot delete User A\'s invoices');
   });
 
@@ -380,6 +397,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
     const res = await request.post(`${SUPABASE_URL}/rest/v1/clients`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_name: `Tamper Test Client ${Date.now()}`,
         email: `tamper-${Date.now()}@example.com`,
       },
@@ -400,6 +418,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
     const res = await request.post(`${SUPABASE_URL}/rest/v1/invoices`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_id: testClientId,
         invoice_number: `TAMPER-STATUS-${Date.now()}`,
         amount: 100,
@@ -429,6 +448,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
     const res = await request.post(`${SUPABASE_URL}/rest/v1/invoices`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_id: testClientId,
         invoice_number: `TAMPER-NEG-${Date.now()}`,
         amount: -9999,
@@ -459,6 +479,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
       headers: pgRestHeaders(tokenA),
       data: {
         client_id: testClientId,
+        user_id: userAId,
         invoice_number: "1 OR 1=1; DROP TABLE invoices; --",
         amount: 100,
         currency: 'USD',
@@ -496,6 +517,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
     const res = await request.post(`${SUPABASE_URL}/rest/v1/clients`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_name: xssPayload,
         email: `xss-${Date.now()}@example.com`,
       },
@@ -529,6 +551,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
       headers: pgRestHeaders(tokenA),
       data: {
         client_id: testClientId,
+        user_id: userAId,
         invoice_number: `TAMPER-BIG-${Date.now()}`,
         amount: 99999999999999.99,
         currency: 'USD',
@@ -555,6 +578,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
       headers: pgRestHeaders(tokenA),
       data: {
         client_id: testClientId,
+        user_id: userAId,
         invoice_number: `TAMPER-CUR-${Date.now()}`,
         amount: 100,
         currency: 'HACKEDCOIN',
@@ -591,6 +615,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
     const res = await request.post(`${SUPABASE_URL}/rest/v1/invoices`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_id: fakeUuid,
         invoice_number: `TAMPER-FK-${Date.now()}`,
         amount: 100,
@@ -619,6 +644,7 @@ test.describe('VECTOR 2 — Direct API Parameter Tampering', () => {
       headers: pgRestHeaders(tokenA),
       data: {
         client_id: testClientId,
+        user_id: userAId,
         invoice_number: `TAMPER-TAX-${Date.now()}`,
         amount: 100,
         currency: 'USD',
@@ -891,6 +917,7 @@ test.describe('VECTOR 4 — Mass Assignment / Privilege Escalation', () => {
     const clientRes = await request.post(`${SUPABASE_URL}/rest/v1/clients`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_name: `Mass Assignment Test ${Date.now()}`,
         email: `massassign-${Date.now()}@example.com`,
       },
@@ -906,6 +933,7 @@ test.describe('VECTOR 4 — Mass Assignment / Privilege Escalation', () => {
     const invoiceRes = await request.post(`${SUPABASE_URL}/rest/v1/invoices`, {
       headers: pgRestHeaders(tokenA),
       data: {
+        user_id: userAId,
         client_id: testClientId,
         invoice_number: `MASS-${Date.now()}`,
         amount: 500,
@@ -1132,6 +1160,7 @@ test.describe('VECTOR 4 — Mass Assignment / Privilege Escalation', () => {
       headers: pgRestHeaders(tokenA),
       data: {
         client_id: testClientId,
+        user_id: userAId,
         invoice_number: `MASS-RC-${Date.now()}`,
         amount: 100,
         currency: 'USD',
