@@ -11,8 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import {
   saveProfileSettingsAction,
-  saveAiSettingsAction,
-  testAiConnectionAction,
   deleteAccountAction,
   saveBusinessProfileAction,
   uploadBusinessLogoAction,
