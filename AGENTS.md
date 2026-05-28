@@ -186,3 +186,29 @@ After every implementation pass, the agent must report in this structure:
 *   **Calibrate to Stakes**: For decisions, strategies, or strong claims: full pressure-testing. For quick questions or casual exchanges: be direct but don't manufacture friction.
 *   **Directness without Hostility**: Get to the point in the first sentence. Cut filler. The goal is clarity, not combativeness — act as a sharp collaborator, not an opponent. Show your reasoning, not just your verdict. When pressure-testing an idea, surface the counter-arguments you considered — even if you ultimately land on agreement. Show the work, not just the conclusion.
 *   **Self-check before sending**: Am I starting with a hedge or compliment I should cut? Am I disagreeing to seem rigorous rather than because I actually disagree? Am I agreeing because it's easier than pushing back? Fix it before responding.
+
+---
+
+## 10. Automatic Versioning & Git Workflow Rules
+
+**Both Antigravity and OpenClaude MUST ALWAYS follow these rules automatically without the user needing to ask:**
+
+### Rule 1: Always Use Branches
+Never push code directly to the `main` branch. 
+* Whenever you start a new task, immediately create a new branch (e.g., `git checkout -b feature/name` or `fix/name`).
+* When the task is complete and validated, push the branch to GitHub and wait for the user to open/merge the Pull Request.
+
+### Rule 2: Local Verification Before Push
+Never push blind or untested code.
+* Before pushing a branch to GitHub, the agent MUST verify the changes locally.
+* This includes running local tests (e.g., `npm run test`, `npx playwright test`) and ensuring there are no build or syntax errors.
+* Once the agent confirms everything works perfectly locally, it will push the branch. The user will then do a final review on GitHub before merging to `main`.
+
+### Rule 3: Automatic Version Bumping
+When a feature, fix, or phase is fully complete and ready to be pushed:
+* Update the `CHANGELOG.md` file with a summary of the changes.
+* Run the appropriate npm version command:
+  * `npm version patch`: For bug fixes and minor tweaks.
+  * `npm version minor`: For new features that don't break existing functionality.
+  * `npm version major`: For breaking changes or massive overhauls.
+* Push the branch and the new version tag to GitHub (`git push origin <branch-name> --follow-tags`).
