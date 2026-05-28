@@ -82,12 +82,12 @@ export async function generateReminderAction(
     // Fetch AI settings
     const { data: aiSettings, error: settingsError } = await supabase
       .from('user_ai_settings')
-      .select('base_url, api_key_encrypted, model_name')
+      .select('base_url, model_name')
       .eq('user_id', user.id)
       .single()
 
     if (settingsError || !aiSettings) {
-      return { error: 'AI settings not configured. Please set your API key in Settings.' }
+      return { error: 'AI settings not configured. Please configure your model in Settings.' }
     }
 
     // SSRF Defense-in-depth Check
@@ -96,11 +96,9 @@ export async function generateReminderAction(
       return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
     }
 
-    let apiKey: string
-    try {
-      apiKey = decryptKey(aiSettings.api_key_encrypted)
-    } catch {
-      return { error: 'Failed to decrypt API key. Please re-enter your API key in Settings.' }
+    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return { error: 'AI_API_KEY environment variable is not configured on the server.' }
     }
 
     // Calculate days overdue
@@ -346,12 +344,12 @@ export async function generateMultipleDraftsAction(
     // Fetch AI settings
     const { data: aiSettings, error: settingsError } = await supabase
       .from('user_ai_settings')
-      .select('base_url, api_key_encrypted, model_name')
+      .select('base_url, model_name')
       .eq('user_id', user.id)
       .single()
 
     if (settingsError || !aiSettings) {
-      return { error: 'AI settings not configured. Please set your API key in Settings.' }
+      return { error: 'AI settings not configured. Please configure your model in Settings.' }
     }
 
     // SSRF Defense-in-depth Check
@@ -360,11 +358,9 @@ export async function generateMultipleDraftsAction(
       return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
     }
 
-    let apiKey: string
-    try {
-      apiKey = decryptKey(aiSettings.api_key_encrypted)
-    } catch {
-      return { error: 'Failed to decrypt API key. Please re-enter your API key in Settings.' }
+    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return { error: 'AI_API_KEY environment variable is not configured on the server.' }
     }
 
     // Calculate days overdue

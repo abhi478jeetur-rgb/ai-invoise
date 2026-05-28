@@ -71,7 +71,6 @@ interface SettingsData {
     provider_label: string
     model_name: string
     temperature: number
-    masked_api_key: string
   } | null
   knowledgeBaseDocuments: {
     id: string
@@ -806,26 +805,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
                 </div>
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Label className="text-neutral-400" htmlFor="apiKey">API Key <span className="text-red-500">*</span></Label>
-                    <div className="group relative inline-block">
-                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
-                        Your unique security key for authenticating requests with your AI provider. Stored encrypted on the server.
-                      </span>
-                    </div>
-                  </div>
-                  <Input id="apiKey" name="apiKey" type="password" defaultValue={aiSettings?.masked_api_key ?? ''}
-                    placeholder="nvapi-..." autoComplete="off"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
-                  <input type="hidden" name="maskedApiKey" value={aiSettings?.masked_api_key ?? ''} />
-                  {aiSettings?.masked_api_key && (
-                    <p className="text-[11px] text-neutral-600">
-                      Current: <span className="font-mono">{aiSettings.masked_api_key}</span> &mdash; leave unchanged to keep existing key.
-                    </p>
-                  )}
-                </div>
 
                 <div className="flex items-center gap-2 pt-2">
                   <Button type="submit" disabled={aiSaving}
