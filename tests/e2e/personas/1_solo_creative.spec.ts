@@ -5,7 +5,7 @@ test.describe('Persona 1: Solo Creative Journey', () => {
   test('should complete FTUE, explore myself, and create an invoice with inline client', async ({ page }) => {
     // 1. Sign in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
     await page.getByRole('button', { name: 'Sign In' }).click();
 

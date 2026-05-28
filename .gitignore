@@ -68,8 +68,5 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Dev Tools Isolation (Agentation, Shortest, Understand-Anything)
-/ai-e2e-tests/
-shortest.config.ts
-.shortest/
+# Dev Tools Isolation (Agentation, Understand-Anything)
 .understand-anything/

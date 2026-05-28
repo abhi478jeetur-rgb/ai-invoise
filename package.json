@@ -36,9 +36,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@antiwork/shortest": "^0.4.9",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",

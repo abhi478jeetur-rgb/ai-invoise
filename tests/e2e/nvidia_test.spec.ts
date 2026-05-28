@@ -9,7 +9,7 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
   test('should configure NVIDIA AI, generate reminder, and download PDF', async ({ page, context }) => {
     // 1. Sign in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
     await page.getByRole('button', { name: 'Sign In' }).click();
 
