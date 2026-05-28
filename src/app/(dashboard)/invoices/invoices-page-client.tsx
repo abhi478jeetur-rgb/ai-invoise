@@ -297,7 +297,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                 key={invoice.id}
                 className="border-white/[0.06] bg-neutral-900/40 backdrop-blur-xl hover:bg-white/[0.02] transition-colors"
               >
-                <CardContent className="py-3.5 px-5">
+                <CardContent className="py-2.5 px-4">
                   <div className="flex items-center justify-between gap-4">
                     <Link
                       href={`/invoices/${invoice.id}`}
