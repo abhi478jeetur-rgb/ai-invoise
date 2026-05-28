@@ -20,6 +20,7 @@ import {
   deleteKnowledgeBaseDocumentAction,
 } from '@/lib/settings/actions'
 import { updateReminderSettingsAction } from '@/lib/profile/actions'
+import { updatePassword } from '@/lib/auth/actions'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD - US Dollar' },
@@ -117,6 +118,9 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [accountDeleting, setAccountDeleting] = useState(false)
 
+  // Security / Password state
+  const [securitySaving, setSecuritySaving] = useState(false)
+
   async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setProfileSaving(true)
@@ -136,6 +140,28 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
       })
     } finally {
       setProfileSaving(false)
+    }
+  }
+
+  async function handleSecuritySubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setSecuritySaving(true)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await updatePassword(formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success('Password successfully updated!')
+        e.currentTarget.reset()
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Network Error', {
+        description: 'Failed to update password. Please check your internet connection.'
+      })
+    } finally {
+      setSecuritySaving(false)
     }
   }
 
@@ -336,16 +362,16 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="bg-neutral-900/60 border border-neutral-800 p-1 flex-wrap h-auto gap-1">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
             Profile & Preferences
           </TabsTrigger>
-          <TabsTrigger value="business" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+          <TabsTrigger value="business" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
             Business & Invoicing
           </TabsTrigger>
-          <TabsTrigger value="ai" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+          <TabsTrigger value="ai" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
             AI Provider
           </TabsTrigger>
-          <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 text-xs cursor-pointer">
+          <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
             Account
           </TabsTrigger>
         </TabsList>
@@ -370,7 +396,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="email">Email</Label>
                   <Input id="email" value={p.email} disabled
-                    className="h-9 border-neutral-800 bg-neutral-900/50 text-neutral-300 cursor-not-allowed disabled:opacity-100" />
+                    className="h-9 border-neutral-700 bg-neutral-900 text-neutral-200 cursor-not-allowed disabled:opacity-100" />
                   <p className="text-[11px] text-neutral-600">Email is managed by your auth provider.</p>
                 </div>
 
@@ -385,6 +411,38 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 <Button type="submit" disabled={profileSaving}
                   className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
                   {profileSaving ? 'Saving...' : 'Save Profile'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-medium text-neutral-200">Security & Password</CardTitle>
+              <CardDescription className="text-sm text-neutral-500">
+                Update your login credentials securely.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSecuritySubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-neutral-400" htmlFor="newPassword">New Password</Label>
+                  <Input id="newPassword" name="password" type="password" required placeholder="••••••••"
+                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                  <p className="text-[10px] text-neutral-500 leading-normal">
+                    Must be at least 8 characters, contain one uppercase letter, one lowercase letter, one number, and one special character.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-neutral-400" htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input id="confirmPassword" name="confirmPassword" type="password" required placeholder="••••••••"
+                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                </div>
+
+                <Button type="submit" disabled={securitySaving}
+                  className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
+                  {securitySaving ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>
             </CardContent>
@@ -554,7 +612,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                       <div className="group relative inline-block">
                         <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
-                          The starting letters for your invoice numbers (e.g., "INV-" or "CF-").
+                          The starting letters for your invoice numbers (e.g., &quot;INV-&quot; or &quot;CF-&quot;).
                         </span>
                       </div>
                     </div>
@@ -675,8 +733,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     ))}
                     <div className="pt-2">
                       <input ref={docInputRef} type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={handleUploadDocument} />
-                      <Button type="button" variant="outline" size="sm" onClick={() => docInputRef.current?.click()} disabled={docUploading}
-                        className="h-8 text-xs border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800">
+                      <Button type="button" size="sm" onClick={() => docInputRef.current?.click()} disabled={docUploading}
+                        className="h-8 text-xs bg-neutral-800 text-neutral-100 hover:bg-neutral-700 border border-neutral-700 cursor-pointer">
                         {docUploading ? 'Uploading...' : 'Upload Document'}
                       </Button>
                     </div>

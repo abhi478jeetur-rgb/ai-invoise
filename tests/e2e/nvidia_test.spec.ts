@@ -9,7 +9,7 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
   test('should configure NVIDIA AI, generate reminder, and download PDF', async ({ page, context }) => {
     // 1. Sign in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
     await page.getByRole('button', { name: 'Sign In' }).click();
 
@@ -18,13 +18,14 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
 
     // 2. Configure NVIDIA API in Settings
     await page.goto('/settings');
-    await page.getByRole('textbox', { name: /Base URL/i }).fill('https://integrate.api.nvidia.com/v1');
-    await page.getByRole('textbox', { name: /Model Name/i }).fill('meta/llama-3.1-8b-instruct');
+    await page.getByRole('tab', { name: /AI Provider/i }).click();
+    await page.locator('input[name="baseUrl"]').fill('https://integrate.api.nvidia.com/v1');
+    await page.locator('input[name="modelName"]').fill('meta/llama-3.1-8b-instruct');
     // Using the key provided by the user
-    await page.getByRole('textbox', { name: /API Key/i }).fill('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');
+    await page.locator('input[name="apiKey"]').fill('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');
     
     // Save AI Settings
-    await page.getByRole('button', { name: /Save AI Settings/i }).click();
+    await page.getByRole('button', { name: /^Save Settings$/i }).click();
     // Wait for some success indication or just wait a moment
     await page.waitForTimeout(2000); 
 
@@ -60,7 +61,7 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
 
     // Click Download PDF
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('link', { name: /Download PDF/i }).click();
+    await page.getByRole('button', { name: /Download PDF/i }).click();
     const download = await downloadPromise;
     
     // Save the downloaded file to verify
@@ -73,20 +74,23 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
 
     // 5. Test AI Reminder Generation
     // Assuming there's a button to generate a reminder
-    const generateBtn = page.getByRole('button', { name: /Generate Reminder/i });
+    const generateBtn = page.getByRole('button', { name: 'Generate Reminder', exact: true });
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
       
-      // Wait for AI generation to complete. The text box should be filled.
-      const reminderTextarea = page.locator('textarea[name="body"]');
-      await expect(reminderTextarea).not.toBeEmpty({ timeout: 20000 }); // AI can take a while
+      // Click 'Generate Draft' inside the new Generate Reminder dialog
+      await page.getByRole('button', { name: 'Generate Draft' }).click();
       
-      // Verify everything is saved successfully (if there's a save button for the draft)
-      const saveDraftBtn = page.getByRole('button', { name: /Save Draft/i });
-      if (await saveDraftBtn.isVisible()) {
-        await saveDraftBtn.click();
-        await page.waitForTimeout(1000);
-      }
+      // Wait for AI generation to complete and show the Reminder Draft dialog
+      const draftDialog = page.getByRole('dialog', { name: 'Reminder Draft' });
+      await expect(draftDialog).toBeVisible({ timeout: 25000 }); // AI can take a while
+
+      // Verify that the generated draft text is present
+      await expect(page.getByText('We are following up regarding')).toBeVisible();
+
+      // Click "Mark as Sent" to save/complete the reminder draft
+      await page.getByRole('button', { name: 'Mark as Sent' }).click();
+      await expect(draftDialog).toBeHidden();
     }
     
     console.log("TEST COMPLETED SUCCESSFULLY");
