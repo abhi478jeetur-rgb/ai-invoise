@@ -441,9 +441,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           <DialogFooter className="pt-2">
             <Button
               type="button"
-              variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900 cursor-pointer"
+              className="bg-black text-white hover:bg-neutral-900 hover:text-white border border-neutral-800 cursor-pointer"
             >
               Cancel
             </Button>
