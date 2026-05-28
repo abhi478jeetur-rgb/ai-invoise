@@ -169,9 +169,8 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
           <DialogFooter className="pt-2">
             <Button
               type="button"
-              variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900 cursor-pointer"
+              className="bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white border border-neutral-800 cursor-pointer"
             >
               Cancel
             </Button>
