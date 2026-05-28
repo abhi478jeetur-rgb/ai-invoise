@@ -366,6 +366,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           </TabsTrigger>
           <TabsTrigger value="business" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
             Business & Invoicing
+          </TabsTrigger>
 
           <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
             Account
