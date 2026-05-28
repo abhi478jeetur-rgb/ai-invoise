@@ -136,7 +136,7 @@ export default function SignInPage() {
           {/* Footer Links */}
           <div className="mt-6 pt-6 border-t border-neutral-900 text-center">
             <p className="text-xs text-neutral-500">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/sign-up" className="text-neutral-300 hover:text-white font-medium underline-offset-4 hover:underline transition-all">
                 Sign up for free
               </Link>

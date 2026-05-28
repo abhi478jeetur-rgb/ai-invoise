@@ -292,7 +292,7 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
         {/* Header */}
         <View style={styles.header}>
           <View>
-            {profile.logo_url && <Image src={profile.logo_url} style={styles.logo} />}
+            {profile.logo_url && <Image src={profile.logo_url} style={styles.logo} alt="Logo" />}
             <Text style={styles.title}>INVOICE</Text>
             <Text style={styles.invoiceNumber}>#{invoice.invoice_number}</Text>
             {invoice.po_number && (

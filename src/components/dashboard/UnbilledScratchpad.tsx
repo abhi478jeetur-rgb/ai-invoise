@@ -82,7 +82,7 @@ export function UnbilledScratchpad() {
           Unbilled Work (Scratchpad)
         </h3>
         <p className="text-sm text-neutral-400 mt-1">
-          Quickly log things you've done. Convert them to invoices later.
+          Quickly log things you&apos;ve done. Convert them to invoices later.
         </p>
       </div>
 
@@ -132,7 +132,7 @@ export function UnbilledScratchpad() {
       )}
       {tasks.length === 0 && (
         <div className="mt-2 text-center py-6 border border-dashed border-neutral-800 rounded-lg">
-          <p className="text-sm text-neutral-500">No unbilled tasks! You're all caught up.</p>
+          <p className="text-sm text-neutral-500">No unbilled tasks! You&apos;re all caught up.</p>
         </div>
       )}
     </div>

@@ -612,7 +612,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                       <div className="group relative inline-block">
                         <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
-                          The starting letters for your invoice numbers (e.g., "INV-" or "CF-").
+                          The starting letters for your invoice numbers (e.g., &quot;INV-&quot; or &quot;CF-&quot;).
                         </span>
                       </div>
                     </div>
