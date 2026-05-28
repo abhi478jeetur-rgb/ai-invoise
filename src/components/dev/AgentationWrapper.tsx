@@ -13,6 +13,6 @@ export default function AgentationWrapper() {
     }
     setMounted(true);
   }, [])
-  if (!mounted) return null;
+  if (!mounted || process.env.NODE_ENV !== 'development') return null;
   return <Agentation />
 }
