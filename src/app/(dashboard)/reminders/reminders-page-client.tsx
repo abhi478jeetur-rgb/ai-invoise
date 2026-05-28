@@ -27,7 +27,6 @@ interface AiSettings {
   provider_label: string
   model_name: string
   temperature: number
-  masked_api_key: string
 }
 
 interface RemindersPageClientProps {
