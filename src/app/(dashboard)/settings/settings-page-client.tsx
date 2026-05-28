@@ -396,7 +396,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 <div className="space-y-1.5">
                   <Label className="text-neutral-400" htmlFor="email">Email</Label>
                   <Input id="email" value={p.email} disabled
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-400 cursor-not-allowed disabled:opacity-70" />
+                    className="h-9 border-neutral-700 bg-neutral-900 text-neutral-200 cursor-not-allowed disabled:opacity-100" />
                   <p className="text-[11px] text-neutral-600">Email is managed by your auth provider.</p>
                 </div>
 
