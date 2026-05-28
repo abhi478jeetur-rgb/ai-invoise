@@ -21,3 +21,19 @@ This file tracks all the major bugs encountered and successfully resolved in the
 - **Bug:** Git Branch name was `v2.5-stable` and research folders were named `version2_5` and `version3`, causing confusion while the actual project version was `2.0.1`.
 - **Root Cause:** Forward-looking naming convention mismatch with actual `package.json` version.
 - **Solution:** Renamed branch to `v2.0.1-stable` and synchronized research doc folder names (`version2_1` and `version2_2`).
+
+### 5. Playwright E2E Settings & Reminder wizard Test Failures
+- **Bug:** `nvidia_test.spec.ts` manual E2E test timed out while executing settings and reminder tests.
+- **Root Causes:**
+  1. **Tab Hidden Inputs:** "AI Provider" configuration inputs are inside a tab panel and not rendered/active until the tab is clicked.
+  2. **Save Settings Button name mismatch:** The save button name changed from `"Save AI Settings"` to `"Save Settings"`.
+  3. **Download PDF Element Role mismatch:** The PDF download link became a premium `button` element instead of an anchor `link`.
+  4. **Strict Mode Violation:** The page introduced multiple elements matching `/Generate Reminder/i`, violating strict element resolution.
+  5. **New Wizard Flow modal dialog:** Reminder generation transitioned into a gorgeous multi-step modal dialog, needing a `"Generate Draft"` button click and expecting a `"Reminder Draft"` modal dialog preview rather than standard input field.
+- **Solution:** 
+  1. Updated test to click the `"AI Provider"` tab first.
+  2. Changed settings save selector to target `"Save Settings"` button exactly.
+  3. Replaced `/Download PDF/i` link selector with a button locator.
+  4. Resolved strict mode violation by using `{ exact: true }` matching for `'Generate Reminder'`.
+  5. Fully aligned the reminder assertions to match the new beautiful preview wizard: clicks `"Generate Draft"`, verifies the generated preview paragraph contents, and completes the flow by clicking `"Mark as Sent"`.
+
