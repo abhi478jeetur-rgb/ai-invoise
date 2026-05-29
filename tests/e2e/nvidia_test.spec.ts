@@ -11,7 +11,7 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
     await page.goto('/sign-in');
     await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // Wait for dashboard to load
     await expect(page).toHaveURL(/.*dashboard|invoices/);
