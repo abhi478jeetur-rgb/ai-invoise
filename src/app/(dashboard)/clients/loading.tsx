@@ -22,7 +22,7 @@ export default function ClientsLoading() {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="border border-neutral-900 bg-neutral-900/40 backdrop-blur-xl rounded-xl py-3.5 px-5"
+            className="border border-border bg-card/40 backdrop-blur-xl rounded-xl py-3.5 px-5"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">

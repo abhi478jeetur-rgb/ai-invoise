@@ -64,12 +64,12 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl">
+      <DialogContent className="sm:max-w-[480px] border-border bg-[#0a0a0a] backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-neutral-100">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {isEditing ? 'Edit Client' : 'Add Client'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-sm text-muted-foreground">
             {isEditing
               ? 'Update the client details below.'
               : 'Add a new client to track their invoices and reminders.'}
@@ -84,7 +84,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="clientName">
+            <Label className="text-muted-foreground" htmlFor="clientName">
               Client Name <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -93,13 +93,13 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
               required
               defaultValue={client?.client_name ?? ''}
               placeholder="Acme Corp"
-              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="contactName">
+              <Label className="text-muted-foreground" htmlFor="contactName">
                 Contact Name
               </Label>
               <Input
@@ -107,11 +107,11 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
                 name="contactName"
                 defaultValue={client?.contact_name ?? ''}
                 placeholder="Jane Smith"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="companyName">
+              <Label className="text-muted-foreground" htmlFor="companyName">
                 Company
               </Label>
               <Input
@@ -119,14 +119,14 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
                 name="companyName"
                 defaultValue={client?.company_name ?? ''}
                 placeholder="Acme Inc."
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="email">
+              <Label className="text-muted-foreground" htmlFor="email">
                 Email
               </Label>
               <Input
@@ -135,11 +135,11 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
                 type="text"
                 defaultValue={client?.email ?? ''}
                 placeholder="billing@acme.com"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="phone">
+              <Label className="text-muted-foreground" htmlFor="phone">
                 Phone
               </Label>
               <Input
@@ -147,13 +147,13 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
                 name="phone"
                 defaultValue={client?.phone ?? ''}
                 placeholder="+1 (555) 000-0000"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="notes">
+            <Label className="text-muted-foreground" htmlFor="notes">
               Notes
             </Label>
             <Textarea
@@ -162,7 +162,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
               defaultValue={client?.notes ?? ''}
               placeholder="Internal notes about this client..."
               rows={3}
-              className="border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none"
+              className="border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50 resize-none"
             />
           </div>
 
@@ -170,14 +170,14 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
             <Button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white border border-neutral-800 cursor-pointer"
+              className="bg-secondary text-foreground/80 hover:bg-accent hover:text-foreground border border-border cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? isEditing ? 'Saving...' : 'Adding...'

@@ -121,7 +121,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
             setSelectedStatus(invoice.status)
             setStatusOpen(true)
           }}
-          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer text-xs"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer text-xs"
         >
           Change Status
         </Button>
@@ -140,7 +140,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
             link.click();
             document.body.removeChild(link);
           }}
-          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer text-xs"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer text-xs"
         >
           Download PDF
         </Button>
@@ -148,7 +148,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
           variant="ghost"
           size="sm"
           onClick={() => setEditOpen(true)}
-          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer text-xs"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer text-xs"
         >
           Edit
         </Button>
@@ -177,7 +177,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
       />
 
       <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-neutral-950 border-neutral-800 text-neutral-200">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle>Change Status</DialogTitle>
           </DialogHeader>
@@ -188,7 +188,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
                 id="status"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
               >
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
@@ -212,7 +212,7 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
                   min="0"
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(e.target.value)}
-                  className="bg-neutral-900 border-neutral-800"
+                  className="bg-secondary border-border"
                   placeholder="e.g. 500"
                 />
               </div>

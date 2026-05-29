@@ -43,7 +43,7 @@ export function ClientDetailActions({ client }: ClientDetailActionsProps) {
           variant="ghost"
           size="sm"
           onClick={() => setFormOpen(true)}
-          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
         >
           Edit
         </Button>

@@ -44,6 +44,12 @@ export async function signup(formData: FormData) {
     return { error: validation.error.issues[0].message }
   }
 
+  // Check if user already exists
+  const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', { email_to_check: email })
+  if (emailExists) {
+    return { error: 'An account with this email already exists. Please sign in instead.' }
+  }
+
   // Supabase sign up sends OTP automatically if configured in templates
   const { error } = await supabase.auth.signUp({
     email,

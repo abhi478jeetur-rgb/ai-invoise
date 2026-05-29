@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-05-29
+
+### Added
+- **Dynamic Theme Support:** Added full Light/Dark/System theme options across all dashboard, authentication, and core application pages.
+- **Theme Segments Toggle:** Integrated an elegant 3-button segmented theme toggle directly in the user navigation avatar dropdown.
+- **Theme E2E Screenshot Testing:** Created a custom Playwright test suite to dynamically verify light/dark mode visual contrast by capturing full-page screenshots.
+
+### Fixed
+- **Dashboard Visual Customizer Overrides:** Fixed a major styling conflict where the Visual Customizer's default Midnight Dark preset overrode body and card backgrounds in light mode, forcing a dark black background. The presets now dynamically adapt to light/dark themes, utilizing a pure white layout for light mode.
+
 ## [2.0.2] - 2026-05-28
 
 ### Added

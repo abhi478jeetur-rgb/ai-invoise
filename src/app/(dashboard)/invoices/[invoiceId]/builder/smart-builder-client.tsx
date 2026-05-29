@@ -12,8 +12,8 @@ import { updateInvoiceAction } from '@/lib/invoices/actions'
 import { LivePdfPreview } from '@/components/invoices/live-pdf-preview'
 import { toast } from 'sonner'
 
-const inputStyles = "bg-zinc-900/50 border border-white/[0.08] rounded-lg px-4 py-2.5 text-zinc-100 placeholder-zinc-500 transition-all focus-visible:ring-1 focus-visible:ring-white/[0.15] focus-visible:border-white/[0.1]"
-const cardStyles = "bg-zinc-950/40 backdrop-blur-md border border-white/[0.05] rounded-xl p-6 mb-6 shadow-2xl"
+const inputStyles = "bg-card/50 border border-white/[0.08] rounded-lg px-4 py-2.5 text-foreground placeholder-zinc-500 transition-all focus-visible:ring-1 focus-visible:ring-white/[0.15] focus-visible:border-white/[0.1]"
+const cardStyles = "bg-background/40 backdrop-blur-md border border-white/[0.05] rounded-xl p-6 mb-6 shadow-2xl"
 
 export default function SmartBuilderClient({ invoice, client, profile, allClients }: any) {
   const router = useRouter()
@@ -221,7 +221,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                   onClick={() => handleSave('draft')} 
                   disabled={isSaving} 
                   variant="outline"
-                  className="border-zinc-800 hover:bg-zinc-900 text-zinc-300 cursor-pointer h-9 px-3 text-xs"
+                  className="border-border hover:bg-secondary text-foreground/80 cursor-pointer h-9 px-3 text-xs"
                 >
                   {isSaving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
                   Save as Draft
@@ -251,21 +251,21 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         {/* FROM Section */}
         <div className={cardStyles}>
           <div className="pb-4">
-            <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">From (Your Details)</h3>
+            <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">From (Your Details)</h3>
           </div>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-500 mb-2">These details are pulled from your profile settings.</p>
+            <p className="text-sm text-muted-foreground mb-2">These details are pulled from your profile settings.</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Company Name</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Company Name</Label>
                 <Input value={localProfile.company_name || localProfile.full_name || ''} disabled className={inputStyles} />
               </div>
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Email</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Email</Label>
                 <Input value={localProfile.email || ''} disabled className={inputStyles} />
               </div>
               <div className="col-span-2">
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Address</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Address</Label>
                 <Input value={localProfile.company_address || ''} disabled className={inputStyles} />
               </div>
             </div>
@@ -275,18 +275,18 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         {/* TO Section */}
         <div className={cardStyles}>
           <div className="pb-4">
-            <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">To (Client Details)</h3>
+            <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">To (Client Details)</h3>
           </div>
           <div className="space-y-4">
             <div>
-              <Label className="text-xs text-neutral-400 mb-1.5 block">Select Client</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Select Client</Label>
               <Select value={formData.clientId} onValueChange={handleClientChange}>
                 <SelectTrigger className={inputStyles}>
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg shadow-xl">
+                <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg shadow-xl">
                   {uniqueClients.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id} className="text-zinc-200 focus:bg-zinc-800 focus:text-white">
+                    <SelectItem key={c.id} value={c.id} className="text-foreground focus:bg-accent focus:text-white">
                       {c.company_name ? `${c.company_name} (${c.client_name})` : c.client_name}
                     </SelectItem>
                   ))}
@@ -294,10 +294,10 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               </Select>
             </div>
             {localClient && (
-              <div className="p-4 bg-zinc-900/40 rounded-lg border border-white/[0.05] text-sm text-zinc-300 space-y-1.5">
-                <p><span className="text-zinc-500">Name:</span> {localClient.client_name}</p>
-                {localClient.email && <p><span className="text-zinc-500">Email:</span> {localClient.email}</p>}
-                {localClient.company_name && <p><span className="text-zinc-500">Company:</span> {localClient.company_name}</p>}
+              <div className="p-4 bg-secondary/40 rounded-lg border border-white/[0.05] text-sm text-foreground/80 space-y-1.5">
+                <p><span className="text-muted-foreground">Name:</span> {localClient.client_name}</p>
+                {localClient.email && <p><span className="text-muted-foreground">Email:</span> {localClient.email}</p>}
+                {localClient.company_name && <p><span className="text-muted-foreground">Company:</span> {localClient.company_name}</p>}
               </div>
             )}
           </div>
@@ -306,12 +306,12 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         {/* INVOICE DETAILS Section */}
         <div className={cardStyles}>
           <div className="pb-4">
-            <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">Invoice Details</h3>
+            <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">Invoice Details</h3>
           </div>
           <div className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Invoice Number</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice Number</Label>
                 <Input 
                   value={formData.invoiceNumber} 
                   onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})} 
@@ -319,7 +319,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                 />
               </div>
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">PO Number (Optional)</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">PO Number (Optional)</Label>
                 <Input 
                   value={formData.poNumber} 
                   onChange={(e) => setFormData({...formData, poNumber: e.target.value})} 
@@ -327,22 +327,22 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                 />
               </div>
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Payment Terms</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Payment Terms</Label>
                 <Select value={paymentTerm} onValueChange={handleTermChange}>
                   <SelectTrigger className={inputStyles}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg shadow-xl">
-                    <SelectItem value="receipt" className="text-zinc-200 focus:bg-zinc-800">Due on Receipt</SelectItem>
-                    <SelectItem value="net_15" className="text-zinc-200 focus:bg-zinc-800">Net 15</SelectItem>
-                    <SelectItem value="net_30" className="text-zinc-200 focus:bg-zinc-800">Net 30</SelectItem>
-                    <SelectItem value="net_60" className="text-zinc-200 focus:bg-zinc-800">Net 60</SelectItem>
-                    <SelectItem value="custom" className="text-zinc-200 focus:bg-zinc-800">Custom Date</SelectItem>
+                  <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg shadow-xl">
+                    <SelectItem value="receipt" className="text-foreground focus:bg-accent">Due on Receipt</SelectItem>
+                    <SelectItem value="net_15" className="text-foreground focus:bg-accent">Net 15</SelectItem>
+                    <SelectItem value="net_30" className="text-foreground focus:bg-accent">Net 30</SelectItem>
+                    <SelectItem value="net_60" className="text-foreground focus:bg-accent">Net 60</SelectItem>
+                    <SelectItem value="custom" className="text-foreground focus:bg-accent">Custom Date</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Due Date</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Due Date</Label>
                 <Input 
                   type="date"
                   value={formData.dueDate} 
@@ -354,7 +354,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs text-neutral-400 mb-1.5 block">Currency</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Currency</Label>
                 <Select 
                   value={formData.currency} 
                   onValueChange={(val) => setFormData({...formData, currency: val})}
@@ -362,9 +362,9 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                   <SelectTrigger className={inputStyles}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg shadow-xl">
+                  <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg shadow-xl">
                     {['USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR'].map((c) => (
-                      <SelectItem key={c} value={c} className="text-zinc-200 focus:bg-zinc-800 focus:text-white">
+                      <SelectItem key={c} value={c} className="text-foreground focus:bg-accent focus:text-white">
                         {c}
                       </SelectItem>
                     ))}
@@ -373,7 +373,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               </div>
             </div>
             <div>
-              <Label className="text-xs text-neutral-400 mb-1.5 block">Main Title (Optional)</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Main Title (Optional)</Label>
               <Input 
                 value={formData.title} 
                 onChange={(e) => setFormData({...formData, title: e.target.value})} 
@@ -387,35 +387,35 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         {/* LINE ITEMS Section */}
         <div className={cardStyles}>
           <div className="pb-4 flex flex-row items-center justify-between">
-            <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">Line Items</h3>
+            <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">Line Items</h3>
           </div>
           <div className="space-y-4">
             {formData.lineItems.map((item: any, idx: number) => (
-              <div key={idx} className="p-4 bg-zinc-900/30 rounded-xl border border-white/[0.05] relative group">
+              <div key={idx} className="p-4 bg-secondary/30 rounded-xl border border-white/[0.05] relative group">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="absolute -top-3 -right-3 h-7 w-7 rounded-full bg-zinc-800 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all shadow-md"
+                  className="absolute -top-3 -right-3 h-7 w-7 rounded-full bg-accent text-muted-foreground hover:text-red-400 hover:bg-accent opacity-0 group-hover:opacity-100 transition-all shadow-md"
                   onClick={() => removeLineItem(idx)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
                 <div className="grid grid-cols-12 gap-4">
                   <div className="col-span-12 sm:col-span-5">
-                    <Label className="text-xs text-zinc-500 mb-1.5 block">Item Name</Label>
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Item Name</Label>
                     <Input value={item.name} onChange={(e) => updateLineItem(idx, 'name', e.target.value)} className={inputStyles} />
                   </div>
                   <div className="col-span-4 sm:col-span-2">
-                    <Label className="text-xs text-zinc-500 mb-1.5 block">Qty</Label>
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Qty</Label>
                     <Input type="number" value={item.quantity} onChange={(e) => updateLineItem(idx, 'quantity', e.target.value)} className={inputStyles} />
                   </div>
                   <div className="col-span-4 sm:col-span-2">
-                    <Label className="text-xs text-zinc-500 mb-1.5 block">Rate</Label>
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Rate</Label>
                     <Input type="number" value={item.rate} onChange={(e) => updateLineItem(idx, 'rate', e.target.value)} className={inputStyles} />
                   </div>
                   <div className="col-span-4 sm:col-span-3">
-                    <Label className="text-xs text-zinc-500 mb-1.5 block">Total</Label>
-                    <div className="h-[46px] flex items-center px-4 bg-zinc-900/80 border border-white/[0.05] rounded-lg text-sm font-medium text-zinc-300">
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Total</Label>
+                    <div className="h-[46px] flex items-center px-4 bg-secondary/80 border border-white/[0.05] rounded-lg text-sm font-medium text-foreground/80">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(item.total)}
                     </div>
                   </div>
@@ -432,7 +432,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
             ))}
             
             <Button 
-              className="bg-zinc-900 border border-white/[0.1] text-zinc-200 hover:bg-zinc-800/80 transition-all rounded-lg px-4 py-2 w-full mt-4" 
+              className="bg-secondary border border-white/[0.1] text-foreground hover:bg-accent/80 transition-all rounded-lg px-4 py-2 w-full mt-4" 
               onClick={addLineItem}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Item
@@ -442,7 +442,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5 mt-5 border-t border-white/[0.05]">
               {/* Discount inputs */}
               <div className="space-y-3">
-                <Label className="text-xs text-neutral-400 block">Discount</Label>
+                <Label className="text-xs text-muted-foreground block">Discount</Label>
                 <div className="flex gap-2">
                   <Input 
                     type="number" 
@@ -455,12 +455,12 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                     value={formData.discountType} 
                     onValueChange={(val) => setFormData({...formData, discountType: val})}
                   >
-                    <SelectTrigger className="w-[100px] bg-zinc-900 border border-white/[0.08] text-zinc-200 rounded-lg">
+                    <SelectTrigger className="w-[100px] bg-secondary border border-white/[0.08] text-foreground rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border border-white/[0.08] rounded-lg">
-                      <SelectItem value="flat" className="text-zinc-200 focus:bg-zinc-800">Flat</SelectItem>
-                      <SelectItem value="percentage" className="text-zinc-200 focus:bg-zinc-800">%</SelectItem>
+                    <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg">
+                      <SelectItem value="flat" className="text-foreground focus:bg-accent">Flat</SelectItem>
+                      <SelectItem value="percentage" className="text-foreground focus:bg-accent">%</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -468,7 +468,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
 
               {/* Tax inputs */}
               <div className="space-y-3">
-                <Label className="text-xs text-neutral-400 block">Tax / GST / VAT</Label>
+                <Label className="text-xs text-muted-foreground block">Tax / GST / VAT</Label>
                 <div className="flex gap-2">
                   <Input 
                     placeholder="Tax Label (e.g. GST)" 
@@ -489,14 +489,14 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
 
             {/* Calculations Breakdown */}
             <div className="flex flex-col items-end gap-2 pt-4 mt-4 border-t border-white/[0.05]">
-              <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+              <div className="flex justify-between w-full sm:w-[300px] text-sm text-muted-foreground">
                 <span>Subtotal:</span>
-                <span className="font-mono text-zinc-200">
+                <span className="font-mono text-foreground">
                   {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(subtotal)}
                 </span>
               </div>
               {discountVal > 0 && (
-                <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+                <div className="flex justify-between w-full sm:w-[300px] text-sm text-muted-foreground">
                   <span>Discount ({formData.discountType === 'percentage' ? `${formData.discountAmount}%` : 'Flat'}):</span>
                   <span className="font-mono text-emerald-400">
                     -{new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(discountVal)}
@@ -504,9 +504,9 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                 </div>
               )}
               {taxVal > 0 && (
-                <div className="flex justify-between w-full sm:w-[300px] text-sm text-zinc-400">
+                <div className="flex justify-between w-full sm:w-[300px] text-sm text-muted-foreground">
                   <span>{formData.taxLabel} ({formData.taxRate}%):</span>
-                  <span className="font-mono text-zinc-200">
+                  <span className="font-mono text-foreground">
                     +{new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(taxVal)}
                   </span>
                 </div>
@@ -524,11 +524,11 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         {/* PAYMENT INFO Section */}
         <div className={cardStyles}>
           <div className="pb-4">
-            <h3 className="text-sm text-neutral-400 font-medium tracking-wide uppercase">Payment Info & Notes</h3>
+            <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">Payment Info & Notes</h3>
           </div>
           <div className="space-y-5">
             <div>
-              <Label className="text-xs text-neutral-400 mb-1.5 block">Payment Link (Optional)</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Payment Link (Optional)</Label>
               <Input 
                 value={formData.paymentLink} 
                 onChange={(e) => setFormData({...formData, paymentLink: e.target.value})} 
@@ -537,7 +537,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               />
             </div>
             <div>
-              <Label className="text-xs text-neutral-400 mb-1.5 block">Notes for Client</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Notes for Client</Label>
               <Textarea 
                 value={formData.notes} 
                 onChange={(e) => setFormData({...formData, notes: e.target.value})} 
@@ -553,12 +553,12 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
 
       {/* Right Pane - Live Preview */}
       <div className="w-full lg:w-1/2 lg:sticky lg:top-4 h-[600px] lg:h-[calc(100vh-8rem)]">
-        <div className="bg-zinc-950/40 backdrop-blur-md rounded-xl border border-white/[0.05] overflow-hidden h-full flex flex-col shadow-2xl">
-          <div className="px-5 py-4 bg-zinc-900/50 border-b border-white/[0.05] flex items-center justify-between">
-            <h3 className="text-sm font-medium tracking-wide text-zinc-200">Live PDF Preview</h3>
+        <div className="bg-background/40 backdrop-blur-md rounded-xl border border-white/[0.05] overflow-hidden h-full flex flex-col shadow-2xl">
+          <div className="px-5 py-4 bg-card/50 border-b border-white/[0.05] flex items-center justify-between">
+            <h3 className="text-sm font-medium tracking-wide text-foreground">Live PDF Preview</h3>
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
           </div>
-          <div className="flex-1 overflow-y-auto scroll-smooth bg-neutral-900/20">
+          <div className="flex-1 overflow-y-auto scroll-smooth bg-secondary/20">
             <LivePdfPreview 
               invoice={previewInvoice as any}
               client={localClient}

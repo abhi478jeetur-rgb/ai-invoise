@@ -71,12 +71,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+    draft: 'bg-muted text-muted-foreground border-border',
     sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
     due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
     overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
     paid: 'bg-green-950/40 text-green-400 border-green-900/50',
-    archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
+    archived: 'bg-muted/50 text-muted-foreground border-border/50',
   }
 
   return (
@@ -96,14 +96,14 @@ function formatCurrency(amount: number, currency: string) {
 }
 
 function getDueLabel(dueDate: string, status: string): { text: string; className: string } {
-  if (!dueDate) return { text: 'No due date', className: 'text-neutral-500' }
+  if (!dueDate) return { text: 'No due date', className: 'text-muted-foreground' }
   if (status === 'paid') return { text: 'Paid', className: 'text-green-400' }
   
   const now = new Date(); now.setHours(0, 0, 0, 0)
   const parseStr = (dueDate.includes('T') || dueDate.includes(' ')) ? dueDate : dueDate + 'T00:00:00'
   const due = new Date(parseStr); due.setHours(0, 0, 0, 0)
   
-  if (isNaN(due.getTime())) return { text: 'Invalid Date', className: 'text-neutral-500' }
+  if (isNaN(due.getTime())) return { text: 'Invalid Date', className: 'text-muted-foreground' }
   const diff = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
   if (status === 'overdue' || diff < 0) {
@@ -112,7 +112,7 @@ function getDueLabel(dueDate: string, status: string): { text: string; className
   }
   if (diff === 0) return { text: 'Due today', className: 'text-yellow-400' }
   if (diff === 1) return { text: 'Due tomorrow', className: 'text-yellow-400' }
-  return { text: `Due in ${diff}d`, className: 'text-neutral-500' }
+  return { text: `Due in ${diff}d`, className: 'text-muted-foreground' }
 }
 
 function getInvoiceEffectiveStatus(inv: { status: string; due_date: string }): string {
@@ -206,8 +206,8 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-100 tracking-tight">Invoices</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Invoices</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Track payments and follow up on outstanding invoices.
           </p>
         </div>
@@ -216,7 +216,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
             setEditingInvoice(null)
             setFormOpen(true)
           }}
-          className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer w-fit"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer w-fit"
         >
           + New Invoice
         </Button>
@@ -230,7 +230,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
               placeholder="Search invoices..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 placeholder:text-neutral-600 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              className="h-9 border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50"
             />
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -240,8 +240,8 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                   statusFilter === status
-                    ? 'bg-neutral-800 text-neutral-200'
-                    : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900'
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                 }`}
               >
                 {STATUS_LABELS[status]}
@@ -253,13 +253,13 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
 
       {/* Empty State */}
       {invoices.length === 0 ? (
-        <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+        <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
           <CardContent className="py-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 mb-4">
-              <span className="text-lg text-neutral-500">$</span>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-4">
+              <span className="text-lg text-muted-foreground">$</span>
             </div>
-            <h3 className="text-base font-medium text-neutral-300 mb-1">No invoices yet</h3>
-            <p className="text-sm text-neutral-500 mb-6 max-w-xs mx-auto">
+            <h3 className="text-base font-medium text-foreground/80 mb-1">No invoices yet</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               {clients.length === 0
                 ? 'Add a client first, then create your first invoice to start tracking payments.'
                 : 'Create your first invoice to track payments and generate AI-powered reminders.'}
@@ -276,7 +276,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                   setEditingInvoice(null)
                   setFormOpen(true)
                 }}
-                className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer"
               >
                 + Create Your First Invoice
               </Button>
@@ -285,7 +285,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
         </Card>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-sm text-neutral-500">No invoices match your filters.</p>
+          <p className="text-sm text-muted-foreground">No invoices match your filters.</p>
         </div>
       ) : (
         /* Invoice List */
@@ -295,7 +295,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
             return (
               <Card
                 key={invoice.id}
-                className="border-white/[0.06] bg-neutral-900/40 backdrop-blur-xl hover:bg-white/[0.02] transition-colors"
+                className="border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors"
               >
                 <CardContent className="py-2.5 px-4">
                   <div className="flex items-center justify-between gap-4">
@@ -314,30 +314,30 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                                 effectiveStatus === 'due_soon' ? 'bg-yellow-500' :
                                 effectiveStatus === 'paid' ? 'bg-green-500' :
                                 effectiveStatus === 'sent' ? 'bg-blue-500' :
-                                'bg-neutral-700'
+                                'bg-muted-foreground/50'
                               }`} />
 
                               {/* Title + Client */}
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm font-semibold text-neutral-200 truncate group-hover:text-white transition-colors capitalize">
+                                  <p className="text-sm font-semibold text-foreground truncate group-hover:text-foreground transition-colors capitalize">
                                     {invoice.title || invoice.clients?.client_name || 'Untitled'}
                                   </p>
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[9px] font-mono text-neutral-500 shrink-0">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted border border-border text-[9px] font-mono text-muted-foreground shrink-0">
                                     {invoice.invoice_number}
                                   </span>
                                 </div>
-                                <p className="text-xs text-neutral-500 truncate mt-0.5">
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
                                   {invoice.clients?.client_name}
                                   {invoice.clients?.company_name && (
-                                    <span className="text-neutral-600"> &middot; {invoice.clients.company_name}</span>
+                                    <span className="text-muted-foreground/60"> &middot; {invoice.clients.company_name}</span>
                                   )}
                                 </p>
                               </div>
 
                               {/* Amount */}
                               <div className="shrink-0 text-right hidden sm:block">
-                                <p className="text-sm font-bold text-neutral-100 font-mono">
+                                <p className="text-sm font-bold text-foreground font-mono">
                                   {formatCurrency(invoice.amount, invoice.currency)}
                                 </p>
                                 <p className={`text-[11px] mt-0.5 ${due.className}`}>
@@ -363,7 +363,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
                             >
                               <span className="text-lg leading-none">...</span>
                             </Button>
@@ -371,12 +371,12 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                         />
                         <DropdownMenuContent
                           align="end"
-                          className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl"
+                          className="border-border bg-popover/95 backdrop-blur-xl"
                         >
                           <DropdownMenuItem asChild>
                             <Link
                               href={`/invoices/${invoice.id}`}
-                              className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer"
+                              className="text-foreground/80 focus:bg-accent focus:text-foreground cursor-pointer"
                             >
                               View Details
                             </Link>
@@ -391,14 +391,14 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                                   duration: 3000,
                                 });
                               }}
-                              className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer w-full text-left"
+                              className="text-foreground/80 focus:bg-accent focus:text-foreground cursor-pointer w-full text-left"
                             >
                               Download PDF
                             </a>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleEdit(invoice)}
-                            className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer"
+                            className="text-foreground/80 focus:bg-accent focus:text-foreground cursor-pointer"
                           >
                             Edit
                           </DropdownMenuItem>
@@ -416,7 +416,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                   {/* Mobile amount row */}
                   <div className="flex items-center justify-between mt-2 sm:hidden">
                     <p className={`text-xs ${due.className}`}>{due.text}</p>
-                    <p className="text-sm font-bold text-neutral-100 font-mono">
+                    <p className="text-sm font-bold text-foreground font-mono">
                       {formatCurrency(invoice.amount, invoice.currency)}
                     </p>
                   </div>

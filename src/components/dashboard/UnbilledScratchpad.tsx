@@ -68,20 +68,20 @@ export function UnbilledScratchpad() {
   }
 
   if (loading) return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6 animate-pulse">
-      <div className="h-5 w-40 bg-neutral-800 rounded mb-4"></div>
-      <div className="h-10 w-full bg-neutral-800 rounded"></div>
+    <div className="rounded-xl border border-border bg-card/50 p-6 animate-pulse">
+      <div className="h-5 w-40 bg-accent rounded mb-4"></div>
+      <div className="h-10 w-full bg-accent rounded"></div>
     </div>
   )
 
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-6 flex flex-col gap-4">
+    <div className="rounded-xl border border-border bg-background p-6 flex flex-col gap-4">
       <div>
         <h3 className="text-lg font-medium text-white flex items-center gap-2">
           <Clock className="h-5 w-5 text-[var(--user-accent)]" />
           Unbilled Work (Scratchpad)
         </h3>
-        <p className="text-sm text-neutral-400 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Quickly log things you&apos;ve done. Convert them to invoices later.
         </p>
       </div>
@@ -92,7 +92,7 @@ export function UnbilledScratchpad() {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="e.g. Wrote 2 blog articles for Acme Corp..."
-          className="w-full rounded-lg border border-neutral-800 bg-neutral-900 py-2.5 pl-4 pr-12 text-sm text-neutral-200 placeholder:text-neutral-500 focus:border-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-700"
+          className="w-full rounded-lg border border-border bg-secondary py-2.5 pl-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-border focus:outline-none focus:ring-1 focus:ring-neutral-700"
           disabled={isPending}
         />
         <button
@@ -107,14 +107,14 @@ export function UnbilledScratchpad() {
       {tasks.length > 0 && (
         <div className="mt-2 space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
           {tasks.map(task => (
-            <div key={task.id} className="group relative flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/50 p-3 hover:border-neutral-700 transition-colors">
-              <span className="text-sm text-neutral-300 pr-20">{task.description}</span>
+            <div key={task.id} className="group relative flex items-center justify-between rounded-lg border border-border bg-card/50 p-3 hover:border-border transition-colors">
+              <span className="text-sm text-foreground/80 pr-20">{task.description}</span>
               
               <div className="absolute right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleCreateInvoice(task.description)}
                   title="Create Invoice from this"
-                  className="rounded bg-neutral-800 p-1.5 text-neutral-300 hover:bg-neutral-700 hover:text-white"
+                  className="rounded bg-accent p-1.5 text-foreground/80 hover:bg-accent hover:text-foreground"
                 >
                   <ArrowRight className="h-4 w-4" />
                 </button>
@@ -131,8 +131,8 @@ export function UnbilledScratchpad() {
         </div>
       )}
       {tasks.length === 0 && (
-        <div className="mt-2 text-center py-6 border border-dashed border-neutral-800 rounded-lg">
-          <p className="text-sm text-neutral-500">No unbilled tasks! You&apos;re all caught up.</p>
+        <div className="mt-2 text-center py-6 border border-dashed border-border rounded-lg">
+          <p className="text-sm text-muted-foreground">No unbilled tasks! You&apos;re all caught up.</p>
         </div>
       )}
     </div>

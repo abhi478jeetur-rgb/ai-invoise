@@ -73,8 +73,8 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-100 tracking-tight">Clients</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Clients</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Your client directory for invoice tracking and follow-ups.
           </p>
         </div>
@@ -84,7 +84,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
             setEditingClient(null)
             setFormOpen(true)
           }}
-          className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer w-fit"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer w-fit"
         >
           + Add Client
         </Button>
@@ -97,20 +97,20 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
             placeholder="Search clients..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 placeholder:text-neutral-600 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+            className="h-9 border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50"
           />
         </div>
       )}
 
       {/* Empty State */}
       {clients.length === 0 ? (
-        <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+        <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
           <CardContent className="py-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 mb-4">
-              <span className="text-lg text-neutral-500">+</span>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-4">
+              <span className="text-lg text-muted-foreground">+</span>
             </div>
-            <h3 className="text-base font-medium text-neutral-300 mb-1">No clients yet</h3>
-            <p className="text-sm text-neutral-500 mb-6 max-w-xs mx-auto">
+            <h3 className="text-base font-medium text-foreground/80 mb-1">No clients yet</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               Add your first client to start tracking invoices and sending follow-ups.
             </p>
             <Button
@@ -118,7 +118,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                 setEditingClient(null)
                 setFormOpen(true)
               }}
-              className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer"
             >
               + Add Your First Client
             </Button>
@@ -126,7 +126,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
         </Card>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-sm text-neutral-500">No clients match your search.</p>
+          <p className="text-sm text-muted-foreground">No clients match your search.</p>
         </div>
       ) : (
         /* Client List */
@@ -134,7 +134,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
           {filtered.map((client) => (
             <Card
               key={client.id}
-              className="border-white/[0.06] bg-neutral-900/40 backdrop-blur-xl hover:bg-white/[0.02] transition-colors"
+              className="border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors"
             >
               <CardContent className="py-2.5 px-4">
                 <div className="flex items-center justify-between">
@@ -143,27 +143,27 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                     className="flex-1 min-w-0 group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-neutral-800/80 border border-neutral-700/50 shrink-0">
-                        <span className="text-xs font-medium text-neutral-400">
+                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-secondary border border-border shrink-0">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {client.client_name[0]?.toUpperCase() ?? '?'}
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-neutral-200 truncate group-hover:text-white transition-colors">
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-foreground transition-colors">
                           {client.client_name}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {client.company_name && (
-                            <span className="text-xs text-neutral-500 truncate">{client.company_name}</span>
+                            <span className="text-xs text-muted-foreground truncate">{client.company_name}</span>
                           )}
                           {client.email && client.company_name && (
-                            <span className="text-neutral-700">&middot;</span>
+                            <span className="text-muted-foreground/50">&middot;</span>
                           )}
                           {client.email && (
-                            <span className="text-xs text-neutral-600 truncate">{client.email}</span>
+                            <span className="text-xs text-muted-foreground/60 truncate">{client.email}</span>
                           )}
                           {!client.company_name && !client.email && (
-                            <span className="text-xs text-neutral-600">No contact info</span>
+                            <span className="text-xs text-muted-foreground/60">No contact info</span>
                           )}
                         </div>
                       </div>
@@ -172,7 +172,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
 
                   <div className="flex items-center gap-3">
                     {client.phone && (
-                      <span className="text-xs text-neutral-600 hidden lg:inline">{client.phone}</span>
+                      <span className="text-xs text-muted-foreground/60 hidden lg:inline">{client.phone}</span>
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger
@@ -180,7 +180,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 cursor-pointer"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
                           >
                             <span className="text-lg leading-none">...</span>
                           </Button>
@@ -188,11 +188,11 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                       />
                       <DropdownMenuContent
                         align="end"
-                        className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl"
+                        className="border-border bg-popover/95 backdrop-blur-xl"
                       >
                         <DropdownMenuItem
                           onClick={() => handleEdit(client)}
-                          className="text-neutral-300 focus:bg-neutral-800 focus:text-neutral-100 cursor-pointer"
+                          className="text-foreground/80 focus:bg-accent focus:text-foreground cursor-pointer"
                         >
                           Edit
                         </DropdownMenuItem>

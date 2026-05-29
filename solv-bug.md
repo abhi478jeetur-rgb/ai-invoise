@@ -37,3 +37,9 @@ This file tracks all the major bugs encountered and successfully resolved in the
   4. Resolved strict mode violation by using `{ exact: true }` matching for `'Generate Reminder'`.
   5. Fully aligned the reminder assertions to match the new beautiful preview wizard: clicks `"Generate Draft"`, verifies the generated preview paragraph contents, and completes the flow by clicking `"Mark as Sent"`.
 
+### 6. Dashboard Visual Customizer Theme Mismatch Override
+- **Bug:** The main dashboard content, including cards, background, text, and tables, remained completely black when the user switched the application theme to light mode, causing severe visual mismatch.
+- **Root Cause:** The `DashboardVisualCustomizer` component statically initialized its preset configuration defaults to `THEME_PRESETS[0]` (Midnight Dark) on mount and overrode key CSS styling variables for the body and cards, completely ignoring next-themes.
+- **Solution:** Integrated `useTheme` from `next-themes` within `visual-customizer.tsx` to dynamically select the Nordic Light preset (which was updated to pure white `#ffffff` cards and backgrounds) when `resolvedTheme` is `'light'`, and Midnight Dark when `'dark'`. This cleanly syncs the visual customizer presets with the system-wide active theme.
+
+

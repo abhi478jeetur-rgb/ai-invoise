@@ -307,129 +307,129 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-100 tracking-tight">Settings</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Manage your profile, business presence, and AI provider configuration.
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="bg-neutral-900/60 border border-neutral-800 p-1 flex-wrap h-auto gap-1">
-          <TabsTrigger value="profile" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
+        <TabsList className="bg-secondary/60 border border-border p-1 flex-wrap h-auto gap-1">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground hover:bg-accent/50 hover:text-foreground/80 text-xs cursor-pointer transition-colors">
             Profile & Preferences
           </TabsTrigger>
-          <TabsTrigger value="business" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
+          <TabsTrigger value="business" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground hover:bg-accent/50 hover:text-foreground/80 text-xs cursor-pointer transition-colors">
             Business & Invoicing
           </TabsTrigger>
 
-          <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
+          <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-muted-foreground hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
             Account
           </TabsTrigger>
         </TabsList>
 
         {/* ─── Tab 1: Profile & Preferences ─── */}
         <TabsContent value="profile" className="mt-4 space-y-6">
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+          <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
             <CardHeader>
-              <CardTitle className="text-base font-medium text-neutral-200">Profile & Preferences</CardTitle>
-              <CardDescription className="text-sm text-neutral-500">
+              <CardTitle className="text-base font-medium text-foreground">Profile & Preferences</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
                 Your personal name, email, and default currency.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleProfileSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="fullName">Full Name</Label>
+                  <Label className="text-muted-foreground" htmlFor="fullName">Full Name</Label>
                   <Input id="fullName" name="fullName" defaultValue={p.full_name}
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                    className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="email">Email</Label>
+                  <Label className="text-muted-foreground" htmlFor="email">Email</Label>
                   <Input id="email" value={p.email} disabled
-                    className="h-9 border-neutral-700 bg-neutral-900 text-neutral-200 cursor-not-allowed disabled:opacity-100" />
-                  <p className="text-[11px] text-neutral-600">Email is managed by your auth provider.</p>
+                    className="h-9 border-border bg-secondary text-foreground cursor-not-allowed disabled:opacity-100" />
+                  <p className="text-[11px] text-muted-foreground/60">Email is managed by your auth provider.</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="defaultCurrency">Default Currency</Label>
+                  <Label className="text-muted-foreground" htmlFor="defaultCurrency">Default Currency</Label>
                   <select id="defaultCurrency" name="defaultCurrency" defaultValue={p.default_currency}
-                    className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                    className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                     {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
 
                 <Button type="submit" disabled={profileSaving}
-                  className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
                   {profileSaving ? 'Saving...' : 'Save Profile'}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+          <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
             <CardHeader>
-              <CardTitle className="text-base font-medium text-neutral-200">Security & Password</CardTitle>
-              <CardDescription className="text-sm text-neutral-500">
+              <CardTitle className="text-base font-medium text-foreground">Security & Password</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
                 Update your login credentials securely.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSecuritySubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="newPassword">New Password</Label>
+                  <Label className="text-muted-foreground" htmlFor="newPassword">New Password</Label>
                   <Input id="newPassword" name="password" type="password" required placeholder="••••••••"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
-                  <p className="text-[10px] text-neutral-500 leading-normal">
+                    className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
+                  <p className="text-[10px] text-muted-foreground leading-normal">
                     Must be at least 8 characters, contain one uppercase letter, one lowercase letter, one number, and one special character.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label className="text-muted-foreground" htmlFor="confirmPassword">Confirm New Password</Label>
                   <Input id="confirmPassword" name="confirmPassword" type="password" required placeholder="••••••••"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                    className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                 </div>
 
                 <Button type="submit" disabled={securitySaving}
-                  className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
                   {securitySaving ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+          <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
             <CardHeader>
-              <CardTitle className="text-base font-medium text-neutral-200">Invoice Reminders</CardTitle>
-              <CardDescription className="text-sm text-neutral-500">
+              <CardTitle className="text-base font-medium text-foreground">Invoice Reminders</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
                 Schedule a weekly reminder to log your unbilled work.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleReminderSubmit} className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-neutral-400" htmlFor="reminderEnabled">Enable Weekly Reminders</Label>
+                  <Label className="text-muted-foreground" htmlFor="reminderEnabled">Enable Weekly Reminders</Label>
                   <input type="checkbox" id="reminderEnabled" checked={reminderEnabled}
                     onChange={(e) => setReminderEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50" />
+                    className="h-4 w-4 rounded border-border bg-background text-foreground focus:ring-ring/50" />
                 </div>
 
                 {reminderEnabled && (
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div className="space-y-1.5">
-                      <Label className="text-neutral-400" htmlFor="reminderDay">Day of Week</Label>
+                      <Label className="text-muted-foreground" htmlFor="reminderDay">Day of Week</Label>
                       <select id="reminderDay" name="reminder_day" defaultValue={p.reminder_day || 'Monday'}
-                        className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                        className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                         {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => (
                           <option key={d} value={d}>{d}</option>
                         ))}
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-neutral-400" htmlFor="reminderTime">Time of Day</Label>
+                      <Label className="text-muted-foreground" htmlFor="reminderTime">Time of Day</Label>
                       <select id="reminderTime" name="reminder_time" defaultValue={p.reminder_time || 'Morning'}
-                        className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                        className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                         <option value="Morning">Morning (9 AM - 12 PM)</option>
                         <option value="Afternoon">Afternoon (12 PM - 5 PM)</option>
                         <option value="Evening">Evening (5 PM - 9 PM)</option>
@@ -439,23 +439,23 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 )}
 
                 <Button type="submit" disabled={reminderSaving}
-                  className="bg-neutral-800 text-white hover:bg-neutral-700 font-medium text-sm cursor-pointer disabled:opacity-50 mt-2">
+                  className="bg-accent text-white hover:bg-accent font-medium text-sm cursor-pointer disabled:opacity-50 mt-2">
                   {reminderSaving ? 'Saving...' : 'Save Reminder Schedule'}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
+          <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
             <CardHeader>
-              <CardTitle className="text-base font-medium text-neutral-200">Recycle Bin</CardTitle>
-              <CardDescription className="text-sm text-neutral-500">
+              <CardTitle className="text-base font-medium text-foreground">Recycle Bin</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
                 Manage deleted invoices and clients.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/trash" className="inline-block">
-                <Button variant="outline" className="bg-neutral-900 border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer">
+                <Button variant="outline" className="bg-secondary border-border text-foreground/80 hover:text-foreground hover:bg-accent cursor-pointer">
                   Open Recycle Bin
                 </Button>
               </Link>
@@ -471,38 +471,39 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
           <form onSubmit={handleBizSubmit} className="space-y-6 max-w-2xl">
             {/* ── Business Identity ── */}
-            <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+            <Card className="border-border bg-card/40 backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-base font-medium text-neutral-200">Business Identity</CardTitle>
-                <CardDescription className="text-sm text-neutral-500">
+                <CardTitle className="text-base font-medium text-foreground">Business Identity</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
                   Your business name, logo, and contact details.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Logo Upload */}
                 <div className="space-y-2">
-                  <Label className="text-neutral-400">Business Logo</Label>
+                  <Label className="text-muted-foreground">Business Logo</Label>
                   <div className="flex items-center gap-4">
                     <div
                       onClick={() => logoInputRef.current?.click()}
-                      className="relative w-20 h-20 rounded-xl border-2 border-dashed border-neutral-700 bg-neutral-950 flex items-center justify-center cursor-pointer hover:border-neutral-500 transition-colors overflow-hidden">
+                      className="relative w-20 h-20 rounded-xl border-2 border-dashed border-border bg-background flex items-center justify-center cursor-pointer hover:border-border transition-colors overflow-hidden">
                       {logoPreview ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={logoPreview} alt="Business logo" className="w-full h-full object-contain p-1" onError={() => setLogoPreview(null)} />
                       ) : (
                         <div className="text-center">
                           <div className="text-2xl mb-1">🏢</div>
-                          <p className="text-[10px] text-neutral-600">Click to upload</p>
+                          <p className="text-[10px] text-muted-foreground/60">Click to upload</p>
                         </div>
                       )}
                       {logoUploading && (
-                        <div className="absolute inset-0 bg-neutral-900/80 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-card/80 flex items-center justify-center">
                           <div className="w-5 h-5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-neutral-400">JPG, PNG, or WebP · Max 2MB</p>
-                      <p className="text-xs text-neutral-600 mt-1">This logo will appear on your PDF invoices.</p>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, or WebP · Max 2MB</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">This logo will appear on your PDF invoices.</p>
                       {logoPreview && (
                         <button type="button" onClick={() => { setLogoPreview(null); setLogoUrl('') }}
                           className="text-xs text-red-400 hover:text-red-300 mt-2 transition-colors">
@@ -518,40 +519,40 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="companyName">Company / Business Name</Label>
+                    <Label className="text-muted-foreground" htmlFor="companyName">Company / Business Name</Label>
                     <Input id="companyName" name="companyName" defaultValue={p.company_name}
                       placeholder="Acme Design Studio"
-                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                      className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="taxId">GST / VAT / Tax ID</Label>
+                    <Label className="text-muted-foreground" htmlFor="taxId">GST / VAT / Tax ID</Label>
                     <Input id="taxId" name="taxId" defaultValue={p.tax_id}
                       placeholder="GSTIN or VAT number"
-                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                      className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="companyAddress">Business Address</Label>
+                  <Label className="text-muted-foreground" htmlFor="companyAddress">Business Address</Label>
                   <textarea id="companyAddress" name="companyAddress" defaultValue={p.company_address} rows={3}
                     placeholder={"123 Main Street\nMumbai, MH 400001\nIndia"}
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="companyWebsite">Website</Label>
+                  <Label className="text-muted-foreground" htmlFor="companyWebsite">Website</Label>
                   <Input id="companyWebsite" name="companyWebsite" type="url" defaultValue={p.company_website}
                     placeholder="https://yourwebsite.com"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                    className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                 </div>
               </CardContent>
             </Card>
 
             {/* ── Invoice Defaults ── */}
-            <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+            <Card className="border-border bg-card/40 backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-base font-medium text-neutral-200">Invoice Defaults & Formatting</CardTitle>
-                <CardDescription className="text-sm text-neutral-500">
+                <CardTitle className="text-base font-medium text-foreground">Invoice Defaults & Formatting</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
                   Configure default options and pattern numbering logic for your invoices.
                 </CardDescription>
               </CardHeader>
@@ -559,30 +560,30 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-neutral-400" htmlFor="invoicePrefix">Invoice Prefix</Label>
+                      <Label className="text-muted-foreground" htmlFor="invoicePrefix">Invoice Prefix</Label>
                       <div className="group relative inline-block">
-                        <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
-                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                        <span className="w-3.5 h-3.5 rounded-full bg-accent hover:bg-accent flex items-center justify-center text-[10px] text-muted-foreground hover:text-foreground cursor-help select-none font-semibold font-sans">?</span>
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-background border border-border text-[11px] leading-relaxed text-foreground/80 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
                           The starting letters for your invoice numbers (e.g., &quot;INV-&quot; or &quot;CF-&quot;).
                         </span>
                       </div>
                     </div>
                     <Input id="invoicePrefix" name="invoicePrefix" defaultValue={p.global_rules?.invoice_prefix ?? 'INV-'}
                       placeholder="INV-"
-                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                      className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-neutral-400" htmlFor="invoiceFormat">Invoice Format</Label>
+                      <Label className="text-muted-foreground" htmlFor="invoiceFormat">Invoice Format</Label>
                       <div className="group relative inline-block">
-                        <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
-                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
+                        <span className="w-3.5 h-3.5 rounded-full bg-accent hover:bg-accent flex items-center justify-center text-[10px] text-muted-foreground hover:text-foreground cursor-help select-none font-semibold font-sans">?</span>
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-background border border-border text-[11px] leading-relaxed text-foreground/80 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
                           Sequential pattern structure. Either simple sequence (INV-001) or including the current calendar year (INV-2026-001).
                         </span>
                       </div>
                     </div>
                     <select id="invoiceFormat" name="invoiceFormat" defaultValue={p.global_rules?.invoice_format ?? 'PREFIX-[SEQUENCE]'}
-                      className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                      className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                       <option value="PREFIX-[SEQUENCE]">PREFIX-[SEQUENCE] (e.g. INV-001)</option>
                       <option value="PREFIX-[YEAR]-[SEQUENCE]">PREFIX-[YEAR]-[SEQUENCE] (e.g. INV-2026-001)</option>
                     </select>
@@ -591,16 +592,16 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="biz_defaultCurrency">Default Currency</Label>
+                    <Label className="text-muted-foreground" htmlFor="biz_defaultCurrency">Default Currency</Label>
                     <select id="biz_defaultCurrency" name="defaultCurrency" defaultValue={p.default_currency}
-                      className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                      className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                       {CURRENCIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="defaultPaymentTerms">Default Payment Terms</Label>
+                    <Label className="text-muted-foreground" htmlFor="defaultPaymentTerms">Default Payment Terms</Label>
                     <select id="defaultPaymentTerms" name="defaultPaymentTerms" defaultValue={p.default_payment_terms || 'net_30'}
-                      className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                      className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                       {PAYMENT_TERMS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
@@ -608,84 +609,84 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="defaultTaxLabel">Tax Label</Label>
+                    <Label className="text-muted-foreground" htmlFor="defaultTaxLabel">Tax Label</Label>
                     <Input id="defaultTaxLabel" name="defaultTaxLabel" defaultValue={p.default_tax_label}
                       placeholder="GST, VAT, HST..."
-                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                      className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-neutral-400" htmlFor="defaultTaxRate">Tax Rate (%)</Label>
+                    <Label className="text-muted-foreground" htmlFor="defaultTaxRate">Tax Rate (%)</Label>
                     <Input id="defaultTaxRate" name="defaultTaxRate" type="number" step="0.01" min="0" max="100"
                       defaultValue={p.default_tax_rate ?? ''}
                       placeholder="18"
-                      className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
+                      className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="paymentLinkDefault">Default Payment Link</Label>
+                  <Label className="text-muted-foreground" htmlFor="paymentLinkDefault">Default Payment Link</Label>
                   <Input id="paymentLinkDefault" name="paymentLinkDefault" type="url" defaultValue={p.payment_link_default}
                     placeholder="https://razorpay.com/payment-link/..."
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
-                  <p className="text-[11px] text-neutral-600">Auto-added to every new invoice. You can override it per-invoice.</p>
+                    className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50" />
+                  <p className="text-[11px] text-muted-foreground/60">Auto-added to every new invoice. You can override it per-invoice.</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="bankDetails">Bank / Payment Details</Label>
+                  <Label className="text-muted-foreground" htmlFor="bankDetails">Bank / Payment Details</Label>
                   <textarea id="bankDetails" name="bankDetails" defaultValue={p.bank_details} rows={4}
                     placeholder={"Bank: HDFC Bank\nAccount Name: Acme Studio\nAccount No: 1234567890\nIFSC: HDFC0001234"}
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
-                  <p className="text-[11px] text-neutral-600">Shown at the bottom of your PDF invoices.</p>
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
+                  <p className="text-[11px] text-muted-foreground/60">Shown at the bottom of your PDF invoices.</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* ── AI Knowledge Base / Business Rules ── */}
-            <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+            <Card className="border-border bg-card/40 backdrop-blur-xl">
               <CardHeader>
-                <CardTitle className="text-base font-medium text-neutral-200">AI Knowledge Base</CardTitle>
-                <CardDescription className="text-sm text-neutral-500">
+                <CardTitle className="text-base font-medium text-foreground">AI Knowledge Base</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
                   These rules are used by the AI when writing reminder emails and are optionally shown on PDF invoices.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="rule_late_payment">Late Payment Policy</Label>
+                  <Label className="text-muted-foreground" htmlFor="rule_late_payment">Late Payment Policy</Label>
                   <textarea id="rule_late_payment" name="rule_late_payment"
                     defaultValue={p.global_rules?.late_payment_policy ?? ''} rows={2}
                     placeholder="e.g., A late fee of 5% will be applied after 30 days."
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="rule_refund">Refund / Cancellation Policy</Label>
+                  <Label className="text-muted-foreground" htmlFor="rule_refund">Refund / Cancellation Policy</Label>
                   <textarea id="rule_refund" name="rule_refund"
                     defaultValue={p.global_rules?.refund_policy ?? ''} rows={2}
                     placeholder="e.g., No refunds after project kick-off."
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="rule_tnc">Terms & Conditions</Label>
+                  <Label className="text-muted-foreground" htmlFor="rule_tnc">Terms & Conditions</Label>
                   <textarea id="rule_tnc" name="rule_tnc"
                     defaultValue={p.global_rules?.terms_and_conditions ?? ''} rows={4}
                     placeholder="e.g., All work remains property of the client upon full payment. Disputes governed by the laws of India..."
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400">Knowledge Base Documents</Label>
+                  <Label className="text-muted-foreground">Knowledge Base Documents</Label>
                   <div className="space-y-2">
                     {kbDocs.map((doc: any) => (
-                      <div key={doc.id} className="flex items-center justify-between p-2 rounded border border-neutral-800 bg-neutral-950">
-                        <span className="text-sm text-neutral-300 truncate max-w-[200px]">{doc.file_name}</span>
+                      <div key={doc.id} className="flex items-center justify-between p-2 rounded border border-border bg-background">
+                        <span className="text-sm text-foreground/80 truncate max-w-[200px]">{doc.file_name}</span>
                         <button type="button" onClick={() => handleDeleteDocument(doc.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
                       </div>
                     ))}
                     <div className="pt-2">
                       <input ref={docInputRef} type="file" accept=".pdf,.txt,.docx" className="hidden" onChange={handleUploadDocument} />
                       <Button type="button" size="sm" onClick={() => docInputRef.current?.click()} disabled={docUploading}
-                        className="h-8 text-xs bg-neutral-800 text-neutral-100 hover:bg-neutral-700 border border-neutral-700 cursor-pointer">
+                        className="h-8 text-xs bg-accent text-foreground hover:bg-accent border border-border cursor-pointer">
                         {docUploading ? 'Uploading...' : 'Upload Document'}
                       </Button>
                     </div>
@@ -693,17 +694,17 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="rule_comm_style">AI Communication Style</Label>
+                  <Label className="text-muted-foreground" htmlFor="rule_comm_style">AI Communication Style</Label>
                   <textarea id="rule_comm_style" name="rule_comm_style"
                     defaultValue={p.global_rules?.communication_style ?? ''} rows={2}
                     placeholder="e.g., Always be polite, professional, and avoid emojis."
-                    className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 resize-none focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700" />
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border" />
                 </div>
               </CardContent>
             </Card>
 
             <Button type="submit" disabled={bizSaving || logoUploading}
-              className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
               {bizSaving ? 'Saving...' : 'Save Business Profile'}
             </Button>
           </form>
@@ -722,12 +723,12 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             <CardContent>
               <form onSubmit={handleDeleteAccount} className="space-y-4">
                 <div className="space-y-2 p-4 bg-red-950/20 border border-red-900/30 rounded-md">
-                  <p className="text-sm text-neutral-300">
+                  <p className="text-sm text-foreground/80">
                     To verify, type <strong className="text-red-400 select-all">delete my account</strong> below:
                   </p>
                   <Input value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)}
                     placeholder="delete my account"
-                    className="h-9 border-red-900/50 bg-neutral-950 text-neutral-200 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                    className="h-9 border-red-900/50 bg-background text-foreground focus-visible:border-red-500 focus-visible:ring-red-500/20"
                     autoComplete="off" />
                 </div>
                 <Button type="submit" disabled={accountDeleting || deleteConfirmation !== 'delete my account'}

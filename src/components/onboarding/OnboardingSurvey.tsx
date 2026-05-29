@@ -127,7 +127,7 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(val) => { if (val) setIsOpen(true); }}>
       <DialogContent
-        className="sm:max-w-md bg-neutral-950 border border-neutral-800"
+        className="sm:max-w-md bg-background border border-border"
         showCloseButton={false}
       >
         <DialogHeader>
@@ -135,16 +135,16 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors mb-2 w-fit"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground/80 transition-colors mb-2 w-fit"
             >
               <ArrowLeft className="h-3 w-3" />
               Back
             </button>
           )}
-          <DialogTitle className="text-neutral-100 text-lg">
+          <DialogTitle className="text-foreground text-lg">
             {step.title}
           </DialogTitle>
-          <DialogDescription className="text-neutral-500 text-sm">
+          <DialogDescription className="text-muted-foreground text-sm">
             {step.description}
           </DialogDescription>
         </DialogHeader>
@@ -155,7 +155,7 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= currentStep ? 'bg-white' : 'bg-neutral-800'
+                i <= currentStep ? 'bg-white' : 'bg-accent'
               }`}
             />
           ))}
@@ -214,7 +214,7 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
             type="button"
             onClick={handleNext}
             disabled={submitting}
-            className="flex-1 bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50"
+            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50"
           >
             {submitting ? (
               <span className="flex items-center gap-2">
@@ -238,7 +238,7 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
 function NameStep({ control, errors }: { control: any; errors: any }) {
   return (
     <div className="space-y-3">
-      <Label htmlFor="full_name" className="text-neutral-400">
+      <Label htmlFor="full_name" className="text-muted-foreground">
         Your Name
       </Label>
       <Controller
@@ -250,7 +250,7 @@ function NameStep({ control, errors }: { control: any; errors: any }) {
             id="full_name"
             placeholder="e.g. Jane Smith"
             autoFocus
-            className="h-10 border-neutral-800 bg-neutral-900 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+            className="h-10 border-border bg-secondary text-foreground focus-visible:border-border focus-visible:ring-ring/50"
           />
         )}
       />
@@ -290,15 +290,15 @@ function RadioStep({
                 key={opt.value}
                 className={`flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
                   field.value === opt.value
-                    ? 'border-neutral-600 bg-neutral-800/60'
-                    : 'border-neutral-800 bg-neutral-900/40 hover:border-neutral-700'
+                    ? 'border-neutral-600 bg-accent/60'
+                    : 'border-border bg-card/40 hover:border-border'
                 }`}
               >
                 <RadioGroupItem value={opt.value} />
                 <div>
-                  <span className="text-sm text-neutral-200">{opt.label}</span>
+                  <span className="text-sm text-foreground">{opt.label}</span>
                   {showDescription && opt.description && (
-                    <p className="text-xs text-neutral-500 mt-0.5">{opt.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
                   )}
                 </div>
               </label>

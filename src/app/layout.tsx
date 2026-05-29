@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PHProvider } from '@/providers/posthog-provider'
+import { ThemeProvider } from '@/providers/theme-provider'
 import SuspendedPostHogPageview from '@/components/posthog-pageview'
 
 const geistSans = Geist({
@@ -34,19 +35,18 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="font-sans antialiased bg-[#000000] text-white min-h-full flex flex-col">
-        <PHProvider>
-          <SuspendedPostHogPageview />
-          <ConnectivityMonitor />
-          {children}
-        </PHProvider>
-        <AgentationDevTool />
-        <Toaster 
-          toastOptions={{
-            className: "bg-zinc-950 border border-white/[0.08] text-zinc-100 font-sans",
-          }}
-        />
+      <body className="font-sans antialiased bg-background text-foreground min-h-full flex flex-col">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <PHProvider>
+            <SuspendedPostHogPageview />
+            <ConnectivityMonitor />
+            {children}
+          </PHProvider>
+          <AgentationDevTool />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

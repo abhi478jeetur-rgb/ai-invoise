@@ -93,20 +93,18 @@ export default function VerifyOtpPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-neutral-950 px-4 py-12 selection:bg-neutral-800 overflow-hidden">
-      {/* Background ambient radial gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,rgba(24,24,27,0.8),transparent)] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neutral-900/10 rounded-full blur-[160px] pointer-events-none" />
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 selection:bg-muted overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,var(--muted),transparent)] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-muted/10 rounded-full blur-[160px] pointer-events-none" />
 
       {/* Main Card Container */}
-      <Card className="relative w-full max-w-md border-neutral-900 bg-neutral-900/40 backdrop-blur-xl shadow-2xl p-4">
-        {/* Top Header */}
+      <Card className="relative w-full max-w-md border-border bg-card/40 backdrop-blur-xl shadow-2xl p-4">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 mb-2 shadow-inner">
-            <span className="text-xl font-bold tracking-tight text-white">C</span>
+          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-2 shadow-inner">
+            <span className="text-xl font-bold tracking-tight text-foreground">C</span>
           </div>
-          <CardTitle className="text-2xl font-semibold text-neutral-100 tracking-tight">Enter Verification Code</CardTitle>
-          <CardDescription className="text-sm text-neutral-500 mt-1">
+          <CardTitle className="text-2xl font-semibold text-foreground tracking-tight">Enter Verification Code</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
             We sent a 6-digit code to {email || 'your email'}
           </CardDescription>
         </CardHeader>
@@ -122,7 +120,7 @@ export default function VerifyOtpPage() {
 
             {!emailParam && (
               <div className="space-y-1.5">
-                <Label className="text-neutral-400" htmlFor="email">
+                <Label className="text-muted-foreground" htmlFor="email">
                   Confirm Email Address
                 </Label>
                 <Input
@@ -133,13 +131,13 @@ export default function VerifyOtpPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="h-10 px-3.5 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                  className="h-10 px-3.5 border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label className="text-neutral-400 text-center block">6-Digit Code</Label>
+              <Label className="text-muted-foreground text-center block">6-Digit Code</Label>
               <div className="flex justify-center gap-2" onPaste={handlePaste}>
                 {otpValues.map((val, idx) => (
                   <input
@@ -150,7 +148,7 @@ export default function VerifyOtpPage() {
                     value={val}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
-                    className="w-11 h-12 text-center text-lg font-semibold border border-neutral-800 bg-neutral-950 text-white rounded-lg focus:outline-none focus:border-neutral-700 focus:ring-1 focus:ring-neutral-700/50"
+                    className="w-11 h-12 text-center text-lg font-semibold border border-border bg-background text-foreground rounded-lg focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring/50"
                   />
                 ))}
               </div>
@@ -159,17 +157,17 @@ export default function VerifyOtpPage() {
             <Button
               type="submit"
               disabled={loading || otpValues.includes('')}
-              className="w-full h-10 rounded-lg bg-white text-black hover:bg-neutral-200 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {loading ? 'Verifying...' : 'Verify Code'}
             </Button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 pt-6 border-t border-neutral-900 text-center">
-            <p className="text-xs text-neutral-500">
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-xs text-muted-foreground">
               Incorrect email?{' '}
-              <Link href="/sign-up" className="text-neutral-300 hover:text-white font-medium underline-offset-4 hover:underline transition-all">
+              <Link href="/sign-up" className="text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline transition-all">
                 Start over
               </Link>
             </p>

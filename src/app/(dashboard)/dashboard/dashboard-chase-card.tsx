@@ -35,8 +35,8 @@ function getDueLabel(dueDate: string, status: string): { text: string; className
   }
   if (diffDays === 0) return { text: 'Due today', className: 'text-yellow-400' }
   if (diffDays === 1) return { text: 'Due tomorrow', className: 'text-yellow-400' }
-  if (diffDays > 0) return { text: `Due in ${diffDays} days`, className: 'text-neutral-400' }
-  return { text: 'Due', className: 'text-neutral-400' }
+  if (diffDays > 0) return { text: `Due in ${diffDays} days`, className: 'text-muted-foreground' }
+  return { text: 'Due', className: 'text-muted-foreground' }
 }
 
 function formatCurrency(amount: number) {
@@ -69,7 +69,7 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
   }
 
   return (
-    <div className="flex items-center justify-between p-3.5 rounded-lg border border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50 transition-colors">
+    <div className="flex items-center justify-between p-3.5 rounded-lg border border-border/60 bg-secondary/30 hover:bg-card/50 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <div className={`w-1.5 h-8 rounded-full shrink-0 ${
           invoice.status === 'overdue' ? 'bg-red-500' :
@@ -78,18 +78,18 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
         }`} />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-neutral-200 truncate">
+            <p className="text-sm font-medium text-foreground truncate">
               {invoice.client_name}
             </p>
-            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border ${STATUS_STYLES[invoice.status] ?? 'bg-neutral-800 text-neutral-400 border-neutral-700'}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border ${STATUS_STYLES[invoice.status] ?? 'bg-accent text-muted-foreground border-border'}`}>
               {invoice.status === 'due_soon' ? 'Due Soon' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-neutral-500 font-mono">{invoice.invoice_number}</span>
-            <span className="text-xs text-neutral-600">&middot;</span>
-            <span className="text-xs font-medium text-neutral-300">{formatCurrency(invoice.amount)}</span>
-            <span className="text-xs text-neutral-600">&middot;</span>
+            <span className="text-xs text-muted-foreground font-mono">{invoice.invoice_number}</span>
+            <span className="text-xs text-muted-foreground/60">&middot;</span>
+            <span className="text-xs font-medium text-foreground/80">{formatCurrency(invoice.amount)}</span>
+            <span className="text-xs text-muted-foreground/60">&middot;</span>
             <span className={`text-xs ${due.className}`}>{due.text}</span>
           </div>
         </div>
@@ -109,7 +109,7 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
           <Button
             size="sm"
             variant="ghost"
-            className="h-7 px-2 text-xs text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 cursor-pointer"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer"
           >
             Chase
           </Button>

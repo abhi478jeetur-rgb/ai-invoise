@@ -80,3 +80,22 @@ This manual verification confirmed that:
 3. Verified compilation logic for reset password form, forgot password triggers, and Google OAuth redirection actions.
 
 
+## [2026-05-29] Theme Screenshot Visual Verification & Production Build
+- **Command Run:** `npx playwright test tests/e2e/theme_screenshot.spec.ts --project=chromium` & `npm run build`
+- **Environment:** Local Windows Machine (Chrome)
+- **Status:** ✅ ALL PASSED
+
+### Results Summary:
+- **tests/e2e/theme_screenshot.spec.ts** (1 test) - Passed in 1.1m
+- **Next.js Production Build** - Compiled successfully (Turbopack) and generated static pages for all 17 routes in 29.8s total.
+
+### Metrics:
+- **E2E Visual Test:** 1 test file passed, capturing 12 total full-page screenshots of all 6 key dashboard/invoices/clients/settings/reminders/trash routes in both light and dark modes.
+- **Production Build:** Successfully optimized 17 dynamic/static routes with 0 TypeScript compilation or bundling errors.
+
+### Notes:
+1. Verified visual parity and contrast index in both midnight dark mode and the new pure white (`#ffffff`) light mode.
+2. Proved theme hydration synchronization: the resolved next-theme resolved successfully on page reloads, and visual customizer correctly swapped dynamic presets and properties.
+
+
+

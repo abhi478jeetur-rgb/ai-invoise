@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import Sidebar from './sidebar'
 import { OnboardingSurvey } from '@/components/onboarding/OnboardingSurvey'
 import { TourManager } from '@/components/onboarding/TourManager'
+import { GlobalSearch } from '@/components/dashboard/GlobalSearch'
+import { NotificationBell } from '@/components/dashboard/NotificationBell'
+import { PageTitle } from '@/components/dashboard/PageTitle'
+import { UserNav } from '@/components/dashboard/UserNav'
 
 export default async function DashboardLayout({
   children,
@@ -35,7 +39,7 @@ export default async function DashboardLayout({
 
   return (
     <div
-      className="min-h-screen bg-neutral-950 flex"
+      className="min-h-screen bg-background flex"
       style={{
         '--user-accent': '#10b981',
         '--user-radius': '12px',
@@ -54,30 +58,20 @@ export default async function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top Minimalist Header */}
-        <header className="h-14 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30 shrink-0">
+        <header className="h-14 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30 shrink-0">
 
-          <div />
+          <div className="flex items-center gap-4">
+            <PageTitle />
+          </div>
 
           {/* User section */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-900 text-neutral-400 font-medium text-xs">
-                {initials}
-              </div>
-              {displayName && (
-                <span className="text-sm text-neutral-300 hidden sm:block">{displayName}</span>
-              )}
-            </div>
-
-            <form action={async () => { 'use server'; await logout(); }}>
-              <Button
-                type="submit"
-                variant="ghost"
-                className="text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900 text-xs cursor-pointer"
-              >
-                Logout
-              </Button>
-            </form>
+            <GlobalSearch />
+            <NotificationBell />
+            
+            <div className="w-px h-4 bg-border mx-2" />
+            
+            <UserNav initials={initials} name={displayName} email={user.email ?? ''} />
           </div>
         </header>
 
