@@ -106,10 +106,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData.profile.logo_url || null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  // AI state
-  const [aiSettings] = useState(initialData.aiSettings)
-  const [aiSaving, setAiSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
+
 
   // Account state
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -283,48 +280,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     }
   }
 
-  async function handleAiSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setAiSaving(true)
-    try {
-      const formData = new FormData(e.currentTarget)
-      const result = await saveAiSettingsAction(formData)
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success('AI settings saved successfully!')
-        router.refresh()
-      }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to save AI settings. Please check your internet connection.'
-      })
-    } finally {
-      setAiSaving(false)
-    }
-  }
 
-  async function handleTestConnection() {
-    setTesting(true)
-    try {
-      const form = document.getElementById('ai-settings-form') as HTMLFormElement
-      const formData = new FormData(form)
-      const result = await testAiConnectionAction(formData)
-      if (result.error) {
-        toast.error(`Connection failed: ${result.error}`)
-      } else {
-        toast.success(result.message ?? 'Connection successful!')
-      }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to test connection. Please check your internet connection.'
-      })
-    } finally {
-      setTesting(false)
-    }
-  }
 
   const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
