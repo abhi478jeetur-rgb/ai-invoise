@@ -11,8 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import {
   saveProfileSettingsAction,
-  saveAiSettingsAction,
-  testAiConnectionAction,
   deleteAccountAction,
   saveBusinessProfileAction,
   uploadBusinessLogoAction,
@@ -108,10 +106,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(initialData.profile.logo_url || null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  // AI state
-  const [aiSettings] = useState(initialData.aiSettings)
-  const [aiSaving, setAiSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
+
 
   // Account state
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -285,48 +280,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     }
   }
 
-  async function handleAiSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setAiSaving(true)
-    try {
-      const formData = new FormData(e.currentTarget)
-      const result = await saveAiSettingsAction(formData)
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success('AI settings saved successfully!')
-        router.refresh()
-      }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to save AI settings. Please check your internet connection.'
-      })
-    } finally {
-      setAiSaving(false)
-    }
-  }
 
-  async function handleTestConnection() {
-    setTesting(true)
-    try {
-      const form = document.getElementById('ai-settings-form') as HTMLFormElement
-      const formData = new FormData(form)
-      const result = await testAiConnectionAction(formData)
-      if (result.error) {
-        toast.error(`Connection failed: ${result.error}`)
-      } else {
-        toast.success(result.message ?? 'Connection successful!')
-      }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to test connection. Please check your internet connection.'
-      })
-    } finally {
-      setTesting(false)
-    }
-  }
 
   const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -367,9 +321,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           <TabsTrigger value="business" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
             Business & Invoicing
           </TabsTrigger>
-          <TabsTrigger value="ai" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300 text-xs cursor-pointer transition-colors">
-            AI Provider
-          </TabsTrigger>
+
           <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-neutral-500 hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
             Account
           </TabsTrigger>
@@ -757,74 +709,6 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           </form>
         </TabsContent>
 
-        {/* ─── Tab 3: AI Provider ─── */}
-        <TabsContent value="ai" className="mt-4">
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl max-w-lg">
-            <CardHeader>
-              <CardTitle className="text-base font-medium text-neutral-200">AI Provider Configuration</CardTitle>
-              <CardDescription className="text-sm text-neutral-500">
-                Configure your OpenAI-compatible provider for AI-powered reminder generation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form id="ai-settings-form" onSubmit={handleAiSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-neutral-400" htmlFor="providerLabel">Provider Label</Label>
-                  <Input id="providerLabel" name="providerLabel" defaultValue={aiSettings?.provider_label ?? ''}
-                    placeholder="NVIDIA NIM / Google AI Studio"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Label className="text-neutral-400" htmlFor="baseUrl">Base URL <span className="text-red-500">*</span></Label>
-                    <div className="group relative inline-block">
-                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
-                        The API endpoint URL for your AI model inference service (e.g., https://api.openai.com/v1 or local LLM servers).
-                      </span>
-                    </div>
-                  </div>
-                  <Input id="baseUrl" name="baseUrl" required defaultValue={aiSettings?.base_url ?? ''}
-                    placeholder="https://integrate.api.nvidia.com/v1"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Label className="text-neutral-400" htmlFor="modelName">Model Name <span className="text-red-500">*</span></Label>
-                    <div className="group relative inline-block">
-                      <span className="w-3.5 h-3.5 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-[10px] text-neutral-400 hover:text-neutral-200 cursor-help select-none font-semibold font-sans">?</span>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-neutral-950 border border-neutral-800 text-[11px] leading-relaxed text-neutral-300 rounded-md shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-150 z-50 whitespace-normal font-sans">
-                        The specific LLM name you want to use (e.g., gpt-4o, claude-3-5-sonnet, or meta/llama-3.1-8b-instruct).
-                      </span>
-                    </div>
-                  </div>
-                  <Input id="modelName" name="modelName" required defaultValue={aiSettings?.model_name ?? ''}
-                    placeholder="meta/llama-3.1-8b-instruct"
-                    className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 font-mono text-xs" />
-                </div>
-
-
-                <div className="flex items-center gap-2 pt-2">
-                  <Button type="submit" disabled={aiSaving}
-                    className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50">
-                    {aiSaving ? 'Saving...' : 'Save Settings'}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={handleTestConnection} disabled={testing}
-                    className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 font-medium text-sm cursor-pointer disabled:opacity-50">
-                    {testing ? (
-                      <span className="flex items-center gap-2">
-                        <span className="inline-block w-3.5 h-3.5 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
-                        Testing...
-                      </span>
-                    ) : 'Test Connection'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* ─── Tab 4: Account (Danger Zone) ─── */}
         <TabsContent value="account" className="mt-4">

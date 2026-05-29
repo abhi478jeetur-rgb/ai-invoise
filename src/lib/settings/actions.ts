@@ -299,47 +299,7 @@ export async function uploadBusinessLogoAction(formData: FormData) {
   }
 }
 
-export async function saveAiSettingsAction(formData: FormData) {
 
-  try {
-    const baseUrl = formData.get('baseUrl') as string
-    const modelName = formData.get('modelName') as string
-    const providerLabel = formData.get('providerLabel') as string
-
-    if (!baseUrl || baseUrl.trim().length === 0) return { error: 'Base URL is required.' }
-    if (baseUrl.trim().length > 500) return { error: 'Base URL must be 500 characters or less.' }
-    if (!modelName || modelName.trim().length === 0) return { error: 'Model name is required.' }
-    if (modelName.trim().length > 100) return { error: 'Model name must be 100 characters or less.' }
-    if (providerLabel && providerLabel.trim().length > 100) return { error: 'Provider label must be 100 characters or less.' }
-
-    // SSRF Check
-    const safeUrl = await isSafeUrl(baseUrl)
-    if (!safeUrl) return { error: 'The AI Base URL is invalid or points to an unsafe local address.' }
-
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'You must be authenticated.' }
-
-    // Upsert AI settings
-    const { error } = await supabase
-      .from('user_ai_settings')
-      .upsert({
-        user_id: user.id,
-        base_url: baseUrl.trim(),
-        model_name: modelName.trim(),
-        provider_label: providerLabel?.trim() || null,
-      }, {
-        onConflict: 'user_id',
-      })
-
-    if (error) return { error: sanitizeDatabaseError(error) }
-
-    revalidatePath('/settings')
-    return { success: true }
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
-  }
-}
 
 // ==============================================================================
 // AI Knowledge Base Actions
@@ -477,80 +437,6 @@ export async function deleteKnowledgeBaseDocumentAction(documentId: string) {
   }
 }
 
-
-export async function testAiConnectionAction(formData: FormData) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'You must be authenticated.' }
-
-    await enforceRateLimit(user.id, { limit: 5, windowMs: 60_000 })
-
-    const baseUrl = formData.get('baseUrl') as string
-    const modelName = formData.get('modelName') as string
-
-    if (!baseUrl) return { error: 'Base URL is required.' }
-    if (baseUrl.trim().length > 500) return { error: 'Base URL must be 500 characters or less.' }
-    if (!modelName) return { error: 'Model name is required.' }
-    if (modelName.trim().length > 100) return { error: 'Model name must be 100 characters or less.' }
-
-    // SSRF Check
-    const safeUrl = await isSafeUrl(baseUrl)
-    if (!safeUrl) return { error: 'The AI Base URL is invalid or points to an unsafe local address.' }
-
-    // Use environment variable API key
-    const resolvedApiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
-    if (!resolvedApiKey) {
-      return { error: 'AI_API_KEY environment variable is not set.' }
-    }
-
-    // Normalize the base URL
-    const normalizedUrl = baseUrl.trim().replace(/\/+$/, '')
-
-    // Try chat completions endpoint first
-    const endpoint = `${normalizedUrl}/chat/completions`
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${resolvedApiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: 'user', content: 'Respond only with the word OK.' },
-        ],
-        max_tokens: 10,
-        temperature: 0,
-      }),
-      signal: AbortSignal.timeout(15000),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
-      return {
-        error: `Connection failed (HTTP ${response.status}): ${errorText.slice(0, 200) || response.statusText}`,
-      }
-    }
-
-    const data = await response.json()
-
-    if (data.choices?.[0]?.message?.content) {
-      return { success: true, message: 'Connection successful!' }
-    }
-
-    return { success: true, message: 'Connection successful! (Unexpected response format, but endpoint is reachable)' }
-  } catch (e) {
-    if (e instanceof RateLimitError) {
-      return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
-    }
-    if (e instanceof Error && e.name === 'TimeoutError') {
-      return { error: 'Connection timed out after 15 seconds. Check your base URL and network.' }
-    }
-    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
-  }
-}
 
 export async function deleteAccountAction(confirmationText: string) {
   try {

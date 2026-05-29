@@ -79,26 +79,18 @@ export async function generateReminderAction(
       ? `\nUSER KNOWLEDGE BASE (Strictly adhere to these custom guidelines from the user's uploaded documents):\n${kbText}\n`
       : ''
 
-    // Fetch AI settings
-    const { data: aiSettings, error: settingsError } = await supabase
-      .from('user_ai_settings')
-      .select('base_url, model_name')
-      .eq('user_id', user.id)
-      .single()
+    const baseUrl = process.env.AI_BASE_URL
+    const modelName = process.env.AI_MODEL_NAME
+    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
 
-    if (settingsError || !aiSettings) {
-      return { error: 'AI settings not configured. Please configure your model in Settings.' }
+    if (!baseUrl || !modelName || !apiKey) {
+      return { error: 'AI configuration (AI_BASE_URL, AI_MODEL_NAME, AI_API_KEY) is missing in server environment variables.' }
     }
 
     // SSRF Defense-in-depth Check
-    const safeUrl = await isSafeUrl(aiSettings.base_url)
+    const safeUrl = await isSafeUrl(baseUrl)
     if (!safeUrl) {
-      return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
-    }
-
-    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      return { error: 'AI_API_KEY environment variable is not configured on the server.' }
+      return { error: 'Unsafe AI Base URL detected in environment variables.' }
     }
 
     // Calculate days overdue
@@ -175,8 +167,8 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
 {"subject": "Your subject line here", "body": "The full email body here"}`
 
     // Call the LLM
-    const baseUrl = aiSettings.base_url.replace(/\/+$/, '')
-    const endpoint = `${baseUrl}/chat/completions`
+    const normalizedUrl = baseUrl.replace(/\/+$/, '')
+    const endpoint = `${normalizedUrl}/chat/completions`
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -184,15 +176,32 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: aiSettings.model_name,
-        messages: [
-          { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, using this strict schema: {"subject": "string", "body": "string"}. No markdown formatting or code fences.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.4,
-        max_tokens: 1000,
-      }),
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { 
+              role: 'system', 
+              content: `You are ChaseFree AI, a highly empathetic yet highly effective professional communication expert specializing in writing payment follow-ups for business owners and freelancers. 
+              
+Your goal is to write natural, human-sounding emails that get invoices paid faster without ruining client relationships.
+
+CRITICAL INSTRUCTIONS:
+1. Speak 100% as the sender (business owner/freelancer) writing directly to the client. Never speak as an assistant.
+2. Structure the email logically:
+   - Appropriate salutation (e.g., "Hi [Client Name]", "Dear [Client Name]" depending on tone).
+   - A clear opening explaining the status of the invoice.
+   - Body showing invoice number, amount due, and due date clearly.
+   - A direct, clean call-to-action (prominently referencing the payment link if provided).
+   - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
+3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
+4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
+{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.4,
+          max_tokens: 1000,
+        }),
       signal: AbortSignal.timeout(30000),
     })
 
@@ -341,26 +350,18 @@ export async function generateMultipleDraftsAction(
       .eq('id', user.id)
       .single()
 
-    // Fetch AI settings
-    const { data: aiSettings, error: settingsError } = await supabase
-      .from('user_ai_settings')
-      .select('base_url, model_name')
-      .eq('user_id', user.id)
-      .single()
+    const baseUrl = process.env.AI_BASE_URL
+    const modelName = process.env.AI_MODEL_NAME
+    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
 
-    if (settingsError || !aiSettings) {
-      return { error: 'AI settings not configured. Please configure your model in Settings.' }
+    if (!baseUrl || !modelName || !apiKey) {
+      return { error: 'AI configuration (AI_BASE_URL, AI_MODEL_NAME, AI_API_KEY) is missing in server environment variables.' }
     }
 
     // SSRF Defense-in-depth Check
-    const safeUrl = await isSafeUrl(aiSettings.base_url)
+    const safeUrl = await isSafeUrl(baseUrl)
     if (!safeUrl) {
-      return { error: 'Unsafe AI settings detected. Please review your Base URL in Settings.' }
-    }
-
-    const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      return { error: 'AI_API_KEY environment variable is not configured on the server.' }
+      return { error: 'Unsafe AI Base URL detected in environment variables.' }
     }
 
     // Calculate days overdue
@@ -438,8 +439,8 @@ ${invoice.payment_link ? '- Include the payment link prominently.' : ''}
 Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
 {"subject": "Your subject line here", "body": "The full email body here"}`
 
-    const baseUrl = aiSettings.base_url.replace(/\/+$/, '')
-    const endpoint = `${baseUrl}/chat/completions`
+    const normalizedUrl = baseUrl.replace(/\/+$/, '')
+    const endpoint = `${normalizedUrl}/chat/completions`
 
     const callLLM = async (styleInstruction: string) => {
       const response = await fetch(endpoint, {
@@ -449,9 +450,26 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: aiSettings.model_name,
+          model: modelName,
           messages: [
-            { role: 'system', content: 'You are a professional email writer. Always respond with valid JSON only, using this strict schema: {"subject": "string", "body": "string"}. No markdown formatting or code fences.' },
+            { 
+              role: 'system', 
+              content: `You are ChaseFree AI, a highly empathetic yet highly effective professional communication expert specializing in writing payment follow-ups for business owners and freelancers. 
+              
+Your goal is to write natural, human-sounding emails that get invoices paid faster without ruining client relationships.
+
+CRITICAL INSTRUCTIONS:
+1. Speak 100% as the sender (business owner/freelancer) writing directly to the client. Never speak as an assistant.
+2. Structure the email logically:
+   - Appropriate salutation (e.g., "Hi [Client Name]", "Dear [Client Name]" depending on tone).
+   - A clear opening explaining the status of the invoice.
+   - Body showing invoice number, amount due, and due date clearly.
+   - A direct, clean call-to-action (prominently referencing the payment link if provided).
+   - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
+3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
+4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
+{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
+            },
             { role: 'user', content: buildPrompt(styleInstruction) },
           ],
           temperature: 0.4,
