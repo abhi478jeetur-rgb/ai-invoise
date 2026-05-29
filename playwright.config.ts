@@ -32,5 +32,10 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120 * 1000,
+    env: {
+      AI_API_KEY: '***REMOVED***',
+      AI_BASE_URL: 'https://integrate.api.nvidia.com/v1',
+      AI_MODEL_NAME: 'meta/llama-3.1-8b-instruct',
+    }
   },
 });
