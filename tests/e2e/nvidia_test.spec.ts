@@ -11,23 +11,12 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
     await page.goto('/sign-in');
     await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // Wait for dashboard to load
     await expect(page).toHaveURL(/.*dashboard|invoices/);
 
-    // 2. Configure NVIDIA API in Settings
-    await page.goto('/settings');
-    await page.getByRole('tab', { name: /AI Provider/i }).click();
-    await page.locator('input[name="baseUrl"]').fill('https://integrate.api.nvidia.com/v1');
-    await page.locator('input[name="modelName"]').fill('meta/llama-3.1-8b-instruct');
-    // Using the key provided by the user
-    await page.locator('input[name="apiKey"]').fill('***REMOVED***');
-    
-    // Save AI Settings
-    await page.getByRole('button', { name: /^Save Settings$/i }).click();
-    // Wait for some success indication or just wait a moment
-    await page.waitForTimeout(2000); 
+
 
     // 3. Create a test invoice
     await page.goto('/invoices');

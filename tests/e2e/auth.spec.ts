@@ -38,7 +38,7 @@ test.describe('Authentication Flows', () => {
     // Using the known test user
     await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // Should reach dashboard
     await expect(page).toHaveURL(/.*dashboard|invoices/);
