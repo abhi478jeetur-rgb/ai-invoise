@@ -14,7 +14,8 @@ export default defineConfig({
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/tests/e2e/**', // Playwright handles these
-      '**/tests/security/**' // Playwright handles these
+      '**/tests/security/**', // Playwright handles these
+      '**/tests/*.spec.ts' // Exclude root-level Playwright specs
     ],
     alias: {
       '@': path.resolve(__dirname, './src')
