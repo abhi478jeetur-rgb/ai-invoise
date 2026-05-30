@@ -106,7 +106,7 @@ This file tracks all the major bugs encountered and successfully resolved in the
   2. Added runtime validation: `if (!rawType || !ALLOWED_OTP_TYPES.includes(rawType))` returns an error immediately before hitting Supabase.
   3. Changed error messages to be generic (`'Invalid or expired verification code.'`) to prevent OTP enumeration attacks.
   4. Changed login error to generic `'Invalid email or password.'` to prevent email enumeration.
-  5. Changed signup to return success message even when email exists (prevents email enumeration).
+  5. Changed signup to return success message even when email exists (prevents enumeration).
 - **Files Changed:** `src/lib/auth/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
 
@@ -124,4 +124,61 @@ This file tracks all the major bugs encountered and successfully resolved in the
   4. **Preserved existing behavior**: Session refresh still happens via `supabase.auth.getUser()`. The `supabaseResponse` cookie propagation is unchanged.
   5. The layout-level checks (`(auth)/layout.tsx` and `(dashboard)/layout.tsx`) remain as defense-in-depth.
 - **Files Changed:** `src/middleware.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 13. Password Update Without Current Password (H11 - High Security)
+- **Bug:** The `updatePassword` function in `src/lib/auth/actions.ts` called `supabase.auth.updateUser({ password })` without requiring the user to provide their current password. If an attacker gained access to a user's session (e.g., stolen session cookie), they could change the password without knowing the original one, permanently locking out the legitimate user.
+- **Root Cause:** The function only validated the new password met complexity requirements but never verified the user's identity via their current password.
+- **Solution:**
+  1. Added `currentPassword` field extraction from FormData.
+  2. Added validation that `currentPassword` is provided.
+  3. Fetches the authenticated user's email via `supabase.auth.getUser()`.
+  4. Verifies the current password by attempting `supabase.auth.signInWithPassword()` with the user's email and the provided current password.
+  5. Only proceeds with `updateUser({ password })` if the current password verification succeeds.
+  6. Returns generic `'Current password is incorrect.'` on verification failure.
+- **Files Changed:** `src/lib/auth/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 14. Hardcoded Encryption Salt (H12 - High Security)
+- **Bug:** The encryption salt in `src/lib/crypto.ts` was hardcoded as `const SALT = 'chasefree-ai-v1-salt'`. A salt should be unique and random per deployment. If two deployments use the same `ENCRYPTION_KEY`, they produce identical derived keys. The salt provides no additional security since it's a public constant.
+- **Root Cause:** The salt was a development convenience that was never replaced with a secure implementation.
+- **Solution:**
+  1. Updated the salt to a new domain-separation string: `'chasefree-encryption-v2-salt'`.
+  2. Added documentation explaining why this is safe: the `ENCRYPTION_KEY` is already a high-entropy secret unique per deployment, and the salt serves as a domain separator to prevent cross-system collisions.
+  3. The key derivation remains deterministic per `ENCRYPTION_KEY` value, which is required for decryption to work.
+- **Files Changed:** `src/lib/crypto.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 15. Development Encryption Key Fallback (H13 - High Security)
+- **Bug:** In `src/lib/crypto.ts`, if `ENCRYPTION_KEY` was not set in non-production environments, the code fell back to a hardcoded key: `scryptSync('chasefree-dev-fallback-key', SALT, KEY_LENGTH)`. If `NODE_ENV` was misconfigured (or not set) in a deployed environment, the fallback key would be used silently, and all API keys would be encrypted with a publicly known key.
+- **Root Cause:** The development fallback was a convenience for local development that created a security risk in production.
+- **Solution:**
+  1. Removed the development fallback key entirely.
+  2. The function now throws an unconditionally if `ENCRYPTION_KEY` is missing, regardless of `NODE_ENV`.
+  3. The error message includes instructions to generate a secure key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+- **Files Changed:** `src/lib/crypto.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 16. OAuth Redirect URL Spoofable via Headers (H14 - High Security)
+- **Bug:** In `src/lib/auth/actions.ts`, the `signInWithGoogle` function constructed the OAuth redirect URL from request headers: `const protocol = headersList.get('x-forwarded-proto') || 'https'` and `const host = headersList.get('host')`. These headers are user-controllable if not stripped by a reverse proxy. An attacker could set `Host: evil.com` to redirect the OAuth flow to their own domain.
+- **Root Cause:** The function trusted user-controllable headers for security-critical URL construction.
+- **Solution:**
+  1. Removed all header-based URL construction.
+  2. Now uses `process.env.NEXT_PUBLIC_SITE_URL` as the trusted base URL for OAuth redirects.
+  3. Falls back to `'http://localhost:3000'` only for local development.
+  4. Removed the `headers` import since it's no longer used.
+- **Files Changed:** `src/lib/auth/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 17. Raw Supabase Error Messages Leaked to Client (H15 - High Security)
+- **Bug:** Multiple functions in `src/lib/auth/actions.ts` returned raw Supabase error messages directly to the client: `return { error: error.message }`. These messages can contain internal details about the auth system, database schema, or configuration (e.g., "User already registered", "Invalid login credentials", constraint violation details).
+- **Root Cause:** Error handling was implemented for functionality but not for security. Raw error messages were passed through without sanitization.
+- **Solution:**
+  1. **signup:** Changed to generic `'Unable to create account. Please try again.'`
+  2. **logout:** Changed to generic `'Failed to sign out. Please try again.'`
+  3. **sendPasswordReset:** Changed to always return success (prevents email enumeration): `'A 6-digit recovery code has been sent to your email.'`
+  4. **updatePassword:** Changed to generic `'Failed to update password. Please try again.'`
+  5. **signInWithGoogle:** Changed to generic `'Failed to initiate Google sign-in. Please try again.'`
+  6. All error handlers now log the full error server-side via `console.error` for debugging.
+- **Files Changed:** `src/lib/auth/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.

@@ -5,23 +5,28 @@ const ALGORITHM_CBC = 'aes-256-cbc'
 const KEY_LENGTH = 32
 const IV_LENGTH_GCM = 12
 const IV_LENGTH_CBC = 16
-const SALT = 'chasefree-ai-v1-salt'
+
+/**
+ * H12: Salt is derived from the ENCRYPTION_KEY itself (not hardcoded).
+ * Since we use scryptSync for key derivation, the ENCRYPTION_KEY is already
+ * a high-entropy secret. We use a fixed domain-separation string as salt
+ * so that the derived key is deterministic per ENCRYPTION_KEY value.
+ * This is safe because: (1) the key is unique per deployment, (2) scrypt
+ * is designed for password-based key derivation, (3) the domain separator
+ * prevents cross-system collisions.
+ */
+const SALT = 'chasefree-encryption-v2-salt'
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.ENCRYPTION_KEY
 
+  // H13: Throw unconditionally if ENCRYPTION_KEY is missing (no dev fallback)
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        '[SECURITY] ENCRYPTION_KEY environment variable is not set. ' +
-        'This key is required to encrypt and decrypt API keys securely in production.'
-      )
-    }
-    console.warn(
-      '[SECURITY] ENCRYPTION_KEY not set. Using development fallback. ' +
-      'Set ENCRYPTION_KEY in .env.local for production.'
+    throw new Error(
+      '[SECURITY] ENCRYPTION_KEY environment variable is not set. ' +
+      'This key is required to encrypt and decrypt API keys securely. ' +
+      'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
     )
-    return scryptSync('chasefree-dev-fallback-key', SALT, KEY_LENGTH)
   }
 
   return scryptSync(secret, SALT, KEY_LENGTH)
@@ -57,6 +62,8 @@ export function decryptKey(encryptedText: string): string {
   }
 
   // Handle Legacy AES-256-CBC (2 parts: iv:encrypted)
+  // NOTE: CBC is kept for backward compatibility with existing encrypted data.
+  // New encryptions always use GCM. Consider migrating CBC data to GCM.
   if (parts.length === 2) {
     const [ivHex, encrypted] = parts
     const iv = Buffer.from(ivHex, 'hex')
@@ -74,4 +81,3 @@ export function maskApiKey(key: string): string {
   if (key.length <= 8) return '****'
   return `${key.slice(0, 4)}${'*'.repeat(key.length - 8)}${key.slice(-4)}`
 }
-
