@@ -110,3 +110,18 @@ This file tracks all the major bugs encountered and successfully resolved in the
 - **Files Changed:** `src/lib/auth/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
 
+### 12. Middleware Does Not Protect Any Routes (C5 - Critical Security)
+- **Bug:** The middleware in `src/middleware.ts` only refreshed the Supabase session via `supabase.auth.getUser()` but never checked whether the user was authenticated. It never called `redirect()` to send unauthenticated users to the sign-in page. Route protection existed only at the layout level (`src/app/(dashboard)/layout.tsx`), meaning individual API routes and pages without that layout wrapper were unprotected.
+- **Root Cause:** The middleware was a boilerplate Supabase session-refresh handler that was never extended with authentication checks. The `getUser()` result was discarded.
+- **Solution:**
+  1. **Defined public routes** that do NOT require authentication:
+     - Exact paths: `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/verify-otp`
+     - API prefixes: `/api/auth/callback` (OAuth), `/api/cron` (has its own Bearer token auth)
+  2. **Defined auth pages** (`/sign-in`, `/sign-up`) where logged-in users should be redirected to dashboard.
+  3. **Added route protection logic** using `request.nextUrl.clone()` for correct absolute URL construction:
+     - If user IS authenticated and visits an auth page -> redirect to `/dashboard`
+     - If user is NOT authenticated and visits a protected route -> redirect to `/sign-in`
+  4. **Preserved existing behavior**: Session refresh still happens via `supabase.auth.getUser()`. The `supabaseResponse` cookie propagation is unchanged.
+  5. The layout-level checks (`(auth)/layout.tsx` and `(dashboard)/layout.tsx`) remain as defense-in-depth.
+- **Files Changed:** `src/middleware.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
