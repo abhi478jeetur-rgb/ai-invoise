@@ -34,6 +34,8 @@ export async function getDashboardDataAction() {
     const overdueInvoices = invoices.filter((inv) => {
       if (inv.status === 'paid' || inv.status === 'archived' || inv.status === 'draft') return false
       if (inv.status === 'overdue') return true
+      // H8: Guard against null/undefined due_date
+      if (!inv.due_date) return false
       const parseStr = (inv.due_date.includes('T') || inv.due_date.includes(' ')) ? inv.due_date : inv.due_date + 'T00:00:00'
       const due = new Date(parseStr)
       due.setHours(0, 0, 0, 0)
@@ -83,6 +85,8 @@ export async function getDashboardDataAction() {
 
     const chaseInvoices = invoices.filter((inv) => {
       if (['paid', 'archived', 'draft', 'paused'].includes(inv.status)) return false
+      // H8: Guard against null/undefined due_date
+      if (!inv.due_date) return false
       const due = new Date(inv.due_date + 'T00:00:00')
       return due <= threeDaysLater
     })
@@ -91,7 +95,10 @@ export async function getDashboardDataAction() {
       .sort((a, b) => {
         const priorityDiff = (statusPriority[a.status] ?? 3) - (statusPriority[b.status] ?? 3)
         if (priorityDiff !== 0) return priorityDiff
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+        // H8: Guard against null/undefined due_date in sort
+        const aTime = a.due_date ? new Date(a.due_date).getTime() : Infinity
+        const bTime = b.due_date ? new Date(b.due_date).getTime() : Infinity
+        return aTime - bTime
       })
       .map((inv) => {
         const clientsData = inv.clients as any

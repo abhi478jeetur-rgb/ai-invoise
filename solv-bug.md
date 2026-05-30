@@ -222,3 +222,62 @@ This file tracks all the major bugs encountered and successfully resolved in the
   4. Invoices that were individually soft-deleted before the client deletion remain in the trash.
 - **Files Changed:** `src/lib/clients/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
+
+### 22. Currency CHECK Constraint Mismatch (C9 - Critical Data)
+- **Bug:** The `ALLOWED_CURRENCIES` whitelist in `src/lib/settings/actions.ts` allowed 12 currencies (`USD, EUR, GBP, INR, CAD, AUD, JPY, SGD, CHF, AED, HKD, MYR`), but the database CHECK constraint in `supabase-migration-v8-security-audit.sql` only allows 7 currencies (`USD, EUR, GBP, INR, AUD, CAD, JPY`). Users who selected SGD, CHF, AED, HKD, or MYR in settings would get a cryptic CHECK constraint violation error every time they tried to create an invoice.
+- **Root Cause:** The settings code and database constraint were not synchronized. The code allowed more currencies than the database would accept.
+- **Solution:**
+  1. Reduced `ALLOWED_CURRENCIES` to match the database constraint exactly: `['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY']`.
+  2. Added a comment referencing the migration file for future reference.
+- **Files Changed:** `src/lib/settings/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 23. No Status Transition Enforcement (H1 - High Data)
+- **Bug:** The `updateInvoiceStatusAction` function in `src/lib/invoices/actions.ts` had no guards preventing invalid status transitions. A `paid` invoice could be set back to `draft`. A `cancelled` invoice could become `paid`. An already-paid invoice could be marked paid again (duplicate `paid_date`). There was no "from status" check.
+- **Root Cause:** The function only validated the target status was a valid enum value, but never checked whether the transition from the current status to the target status was logically valid.
+- **Solution:**
+  1. Added `VALID_TRANSITIONS` constant defining allowed transitions for each status:
+     - `draft` -> `sent`
+     - `sent` -> `paid, partial, overdue, due_soon, promised, paused, archived`
+     - `due_soon` -> `paid, partial, overdue, promised, paused, archived`
+     - `overdue` -> `paid, partial, promised, paused, archived`
+     - `partial` -> `paid, overdue, promised, paused, archived`
+     - `promised` -> `paid, partial, overdue, paused, archived`
+     - `paused` -> `sent, paid, partial, overdue, due_soon, promised, archived`
+     - `paid` -> (terminal state, no transitions)
+     - `archived` -> (terminal state, no transitions)
+  2. The function now fetches the current status before allowing any update.
+  3. Returns descriptive error: `'Cannot change status from 'paid' to 'draft'. 'paid' is a terminal status and cannot be changed.'`
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 24. Invoice Update Drops PO Number (H7 - High Data)
+- **Bug:** The `updateInvoiceAction` in `src/lib/invoices/actions.ts` did not read `poNumber` from formData and did not include `po_number` in the Supabase update payload. The `createInvoiceAction` correctly set `po_number` on line 93, but the update action completely ignored it. This meant users could not change the PO number when editing an invoice.
+- **Root Cause:** The `poNumber` field was omitted from the formData extraction and the update payload in `updateInvoiceAction`.
+- **Solution:**
+  1. Added `const poNumber = formData.get('poNumber') as string | null` to the formData extraction.
+  2. Added `po_number: poNumber?.trim() || null` to the Supabase update payload.
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 25. Dashboard Date Null Pointer (H8 - High Logic)
+- **Bug:** In `src/lib/dashboard/actions.ts`, the `overdueInvoices` filter called `inv.due_date.includes('T')` without a null check. If `due_date` was null or undefined (possible if data is inconsistent), this threw `TypeError: Cannot read properties of null (reading 'includes')`, crashing the entire dashboard page. The same issue existed in `chaseInvoices` filter and the sort function.
+- **Root Cause:** Date parsing logic assumed `due_date` would always be a valid string, but the database allows null values.
+- **Solution:**
+  1. Added `if (!inv.due_date) return false` guard in `overdueInvoices` filter before date parsing.
+  2. Added `if (!inv.due_date) return false` guard in `chaseInvoices` filter before date parsing.
+  3. Added null-safe sort: `const aTime = a.due_date ? new Date(a.due_date).getTime() : Infinity`
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 26. Reminder Count Race Condition & Missing Update (H9, H10 - High Logic)
+- **Bug:** Two issues with reminder count tracking:
+  - **H10 (Race Condition):** In `generateReminderAction`, the code read `invoice.reminder_count` and then wrote `(invoice.reminder_count || 0) + 1`. Two concurrent requests could both read the same count and set it to the same incremented value, losing one increment.
+  - **H9 (Missing Update):** The `generateMultipleDraftsAction` inserted multiple drafts but never updated the invoice's `reminder_count` or `last_reminder_at`. Subsequent reminders would use a stale count.
+- **Root Cause:** H10 used a read-then-write pattern without atomicity. H9 simply forgot to update the tracking fields.
+- **Solution:**
+  1. **H10:** Changed `generateReminderAction` to attempt atomic increment via `supabase.rpc('increment_reminder_count', ...)` with fallback to regular update if the RPC doesn't exist.
+  2. **H9:** Added the same `reminder_count` and `last_reminder_at` update logic to `generateMultipleDraftsAction` after successful draft insertion.
+  3. Both functions now use the same pattern: try RPC first (atomic), fallback to regular update (safe for single-user).
+- **Files Changed:** `src/lib/reminders/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.

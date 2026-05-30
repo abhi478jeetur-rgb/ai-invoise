@@ -233,6 +233,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     const discountAmount = parseFloat(formData.get('discountAmount') as string) || 0
     const discountType = (formData.get('discountType') as string) || 'flat'
     const status = formData.get('status') as string | null
+    const poNumber = formData.get('poNumber') as string | null  // H7: Read PO number from form
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
@@ -289,6 +290,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
         due_date: dueDate,
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
+        po_number: poNumber?.trim() || null,  // H7: Include PO number in update
         line_items: lineItems,
         tax_rate: taxRate,
         tax_label: taxLabel.trim() || 'Tax',
@@ -465,6 +467,19 @@ const VALID_UPDATE_STATUSES = [
   'draft', 'sent', 'due_soon', 'overdue', 'paid', 'partial', 'promised', 'paused', 'archived'
 ] as const
 
+/** H1: Valid status transitions - defines which statuses can transition to which */
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  'draft':    ['sent'],
+  'sent':     ['paid', 'partial', 'overdue', 'due_soon', 'promised', 'paused', 'archived'],
+  'due_soon': ['paid', 'partial', 'overdue', 'promised', 'paused', 'archived'],
+  'overdue':  ['paid', 'partial', 'promised', 'paused', 'archived'],
+  'partial':  ['paid', 'overdue', 'promised', 'paused', 'archived'],
+  'promised': ['paid', 'partial', 'overdue', 'paused', 'archived'],
+  'paused':   ['sent', 'paid', 'partial', 'overdue', 'due_soon', 'promised', 'archived'],
+  'paid':     [],      // Terminal state - no transitions allowed
+  'archived': [],      // Terminal state - no transitions allowed
+}
+
 export async function updateInvoiceStatusAction(invoiceId: string, status: string, amountPaid: number = 0) {
   try {
     // C2: Validate status against allowed values
@@ -475,6 +490,30 @@ export async function updateInvoiceStatusAction(invoiceId: string, status: strin
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // H1: Fetch current status to validate the transition
+    const { data: currentInvoice, error: fetchCurrentError } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchCurrentError || !currentInvoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    const currentStatus = currentInvoice.status
+    const allowedTransitions = VALID_TRANSITIONS[currentStatus] || []
+
+    if (!allowedTransitions.includes(status)) {
+      return {
+        error: `Cannot change status from '${currentStatus}' to '${status}'. ` +
+          (allowedTransitions.length > 0
+            ? `Allowed transitions: ${allowedTransitions.join(', ')}`
+            : `'${currentStatus}' is a terminal status and cannot be changed.`)
+      }
+    }
 
     // C3: When status is 'partial', validate amountPaid against the invoice's total amount
     const updateData: Record<string, unknown> = { status }

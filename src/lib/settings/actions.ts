@@ -147,8 +147,9 @@ export async function saveProfileSettingsAction(formData: FormData) {
   }
 }
 
-// Allowed currency codes (whitelist to prevent injection)
-const ALLOWED_CURRENCIES = ['USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR']
+// C9: Allowed currency codes - must match DB CHECK constraint exactly
+// supabase-migration-v8-security-audit.sql: CHECK (currency IN ('USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY'))
+const ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'JPY']
 const ALLOWED_PAYMENT_TERMS = ['receipt','net_15','net_30','net_60','net_90','custom']
 
 export async function saveBusinessProfileAction(formData: FormData) {
