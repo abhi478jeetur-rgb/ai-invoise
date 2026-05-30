@@ -8,7 +8,7 @@ test.describe('Theme Visual Screenshot Verification', () => {
   test('capture theme screenshots', async ({ page }) => {
     // 1. Log in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     await expect(page).toHaveURL(/.*dashboard|invoices/);

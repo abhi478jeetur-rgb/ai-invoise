@@ -72,7 +72,7 @@ test.describe('Authentication Flows', () => {
     await page.goto('/sign-in');
     
     // Using the known test user
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
