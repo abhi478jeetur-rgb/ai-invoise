@@ -281,3 +281,70 @@ This file tracks all the major bugs encountered and successfully resolved in the
   3. Both functions now use the same pattern: try RPC first (atomic), fallback to regular update (safe for single-user).
 - **Files Changed:** `src/lib/reminders/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
+
+### 27. Invoice Number Race Condition (H6 - High Logic)
+- **Bug:** In `src/lib/invoices/actions.ts`, `getNextInvoiceNumberAction` fetched the last invoice by `created_at` and extracted its numeric suffix. This had two problems:
+  1. If invoices were created out of order (e.g., imports, manual numbering, or restoring deleted invoices), the "last created" invoice might have a lower number than existing invoices, generating a duplicate.
+  2. Two concurrent `createInvoiceAction` calls could both read the same "last" invoice and generate the same "next" number, causing a unique constraint violation.
+- **Root Cause:** The function relied on `created_at` ordering instead of finding the actual maximum sequence number. There was also no retry mechanism for constraint violations.
+- **Solution:**
+  1. **Robust sequence detection:** Changed `getNextInvoiceNumberAction` to scan ALL invoice numbers and find the maximum numeric suffix, rather than relying on `created_at` ordering. This handles out-of-order invoices correctly.
+  2. **Retry mechanism:** Added a retry loop in `createInvoiceAction` (up to 3 attempts) that catches unique constraint violations on `invoice_number` and retries with a fresh number from `getNextInvoiceNumberAction`.
+  3. Logs a warning on collision: `'Invoice number collision on attempt X, retrying...'`
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 28. Missing AI Settings Save Action (H7 - High Logic)
+- **Bug:** In `src/lib/settings/actions.ts`, `getSettingsAction` fetched from the `user_ai_settings` table, but there was NO corresponding `saveAISettingsAction` anywhere in the codebase. Users who configured their AI provider settings (base URL, model, temperature) would see their changes appear to save but nothing was actually written to the database. This was a silent data loss.
+- **Root Cause:** The AI settings UI was built but the server action to persist changes was never implemented.
+- **Solution:**
+  1. Created `saveAISettingsAction` function that:
+     - Accepts FormData with fields: `aiBaseUrl`, `aiProviderLabel`, `aiModelName`, `aiTemperature`, `aiApiKey`
+     - Validates all inputs (length limits, URL safety, temperature range 0-2)
+     - Encrypts the API key using `encryptKey` before storage
+     - Upserts into `user_ai_settings` table with `onConflict: 'user_id'`
+     - Only updates `encrypted_key` if a new key was provided (preserves existing key otherwise)
+     - Properly handles temperature null case (was previously broken with `Number(null) ?? 0.4`)
+  2. Added proper error handling with `sanitizeDatabaseError` and `RateLimitError` support.
+- **Files Changed:** `src/lib/settings/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 29. UnbilledScratchpad Optimistic Delete Never Rolls Back (H14 - High UX)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, `handleMarkDone` immediately removed the task from local state (`setTasks(prev => prev.filter(t => t.id !== id))`), then called `markUnbilledTaskAsInvoicedAction` inside `startTransition`. The result was never checked. If the server action failed (network error, auth failure, DB error), the task was already gone from the UI but still `pending` in the database. There was no rollback.
+- **Root Cause:** The optimistic update was implemented but the error handling and rollback logic was missing.
+- **Solution:**
+  1. Store the removed task before filtering: `const removedTask = tasks.find(t => t.id === id)`
+  2. Check the action result after the server call
+  3. On failure, re-add the task to state: `setTasks(prev => [removedTask, ...prev])`
+  4. Show a `toast.error` with the failure reason
+  5. Added `import { toast } from 'sonner'` for error notifications
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 30. UnbilledScratchpad Navigates to Non-Existent Route (H15 - High UX)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, `handleCreateInvoice` navigated to `/invoices/new?desc=...`, but there is no `/invoices/new` page. The invoice creation is handled via a dialog modal on the `/invoices` page triggered by the `?new=true` query parameter. Clicking "Create Invoice from this" on an unbilled task would navigate to a 404 / not-found page.
+- **Root Cause:** The route was hardcoded to a non-existent path. The correct pattern uses query parameters to trigger the invoice creation dialog.
+- **Solution:**
+  1. Changed the route from `/invoices/new?desc=...` to `/invoices?new=true&desc=...`
+  2. Uses `URLSearchParams` to construct the query string with both `new=true` and `desc=...` parameters.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 31. Reset Password Memory Leak (H16 - High UX)
+- **Bug:** In `src/app/(auth)/reset-password/page.tsx`, after successful password update, `setTimeout(() => router.push('/sign-in'), 2000)` was called but never cleaned up. If the user navigated away before the 2-second timer fired, the callback still executed on an unmounted component, causing React warnings and unexpected navigation behavior.
+- **Root Cause:** The timeout ID was not stored and no cleanup function was provided to clear it on unmount.
+- **Solution:**
+  1. Added `const redirectTimerRef = useRef<NodeJS.Timeout | null>(null)` to store the timeout ID.
+  2. Added a `useEffect` with cleanup function that clears the timeout on unmount:
+     ```typescript
+     useEffect(() => {
+       return () => {
+         if (redirectTimerRef.current) {
+           clearTimeout(redirectTimerRef.current)
+         }
+       }
+     }, [])
+     ```
+  3. Changed the `setTimeout` call to store the ID: `redirectTimerRef.current = setTimeout(...)`
+- **Files Changed:** `src/app/(auth)/reset-password/page.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.

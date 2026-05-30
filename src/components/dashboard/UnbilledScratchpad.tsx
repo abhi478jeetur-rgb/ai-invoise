@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from 'react'
 import { Plus, CheckCircle2, Clock, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { addUnbilledTaskAction, markUnbilledTaskAsInvoicedAction, getUnbilledTasksAction } from '@/lib/unbilled/actions'
 
 interface UnbilledTask {
@@ -54,17 +55,29 @@ export function UnbilledScratchpad() {
   }
 
   const handleMarkDone = async (id: string) => {
+    // H14: Store the task before removing for potential rollback
+    const removedTask = tasks.find(t => t.id === id)
     setTasks(prev => prev.filter(t => t.id !== id))
+
     startTransition(async () => {
-      await markUnbilledTaskAsInvoicedAction(id)
+      const result = await markUnbilledTaskAsInvoicedAction(id)
+
+      // H14: Rollback on failure - re-add the task and show error
+      if (result && 'error' in result && removedTask) {
+        setTasks(prev => [removedTask, ...prev])
+        toast.error('Failed to mark task as done', {
+          description: result.error || 'Please try again.'
+        })
+      }
     })
   }
 
   const handleCreateInvoice = (description: string) => {
-    // Navigate to new invoice page with the description pre-filled in the URL params
+    // H15: Navigate to invoices page with new invoice dialog and description pre-filled
     const params = new URLSearchParams()
+    params.set('new', 'true')
     params.set('desc', description)
-    router.push(`/invoices/new?${params.toString()}`)
+    router.push(`/invoices?${params.toString()}`)
   }
 
   if (loading) return (

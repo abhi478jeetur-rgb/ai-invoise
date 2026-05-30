@@ -76,29 +76,54 @@ export async function createInvoiceAction(formData: FormData) {
       return { error: 'Invalid client reference.' }
     }
 
-    const { data, error } = await supabase
-      .from('invoices')
-      .insert({
-        user_id: user.id,
-        client_id: clientId,
-        invoice_number: finalInvoiceNumber.trim(),
-        title: title?.trim() || null,
-        description: description?.trim() || null,
-        amount,
-        currency,
-        status: status as any,
-        due_date: dueDate,
-        notes: notes?.trim() || null,
-        payment_link: paymentLink?.trim() || null,
-        po_number: poNumber?.trim() || null,
-        line_items: lineItems,
-        tax_rate: taxRate,
-        tax_label: taxLabel.trim() || 'Tax',
-        discount_amount: discountAmount,
-        discount_type: discountType,
-      })
-      .select()
-      .single()
+    // H6: Retry mechanism for unique constraint violation on invoice_number
+    const MAX_RETRIES = 3
+    let data: any = null
+    let error: any = null
+    let currentInvoiceNumber = finalInvoiceNumber.trim()
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const result = await supabase
+        .from('invoices')
+        .insert({
+          user_id: user.id,
+          client_id: clientId,
+          invoice_number: currentInvoiceNumber,
+          title: title?.trim() || null,
+          description: description?.trim() || null,
+          amount,
+          currency,
+          status: status as any,
+          due_date: dueDate,
+          notes: notes?.trim() || null,
+          payment_link: paymentLink?.trim() || null,
+          po_number: poNumber?.trim() || null,
+          line_items: lineItems,
+          tax_rate: taxRate,
+          tax_label: taxLabel.trim() || 'Tax',
+          discount_amount: discountAmount,
+          discount_type: discountType,
+        })
+        .select()
+        .single()
+
+      data = result.data
+      error = result.error
+
+      // If no error or error is not a unique constraint violation, break
+      if (!error || !error.message?.includes('unique constraint') || !error.message?.includes('invoice_number')) {
+        break
+      }
+
+      // Unique constraint violation - get a fresh number and retry
+      console.warn(`Invoice number collision on attempt ${attempt + 1}, retrying...`)
+      const freshNumber = await getNextInvoiceNumberAction()
+      if (freshNumber.success && freshNumber.data) {
+        currentInvoiceNumber = freshNumber.data
+      } else {
+        break // Can't get a new number, fail with original error
+      }
+    }
 
     if (error) return { error: sanitizeDatabaseError(error) }
 
@@ -125,25 +150,29 @@ export async function getNextInvoiceNumberAction() {
     const prefix = profile?.global_rules?.invoice_prefix?.trim() || 'INV-'
     const format = profile?.global_rules?.invoice_format || 'PREFIX-[SEQUENCE]'
 
-    // Fetch highest invoice number created by this user (including soft deleted to prevent gaps!)
-    const { data: lastInvoice } = await supabase
+    // H6: Fetch highest invoice number by parsing all invoice numbers
+    // This is more robust than ordering by created_at which can be wrong
+    // if invoices are created out of order or restored from trash
+    const { data: allInvoices } = await supabase
       .from('invoices')
       .select('invoice_number')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
 
     const yearStr = new Date().getFullYear().toString()
-    let nextSeq = 1
+    let maxSeq = 0
 
-    if (lastInvoice?.invoice_number) {
-      const numMatch = lastInvoice.invoice_number.match(/(\d+)$/)
-      if (numMatch) {
-        nextSeq = parseInt(numMatch[1], 10) + 1
+    if (allInvoices && allInvoices.length > 0) {
+      for (const inv of allInvoices) {
+        if (!inv.invoice_number) continue
+        const numMatch = inv.invoice_number.match(/(\d+)$/)
+        if (numMatch) {
+          const seq = parseInt(numMatch[1], 10)
+          if (seq > maxSeq) maxSeq = seq
+        }
       }
     }
 
+    const nextSeq = maxSeq + 1
     const seqPad = String(nextSeq).padStart(3, '0')
 
     let nextNumber = ''

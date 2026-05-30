@@ -250,6 +250,83 @@ export async function saveBusinessProfileAction(formData: FormData) {
   }
 }
 
+// H7: Save AI Settings Action - persists AI provider configuration to user_ai_settings table
+export async function saveAISettingsAction(formData: FormData) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const baseUrl = (formData.get('aiBaseUrl') as string) || ''
+    const providerLabel = (formData.get('aiProviderLabel') as string) || ''
+    const modelName = (formData.get('aiModelName') as string) || ''
+    const temperatureRaw = formData.get('aiTemperature') as string
+    const apiKey = (formData.get('aiApiKey') as string) || ''
+
+    // Validate inputs
+    if (modelName.trim().length > 200) {
+      return { error: 'Model name must be 200 characters or less.' }
+    }
+    if (providerLabel.trim().length > 100) {
+      return { error: 'Provider label must be 100 characters or less.' }
+    }
+    if (baseUrl && !isSafeUrl(baseUrl)) {
+      return { error: 'Invalid base URL.' }
+    }
+
+    // Parse temperature with proper null handling
+    let temperature: number | null = null
+    if (temperatureRaw && temperatureRaw.trim() !== '') {
+      const parsed = parseFloat(temperatureRaw)
+      if (isNaN(parsed) || parsed < 0 || parsed > 2) {
+        return { error: 'Temperature must be between 0.0 and 2.0.' }
+      }
+      temperature = parsed
+    }
+
+    // Encrypt API key if provided
+    let encryptedKey: string | null = null
+    if (apiKey.trim()) {
+      try {
+        encryptedKey = encryptKey(apiKey.trim())
+      } catch (encryptError) {
+        console.error('[AI SETTINGS] Encryption error:', encryptError)
+        return { error: 'Failed to securely store API key. Please check server configuration.' }
+      }
+    }
+
+    // Upsert into user_ai_settings
+    const upsertData: Record<string, unknown> = {
+      user_id: user.id,
+      base_url: baseUrl.trim() || null,
+      provider_label: providerLabel.trim() || null,
+      model_name: modelName.trim() || null,
+      temperature: temperature,
+    }
+
+    // Only update encrypted_key if a new key was provided
+    if (encryptedKey) {
+      upsertData.encrypted_key = encryptedKey
+    }
+
+    const { error: upsertError } = await supabase
+      .from('user_ai_settings')
+      .upsert(upsertData, { onConflict: 'user_id' })
+
+    if (upsertError) {
+      return { error: sanitizeDatabaseError(upsertError) }
+    }
+
+    revalidatePath('/settings')
+    return { success: true, message: 'AI settings saved successfully.' }
+  } catch (e) {
+    if (e instanceof RateLimitError) {
+      return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
+    }
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
 export async function uploadBusinessLogoAction(formData: FormData) {
   try {
     const file = formData.get('logo') as File | null

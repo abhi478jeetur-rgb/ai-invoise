@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { updatePassword } from '@/lib/auth/actions'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,17 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  // H16: Store timeout ID in ref for cleanup
+  const redirectTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // H16: Cleanup timeout on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current)
+      }
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -29,8 +40,8 @@ export default function ResetPasswordPage() {
     } else if (result && 'success' in result) {
       setSuccess(result.message || 'Password successfully updated!')
       setLoading(false)
-      // Redirect to sign-in page after a brief delay
-      setTimeout(() => {
+      // H16: Store timeout ID for cleanup
+      redirectTimerRef.current = setTimeout(() => {
         router.push('/sign-in')
       }, 2000)
     }
