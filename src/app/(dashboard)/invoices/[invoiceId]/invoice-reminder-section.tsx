@@ -48,18 +48,18 @@ export function InvoiceReminderSection({
   if (variant === 'cta') {
     return (
       <>
-        <Card className="border-neutral-800 bg-gradient-to-br from-neutral-900/80 to-neutral-900/40 backdrop-blur-xl">
+        <Card className="border-border bg-gradient-to-br from-neutral-900/80 to-neutral-900/40 backdrop-blur-xl">
           <CardContent className="py-5 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-neutral-800/80 border border-neutral-700/50 mb-3">
-              <span className="text-sm text-neutral-400">AI</span>
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/80 border border-border mb-3">
+              <span className="text-sm text-muted-foreground">AI</span>
             </div>
-            <h3 className="text-sm font-medium text-neutral-200 mb-1">Generate Reminder</h3>
-            <p className="text-xs text-neutral-500 mb-4">
+            <h3 className="text-sm font-medium text-foreground mb-1">Generate Reminder</h3>
+            <p className="text-xs text-muted-foreground mb-4">
               AI-drafted follow-up emails calibrated to the right tone.
             </p>
             <Button
               onClick={() => setModalOpen(true)}
-              className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer"
             >
               Generate Reminder
             </Button>
@@ -86,7 +86,7 @@ export function InvoiceReminderSection({
         <Button
           size="sm"
           onClick={() => setModalOpen(true)}
-          className="bg-white text-black hover:bg-neutral-200 font-medium text-xs cursor-pointer h-7 px-3"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs cursor-pointer h-7 px-3"
         >
           + Generate Reminder
         </Button>

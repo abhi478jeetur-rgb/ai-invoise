@@ -28,7 +28,7 @@ export function QuickStartBanner() {
             <p className="text-sm font-medium text-white mb-1">
               Step 1: Add your first client
             </p>
-            <p className="text-xs text-neutral-400 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               Keep track of who you&apos;re billing.
             </p>
             <Link
@@ -47,7 +47,7 @@ export function QuickStartBanner() {
             <p className="text-sm font-medium text-white mb-1">
               Step 2: Create a professional invoice
             </p>
-            <p className="text-xs text-neutral-400 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               Send polished invoices in seconds.
             </p>
             <Link
@@ -66,12 +66,12 @@ export function QuickStartBanner() {
             <p className="text-sm font-medium text-white mb-1">
               Step 3: Let AI chase your payments
             </p>
-            <p className="text-xs text-neutral-400 mb-4">
+            <p className="text-xs text-muted-foreground mb-4">
               Generates polite follow-ups automatically.
             </p>
             <Link
               href="/reminders"
-              className={buttonVariants({ variant: "outline", size: "sm" }) + " border-white/10 text-neutral-300 hover:bg-white/10 text-xs mt-auto"}
+              className={buttonVariants({ size: "sm" }) + " bg-black hover:bg-black/80 text-white text-xs mt-auto"}
             >
               See How It Works
             </Link>

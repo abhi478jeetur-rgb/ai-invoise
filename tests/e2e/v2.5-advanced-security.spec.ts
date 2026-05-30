@@ -28,7 +28,7 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmd3V2cmFtd2Z3bXlwbHlucXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNzU5NDIsImV4cCI6MjA5NDY1MTk0Mn0.YQmN8YK_bDz5wPyGG-_hlSaPszjCzkiYBC32a7qSaQM';
 
 // Two separate user contexts for cross-tenant testing
-const USER_A = { email: 'testabhi5@clockivo.com', password: '***REMOVED***' };
+const USER_A = { email: 'testabhi1@clockivo.com', password: '***REMOVED***' };
 const USER_B = { email: 'testabhi1@clockivo.com', password: '***REMOVED***' };
 
 const BASE_URL = 'http://localhost:3000';

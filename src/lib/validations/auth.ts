@@ -9,7 +9,7 @@ export const passwordSchema = z
   .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character.' })
 
 export const signUpSchema = z.object({
-  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
+  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }).regex(/^[^<>]*$/, { message: 'Special characters < and > are not allowed.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: passwordSchema,
 })
@@ -25,7 +25,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   password: passwordSchema,
-  confirmPassword: z.string(),
+  confirmPassword: z.string().min(1, 'Please confirm your password.'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match.',
   path: ['confirmPassword'],

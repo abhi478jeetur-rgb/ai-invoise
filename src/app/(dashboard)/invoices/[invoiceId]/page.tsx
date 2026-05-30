@@ -27,16 +27,17 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
-  sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
-  due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-  overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
-  paid: 'bg-green-950/40 text-green-400 border-green-900/50',
-  archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
-  promised: 'bg-indigo-950/40 text-indigo-400 border-indigo-900/50',
-  paused: 'bg-slate-950/40 text-slate-400 border-slate-900/50',
-  partial: 'bg-amber-950/40 text-amber-400 border-amber-900/50',
+  draft: 'bg-accent text-muted-foreground border-border',
+  sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+  due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+  overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+  paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  archived: 'bg-accent/50 text-muted-foreground border-border',
+  promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+  paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+  partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
 }
+
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('en-US', {
@@ -103,7 +104,7 @@ function getDueInterpretation(dueDate: string, status: string): { text: string; 
   }
   if (diff === 0) return { text: 'Due today', className: 'text-yellow-400' }
   if (diff === 1) return { text: 'Due tomorrow', className: 'text-yellow-400' }
-  return { text: `Due in ${diff} days`, className: 'text-neutral-400' }
+  return { text: `Due in ${diff} days`, className: 'text-muted-foreground' }
 }
 
 export default async function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
@@ -120,20 +121,20 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   if (!result.success || !result.data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="bg-zinc-950/40 backdrop-blur-md border border-white/[0.05] rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-6">
+        <div className="bg-background/40 backdrop-blur-md border border-white/[0.05] rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-6">
           <div className="w-16 h-16 rounded-full bg-red-500/[0.08] border border-red-500/[0.15] flex items-center justify-center text-red-400">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-zinc-100 tracking-tight">Invoice Not Found</h2>
-            <p className="text-sm text-zinc-500 leading-relaxed">
+            <h2 className="text-xl font-semibold text-foreground tracking-tight">Invoice Not Found</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               The invoice you are trying to access does not exist, has been deleted, or you do not have permission to view it.
             </p>
           </div>
           <Link href="/invoices" className="w-full">
-            <Button className="w-full bg-white text-black hover:bg-zinc-200 font-medium py-2.5 rounded-xl transition-all cursor-pointer">
+            <Button className="w-full bg-primary text-primary-foreground hover:bg-zinc-200 font-medium py-2.5 rounded-xl transition-all cursor-pointer">
               Back to Invoices
             </Button>
           </Link>
@@ -179,20 +180,20 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2">
-        <Link href="/invoices" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">
+        <Link href="/invoices" className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors">
           Invoices
         </Link>
-        <span className="text-xs text-neutral-700">/</span>
-        <span className="text-xs text-neutral-400">{invoice.invoice_number}</span>
+        <span className="text-xs text-muted-foreground/40">/</span>
+        <span className="text-xs text-muted-foreground">{invoice.invoice_number}</span>
       </div>
 
       {/* Hero: Invoice Identity + Primary CTA */}
-      <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+      <Card className="border-border bg-card/40 backdrop-blur-xl">
         <CardContent className="py-6 px-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl font-semibold text-neutral-100 tracking-tight capitalize">
+                <h1 className="text-xl font-semibold text-foreground tracking-tight capitalize">
                   {invoice.title || invoice.invoice_number}
                 </h1>
                 <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${STATUS_STYLES[effectiveStatus] ?? STATUS_STYLES.draft}`}>
@@ -200,20 +201,20 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
                 </span>
               </div>
               {invoice.title && (
-                <p className="text-xs font-mono text-neutral-500">{invoice.invoice_number}</p>
+                <p className="text-xs font-mono text-muted-foreground">{invoice.invoice_number}</p>
               )}
               <div className="flex items-center gap-4 flex-wrap">
-                <p className="text-2xl font-bold text-neutral-100 font-mono">
+                <p className="text-2xl font-bold text-foreground font-mono">
                   {formatCurrency(invoice.amount, invoice.currency)}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className={`text-sm font-medium ${dueInfo.className}`}>{dueInfo.text}</span>
-                  <span className="text-neutral-700">&middot;</span>
-                  <span className="text-sm text-neutral-500 font-mono">{formatDate(invoice.due_date)}</span>
+                  <span className="text-muted-foreground/40">&middot;</span>
+                  <span className="text-sm text-muted-foreground font-mono">{formatDate(invoice.due_date)}</span>
                 </div>
               </div>
               {invoice.reminder_count > 0 && (
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {invoice.reminder_count} reminder{invoice.reminder_count !== 1 ? 's' : ''} sent
                   {invoice.last_reminder_at && (
                     <> &middot; Last: {new Date(invoice.last_reminder_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</>
@@ -223,7 +224,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <InvoiceDetailActions invoice={invoice} />
+              <InvoiceDetailActions invoice={invoice} client={client} />
             </div>
           </div>
         </CardContent>
@@ -234,72 +235,72 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         {/* Left: Invoice Particulars + Activity */}
         <div className="lg:col-span-2 space-y-4">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="bg-neutral-900/60 border border-neutral-800 p-1 flex-wrap h-auto gap-1 mb-4">
-              <TabsTrigger value="details" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+            <TabsList className="bg-secondary/60 border border-border p-1 flex-wrap h-auto gap-1 mb-4">
+              <TabsTrigger value="details" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground text-xs cursor-pointer">
                 Overview & Activity
               </TabsTrigger>
-              <TabsTrigger value="preview" className="data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-100 text-neutral-500 text-xs cursor-pointer">
+              <TabsTrigger value="preview" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground text-xs cursor-pointer">
                 Live PDF Preview
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 m-0 focus-visible:outline-none">
               {/* Invoice Details */}
-              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+              <Card className="border-border bg-card/40 backdrop-blur-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-neutral-300">Details</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground/80">Details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-neutral-500 mb-1">Amount</p>
-                  <p className="text-lg font-semibold text-neutral-100 font-mono">
+                  <p className="text-xs text-muted-foreground mb-1">Amount</p>
+                  <p className="text-lg font-semibold text-foreground font-mono">
                     {formatCurrency(invoice.amount, invoice.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 mb-1">Status</p>
+                  <p className="text-xs text-muted-foreground mb-1">Status</p>
                   <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md border ${STATUS_STYLES[effectiveStatus] ?? ''}`}>
                     {STATUS_LABELS[effectiveStatus] ?? effectiveStatus}
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 mb-1">Invoice Number</p>
-                  <p className="text-sm text-neutral-300 font-mono">{invoice.invoice_number}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Invoice Number</p>
+                  <p className="text-sm text-foreground/80 font-mono">{invoice.invoice_number}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 mb-1">Due Date</p>
-                  <p className="text-sm text-neutral-300 font-mono">{formatDate(invoice.due_date)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Due Date</p>
+                  <p className="text-sm text-foreground/80 font-mono">{formatDate(invoice.due_date)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 mb-1">Created</p>
-                  <p className="text-sm text-neutral-300 font-mono">{formatDate(invoice.created_at)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Created</p>
+                  <p className="text-sm text-foreground/80 font-mono">{formatDate(invoice.created_at)}</p>
                 </div>
                 {invoice.paid_date && (
                   <div>
-                    <p className="text-xs text-neutral-500 mb-1">Paid Date</p>
+                    <p className="text-xs text-muted-foreground mb-1">Paid Date</p>
                     <p className="text-sm text-green-400 font-mono">{formatDate(invoice.paid_date)}</p>
                   </div>
                 )}
               </div>
 
               {invoice.description && (
-                <div className="mt-4 pt-4 border-t border-neutral-800/50">
-                  <p className="text-xs text-neutral-500 mb-1">Description</p>
-                  <p className="text-sm text-neutral-400 leading-relaxed">{invoice.description}</p>
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">Description</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{invoice.description}</p>
                 </div>
               )}
 
               {invoice.notes && (
-                <div className="mt-4 pt-4 border-t border-neutral-800/50">
-                  <p className="text-xs text-neutral-500 mb-1">Notes</p>
-                  <p className="text-sm text-neutral-400 leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
                 </div>
               )}
 
               {invoice.payment_link && (
-                <div className="mt-4 pt-4 border-t border-neutral-800/50">
-                  <p className="text-xs text-neutral-500 mb-1">Payment Link</p>
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground mb-1">Payment Link</p>
                   <a
                     href={sanitizeHref(invoice.payment_link)}
                     target="_blank"
@@ -314,9 +315,9 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
           </Card>
 
           {/* Activity Timeline */}
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+          <Card className="border-border bg-card/40 backdrop-blur-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-neutral-300">Activity</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground/80">Activity</CardTitle>
             </CardHeader>
             <CardContent>
                 <InvoiceReminderSection
@@ -332,7 +333,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
             </TabsContent>
 
             <TabsContent value="preview" className="m-0 focus-visible:outline-none">
-              <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl overflow-hidden">
+              <Card className="border-border bg-card/40 backdrop-blur-xl overflow-hidden">
                 <CardContent className="p-0">
                   {profile && client && (
                     <LivePdfPreview 
@@ -367,43 +368,43 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         {/* Right: Client + Generate Reminder CTA */}
         <div className="space-y-4">
           {/* Client Card */}
-          <Card className="border-neutral-900 bg-neutral-900/40 backdrop-blur-xl">
+          <Card className="border-border bg-card/40 backdrop-blur-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-neutral-300">Client</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground/80">Client</CardTitle>
             </CardHeader>
             <CardContent>
               {client ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-neutral-800/80 border border-neutral-700/50 shrink-0">
-                      <span className="text-xs font-medium text-neutral-400">
+                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-accent/80 border border-border shrink-0">
+                      <span className="text-xs font-medium text-muted-foreground">
                         {client.client_name[0]?.toUpperCase() ?? '?'}
                       </span>
                     </div>
                     <div className="min-w-0">
-                      <Link href={`/clients/${client.id}`} className="text-sm font-medium text-neutral-200 hover:text-white transition-colors">
+                      <Link href={`/clients/${client.id}`} className="text-sm font-medium text-foreground hover:text-foreground transition-colors">
                         {client.client_name}
                       </Link>
-                      {client.company_name && <p className="text-xs text-neutral-500 truncate">{client.company_name}</p>}
+                      {client.company_name && <p className="text-xs text-muted-foreground truncate">{client.company_name}</p>}
                     </div>
                   </div>
-                  <div className="pt-2 space-y-2 border-t border-neutral-800/50">
+                  <div className="pt-2 space-y-2 border-t border-border/50">
                     {client.email && (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">Email</span>
-                        <span className="text-xs text-neutral-300 truncate max-w-[160px]">{client.email}</span>
+                        <span className="text-xs text-muted-foreground">Email</span>
+                        <span className="text-xs text-foreground/80 truncate max-w-[160px]">{client.email}</span>
                       </div>
                     )}
                     {client.phone && (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">Phone</span>
-                        <span className="text-xs text-neutral-300">{client.phone}</span>
+                        <span className="text-xs text-muted-foreground">Phone</span>
+                        <span className="text-xs text-foreground/80">{client.phone}</span>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-neutral-500">Client information not available.</p>
+                <p className="text-sm text-muted-foreground">Client information not available.</p>
               )}
             </CardContent>
           </Card>

@@ -24,10 +24,10 @@ export default function ForgotPasswordPage() {
     const formData = new FormData(e.currentTarget)
     const result = await sendPasswordReset(formData)
 
-    if (result?.error) {
+    if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
-    } else if (result?.success) {
+    } else if (result && 'success' in result) {
       setSuccess(result.message || 'Password reset email sent!')
       setLoading(false)
       // Redirect to OTP verification screen for recovery
@@ -38,20 +38,19 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-neutral-950 px-4 py-12 selection:bg-neutral-800 overflow-hidden">
-      {/* Background ambient radial gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,rgba(24,24,27,0.8),transparent)] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neutral-900/10 rounded-full blur-[160px] pointer-events-none" />
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 selection:bg-muted overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,var(--muted),transparent)] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-muted/10 rounded-full blur-[160px] pointer-events-none" />
 
       {/* Main Card Container */}
-      <Card className="relative w-full max-w-md border-neutral-900 bg-neutral-900/40 backdrop-blur-xl shadow-2xl p-4">
+      <Card className="relative w-full max-w-md border-border bg-card/40 backdrop-blur-xl shadow-2xl p-4">
         {/* Top Header */}
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 mb-2 shadow-inner">
-            <span className="text-xl font-bold tracking-tight text-white">C</span>
+          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-2 shadow-inner">
+            <span className="text-xl font-bold tracking-tight text-foreground">C</span>
           </div>
-          <CardTitle className="text-2xl font-semibold text-neutral-100 tracking-tight">Forgot Password</CardTitle>
-          <CardDescription className="text-sm text-neutral-500 mt-1">
+          <CardTitle className="text-2xl font-semibold text-foreground tracking-tight">Forgot Password</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
             Enter your email to receive a password reset link
           </CardDescription>
         </CardHeader>
@@ -72,7 +71,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="email">
+              <Label className="text-muted-foreground" htmlFor="email">
                 Email Address
               </Label>
               <Input
@@ -81,24 +80,24 @@ export default function ForgotPasswordPage() {
                 type="email"
                 required
                 placeholder="name@company.com"
-                className="h-10 px-3.5 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-10 px-3.5 border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-10 rounded-lg bg-white text-black hover:bg-neutral-200 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {loading ? 'Sending link...' : 'Send Reset Link'}
             </Button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 pt-6 border-t border-neutral-900 text-center">
-            <p className="text-xs text-neutral-500">
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-xs text-muted-foreground">
               Remember your password?{' '}
-              <Link href="/sign-in" className="text-neutral-300 hover:text-white font-medium underline-offset-4 hover:underline transition-all">
+              <Link href="/sign-in" className="text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline transition-all">
                 Sign in
               </Link>
             </p>

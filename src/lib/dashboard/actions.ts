@@ -11,11 +11,13 @@ export async function getDashboardDataAction() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    // Fetch all invoices for stats
+    // C7: Fetch invoices for stats (exclude soft-deleted, limit to prevent unbounded growth)
     const { data: allInvoices, error: invoicesError } = await supabase
       .from('invoices')
       .select('id, amount, currency, status, due_date, invoice_number, title, client_id, reminder_count, last_reminder_at, created_at, clients (client_name, email, company_name)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .limit(500)
 
     if (invoicesError) return { error: sanitizeDatabaseError(invoicesError) }
 
@@ -33,6 +35,8 @@ export async function getDashboardDataAction() {
     const overdueInvoices = invoices.filter((inv) => {
       if (inv.status === 'paid' || inv.status === 'archived' || inv.status === 'draft') return false
       if (inv.status === 'overdue') return true
+      // H8: Guard against null/undefined due_date
+      if (!inv.due_date) return false
       const parseStr = (inv.due_date.includes('T') || inv.due_date.includes(' ')) ? inv.due_date : inv.due_date + 'T00:00:00'
       const due = new Date(parseStr)
       due.setHours(0, 0, 0, 0)
@@ -50,12 +54,16 @@ export async function getDashboardDataAction() {
       const currencies = Object.keys(map).filter(c => map[c] > 0)
       if (currencies.length === 0) return '$0'
       return currencies.map(cur => {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: cur,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        }).format(map[cur])
+        try {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: cur,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          }).format(map[cur])
+        } catch {
+          return `${cur} ${map[cur].toFixed(2)}`
+        }
       }).join(' + ')
     }
 
@@ -82,6 +90,8 @@ export async function getDashboardDataAction() {
 
     const chaseInvoices = invoices.filter((inv) => {
       if (['paid', 'archived', 'draft', 'paused'].includes(inv.status)) return false
+      // H8: Guard against null/undefined due_date
+      if (!inv.due_date) return false
       const due = new Date(inv.due_date + 'T00:00:00')
       return due <= threeDaysLater
     })
@@ -90,7 +100,10 @@ export async function getDashboardDataAction() {
       .sort((a, b) => {
         const priorityDiff = (statusPriority[a.status] ?? 3) - (statusPriority[b.status] ?? 3)
         if (priorityDiff !== 0) return priorityDiff
-        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+        // H8: Guard against null/undefined due_date in sort
+        const aTime = a.due_date ? new Date(a.due_date).getTime() : Infinity
+        const bTime = b.due_date ? new Date(b.due_date).getTime() : Infinity
+        return aTime - bTime
       })
       .map((inv) => {
         const clientsData = inv.clients as any
@@ -111,19 +124,21 @@ export async function getDashboardDataAction() {
         }
       })
 
-    // Fetch recent activities with safe column fallback
+    // Fetch recent activities with safe column fallback (M32: exclude soft-deleted invoices)
     let activitiesRes: any = await supabase
       .from('reminder_events')
-      .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone), mail_subject, mail_body')
+      .select('id, event_type, description, created_at, invoice_id, invoices!inner (invoice_number, title, deleted_at), reminder_drafts (tone), mail_subject, mail_body')
       .eq('user_id', user.id)
+      .is('invoices.deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5)
 
     if (activitiesRes.error && (activitiesRes.error.code === '42703' || activitiesRes.error.message?.includes('mail_subject'))) {
       activitiesRes = await supabase
         .from('reminder_events')
-        .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone)')
+        .select('id, event_type, description, created_at, invoice_id, invoices!inner (invoice_number, title, deleted_at), reminder_drafts (tone)')
         .eq('user_id', user.id)
+        .is('invoices.deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(5)
     }

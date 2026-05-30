@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/db/server";
 import { renderToStream } from "@react-pdf/renderer";
 import { InvoicePdfDocument } from "@/components/invoices/invoice-pdf-document";
+import { enforceRateLimit, RateLimitError } from "@/lib/utils/rate-limit";
 
 // We use edge or nodejs? React-PDF requires Nodejs
 export const runtime = "nodejs";
@@ -19,6 +20,19 @@ export async function GET(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // M34: Rate limit PDF generation (10 per minute per user)
+    try {
+      await enforceRateLimit(user.id, { limit: 10, windowMs: 60 * 1000 });
+    } catch (e) {
+      if (e instanceof RateLimitError) {
+        return new NextResponse(
+          JSON.stringify({ error: "Too many PDF requests. Please wait a moment and try again." }),
+          { status: 429, headers: { "Content-Type": "application/json", "Retry-After": Math.ceil(e.retryAfterMs / 1000).toString() } }
+        );
+      }
+      throw e;
     }
 
     // Fetch invoice
@@ -80,7 +94,7 @@ export async function GET(
   } catch (error: any) {
     console.error("PDF Generation Error:", error);
     return new NextResponse(
-      JSON.stringify({ error: "Failed to generate PDF", details: error.message }),
+      JSON.stringify({ error: "Failed to generate PDF. Please try again." }),
       {
         status: 500,
         headers: {

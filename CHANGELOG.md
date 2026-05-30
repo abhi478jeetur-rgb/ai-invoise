@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-05-30
+
+### Fixed
+- **Status Badge Light Mode Legibility:** Resolved poor contrast on the "Sent" status badge (and all other status badges like "Due Soon", "Overdue", "Promised", etc.) across the entire application under Light Mode. Statuses now render with high-contrast, premium light-mode tailored backgrounds and borders by default (e.g. `bg-blue-50 text-blue-700 border-blue-200`) and seamlessly transition to midnight dark versions using `dark:` utility prefixes.
+
+## [2.0.3] - 2026-05-29
+
+### Added
+- **Dynamic Theme Support:** Added full Light/Dark/System theme options across all dashboard, authentication, and core application pages.
+- **Theme Segments Toggle:** Integrated an elegant 3-button segmented theme toggle directly in the user navigation avatar dropdown.
+- **Theme E2E Screenshot Testing:** Created a custom Playwright test suite to dynamically verify light/dark mode visual contrast by capturing full-page screenshots.
+
+### Fixed
+- **Dashboard Visual Customizer Overrides:** Fixed a major styling conflict where the Visual Customizer's default Midnight Dark preset overrode body and card backgrounds in light mode, forcing a dark black background. The presets now dynamically adapt to light/dark themes, utilizing a pure white layout for light mode.
+
 ## [2.0.2] - 2026-05-28
 
 ### Added

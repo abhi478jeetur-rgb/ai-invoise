@@ -7,22 +7,27 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await login(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await login(formData)
 
-    if (result?.error) {
-      setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      }
+    } finally {
       setLoading(false)
     }
   }
@@ -38,20 +43,20 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-neutral-950 px-4 py-12 selection:bg-neutral-800 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center bg-background px-4 py-12 selection:bg-muted overflow-hidden">
       {/* Background ambient radial gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,rgba(24,24,27,0.8),transparent)] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neutral-900/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_-100px,var(--muted),transparent)] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-muted/10 rounded-full blur-[160px] pointer-events-none" />
 
       {/* Main Card Container */}
-      <Card className="relative w-full max-w-md border-neutral-900 bg-neutral-900/40 backdrop-blur-xl shadow-2xl p-4">
+      <Card className="relative w-full max-w-md border-border bg-card/40 backdrop-blur-xl shadow-2xl p-4">
         {/* Top Header */}
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 mb-2 shadow-inner">
-            <span className="text-xl font-bold tracking-tight text-white">C</span>
+          <div className="mx-auto inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-2 shadow-inner">
+            <span className="text-xl font-bold tracking-tight text-foreground">C</span>
           </div>
-          <CardTitle className="text-2xl font-semibold text-neutral-100 tracking-tight">Welcome back</CardTitle>
-          <CardDescription className="text-sm text-neutral-500 mt-1">
+          <CardTitle className="text-2xl font-semibold text-foreground tracking-tight">Welcome back</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
             Sign in to manage your late invoices with AI
           </CardDescription>
         </CardHeader>
@@ -66,7 +71,7 @@ export default function SignInPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="email">
+              <Label className="text-muted-foreground" htmlFor="email">
                 Email Address
               </Label>
               <Input
@@ -75,33 +80,42 @@ export default function SignInPage() {
                 type="email"
                 required
                 placeholder="name@company.com"
-                className="h-10 px-3.5 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-10 px-3.5 border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-neutral-400" htmlFor="password">
+                <Label className="text-muted-foreground" htmlFor="password">
                   Password
                 </Label>
-                <Link href="/forgot-password" className="text-xs text-neutral-500 hover:text-neutral-300 hover:underline transition-colors">
+                <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors">
                   Forgot Password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="••••••••"
-                className="h-10 px-3.5 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••"
+                  className="h-10 px-3.5 border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <Button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full h-10 rounded-lg bg-white text-black hover:bg-neutral-200 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
@@ -110,10 +124,10 @@ export default function SignInPage() {
           {/* Social Sign-In Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-900"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#0e0e0f] px-2 text-neutral-500">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -122,7 +136,7 @@ export default function SignInPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading || googleLoading}
-            className="w-full h-10 rounded-lg bg-neutral-900 border border-neutral-850 hover:bg-neutral-800 text-neutral-200 font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            className="w-full h-10 rounded-lg bg-secondary border border-border hover:bg-accent text-foreground font-medium text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-sm"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -134,10 +148,10 @@ export default function SignInPage() {
           </Button>
 
           {/* Footer Links */}
-          <div className="mt-6 pt-6 border-t border-neutral-900 text-center">
-            <p className="text-xs text-neutral-500">
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-xs text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/sign-up" className="text-neutral-300 hover:text-white font-medium underline-offset-4 hover:underline transition-all">
+              <Link href="/sign-up" className="text-foreground/80 hover:text-foreground font-medium underline-offset-4 hover:underline transition-all">
                 Sign up for free
               </Link>
             </p>
