@@ -143,7 +143,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
     try {
       const formData = new FormData(e.currentTarget)
       const result = await updatePassword(formData)
-      if (result.error) {
+      if (result && 'error' in result) {
         toast.error(result.error)
       } else {
         toast.success('Password successfully updated!')
@@ -360,7 +360,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 </div>
 
                 <Button type="submit" disabled={profileSaving}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-sm cursor-pointer disabled:opacity-50">
                   {profileSaving ? 'Saving...' : 'Save Profile'}
                 </Button>
               </form>
@@ -392,7 +392,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 </div>
 
                 <Button type="submit" disabled={securitySaving}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-sm cursor-pointer disabled:opacity-50">
                   {securitySaving ? 'Updating...' : 'Update Password'}
                 </Button>
               </form>
@@ -439,7 +439,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 )}
 
                 <Button type="submit" disabled={reminderSaving}
-                  className="bg-accent text-white hover:bg-accent font-medium text-sm cursor-pointer disabled:opacity-50 mt-2">
+                  className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-sm cursor-pointer disabled:opacity-50 mt-2">
                   {reminderSaving ? 'Saving...' : 'Save Reminder Schedule'}
                 </Button>
               </form>
@@ -704,7 +704,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             </Card>
 
             <Button type="submit" disabled={bizSaving || logoUploading}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50">
+              className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-sm cursor-pointer disabled:opacity-50">
               {bizSaving ? 'Saving...' : 'Save Business Profile'}
             </Button>
           </form>

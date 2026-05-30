@@ -27,10 +27,10 @@ export default function SignUpPage() {
     const formData = new FormData(e.currentTarget)
     const result = await signup(formData)
 
-    if (result?.error) {
+    if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
-    } else if (result?.success) {
+    } else if (result && 'success' in result) {
       setSuccess(result.message || 'Verification link sent!')
       setLoading(false)
       // Redirect to OTP verification screen

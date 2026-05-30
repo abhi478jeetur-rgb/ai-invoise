@@ -24,10 +24,10 @@ export default function ForgotPasswordPage() {
     const formData = new FormData(e.currentTarget)
     const result = await sendPasswordReset(formData)
 
-    if (result?.error) {
+    if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
-    } else if (result?.success) {
+    } else if (result && 'success' in result) {
       setSuccess(result.message || 'Password reset email sent!')
       setLoading(false)
       // Redirect to OTP verification screen for recovery

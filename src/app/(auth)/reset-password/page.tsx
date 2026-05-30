@@ -23,10 +23,10 @@ export default function ResetPasswordPage() {
     const formData = new FormData(e.currentTarget)
     const result = await updatePassword(formData)
 
-    if (result?.error) {
+    if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
-    } else if (result?.success) {
+    } else if (result && 'success' in result) {
       setSuccess(result.message || 'Password successfully updated!')
       setLoading(false)
       // Redirect to sign-in page after a brief delay
