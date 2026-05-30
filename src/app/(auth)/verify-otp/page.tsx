@@ -144,6 +144,9 @@ export default function VerifyOtpPage() {
                     key={idx}
                     ref={inputRefs[idx]}
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="one-time-code"
                     maxLength={1}
                     value={val}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}

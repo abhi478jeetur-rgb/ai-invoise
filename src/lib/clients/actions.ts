@@ -4,6 +4,12 @@ import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 
+// M18: UUID validation helper
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id)
+}
+
 export async function createClientAction(formData: FormData) {
   try {
     const clientName = formData.get('clientName') as string
@@ -96,6 +102,8 @@ export async function getClientsAction() {
 
 export async function updateClientAction(clientId: string, formData: FormData) {
   try {
+    if (!isValidUUID(clientId)) return { error: 'Invalid client ID format.' }
+
     const clientName = formData.get('clientName') as string
     const contactName = formData.get('contactName') as string
     const email = formData.get('email') as string
@@ -163,6 +171,8 @@ export async function updateClientAction(clientId: string, formData: FormData) {
 
 export async function deleteClientAction(clientId: string) {
   try {
+    if (!isValidUUID(clientId)) return { error: 'Invalid client ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -178,12 +188,17 @@ export async function deleteClientAction(clientId: string) {
       .eq('user_id', user.id)
 
     if (!error) {
-      // Cascade soft delete to invoices
-      await supabase
+      // Cascade soft delete to invoices (M31: only touch active invoices)
+      const { error: cascadeError } = await supabase
         .from('invoices')
         .update({ deleted_at: deletedAt })
         .eq('client_id', clientId)
         .eq('user_id', user.id)
+        .is('deleted_at', null)
+
+      if (cascadeError) {
+        console.error('Cascade soft-delete warning:', cascadeError)
+      }
     }
 
     if (error) {
@@ -226,6 +241,8 @@ export async function getDeletedClientsAction() {
 
 export async function restoreClientAction(clientId: string) {
   try {
+    if (!isValidUUID(clientId)) return { error: 'Invalid client ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -277,6 +294,8 @@ export async function restoreClientAction(clientId: string) {
 
 export async function hardDeleteClientAction(clientId: string) {
   try {
+    if (!isValidUUID(clientId)) return { error: 'Invalid client ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {

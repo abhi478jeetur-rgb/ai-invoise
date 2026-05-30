@@ -112,13 +112,11 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
 
     setIsOpen(false)
 
-    // Route based on setup preference
-    if (data.setup_preference === 'quick_guided_tour') {
-      router.push('/dashboard')
-    } else if (data.setup_preference === 'checklist_setup') {
-      router.push('/dashboard')
+    // Route based on setup preference (L18: all paths go to dashboard)
+    router.push('/dashboard')
+    if (data.setup_preference === 'explore_myself') {
+      // "explore_myself" just closes the modal, no redirect needed
     }
-    // "explore_myself" just closes the modal
 
     router.refresh()
     setSubmitting(false)

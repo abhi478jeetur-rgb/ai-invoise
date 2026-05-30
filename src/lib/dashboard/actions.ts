@@ -11,12 +11,13 @@ export async function getDashboardDataAction() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    // C7: Fetch all invoices for stats (exclude soft-deleted)
+    // C7: Fetch invoices for stats (exclude soft-deleted, limit to prevent unbounded growth)
     const { data: allInvoices, error: invoicesError } = await supabase
       .from('invoices')
       .select('id, amount, currency, status, due_date, invoice_number, title, client_id, reminder_count, last_reminder_at, created_at, clients (client_name, email, company_name)')
       .eq('user_id', user.id)
       .is('deleted_at', null)
+      .limit(500)
 
     if (invoicesError) return { error: sanitizeDatabaseError(invoicesError) }
 
@@ -53,12 +54,16 @@ export async function getDashboardDataAction() {
       const currencies = Object.keys(map).filter(c => map[c] > 0)
       if (currencies.length === 0) return '$0'
       return currencies.map(cur => {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: cur,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        }).format(map[cur])
+        try {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: cur,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          }).format(map[cur])
+        } catch {
+          return `${cur} ${map[cur].toFixed(2)}`
+        }
       }).join(' + ')
     }
 
@@ -119,19 +124,21 @@ export async function getDashboardDataAction() {
         }
       })
 
-    // Fetch recent activities with safe column fallback
+    // Fetch recent activities with safe column fallback (M32: exclude soft-deleted invoices)
     let activitiesRes: any = await supabase
       .from('reminder_events')
-      .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone), mail_subject, mail_body')
+      .select('id, event_type, description, created_at, invoice_id, invoices!inner (invoice_number, title, deleted_at), reminder_drafts (tone), mail_subject, mail_body')
       .eq('user_id', user.id)
+      .is('invoices.deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5)
 
     if (activitiesRes.error && (activitiesRes.error.code === '42703' || activitiesRes.error.message?.includes('mail_subject'))) {
       activitiesRes = await supabase
         .from('reminder_events')
-        .select('id, event_type, description, created_at, invoice_id, invoices (invoice_number, title), reminder_drafts (tone)')
+        .select('id, event_type, description, created_at, invoice_id, invoices!inner (invoice_number, title, deleted_at), reminder_drafts (tone)')
         .eq('user_id', user.id)
+        .is('invoices.deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(5)
     }

@@ -77,6 +77,25 @@ export function decryptKey(encryptedText: string): string {
   throw new Error('Invalid encrypted key format.')
 }
 
+/**
+ * M9: Decrypt a key and automatically re-encrypt from legacy CBC to GCM.
+ * Returns the decrypted value and the new GCM-encrypted string if migration occurred.
+ * Callers should update the database with `migratedEncrypted` when it's non-null.
+ */
+export function decryptAndMigrate(encryptedText: string): { decrypted: string; migratedEncrypted: string | null } {
+  const parts = encryptedText.split(':')
+
+  // CBC format (2 parts) — needs migration
+  if (parts.length === 2) {
+    const decrypted = decryptKey(encryptedText)
+    const migratedEncrypted = encryptKey(decrypted)
+    return { decrypted, migratedEncrypted }
+  }
+
+  // GCM format (3 parts) — already current
+  return { decrypted: decryptKey(encryptedText), migratedEncrypted: null }
+}
+
 export function maskApiKey(key: string): string {
   if (key.length <= 8) return '****'
   return `${key.slice(0, 4)}${'*'.repeat(key.length - 8)}${key.slice(-4)}`

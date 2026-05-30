@@ -96,6 +96,8 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     if (!open) {
       setDraft(null)
       setError(null)
+      setTone('professional')
+      setCustomInstructions('')
       setEditMode(false)
       setEditedBody('')
       setCopiedField(null)
@@ -121,10 +123,17 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
   }
 
   async function handleCopy(field: 'subject' | 'body', text: string) {
-    await navigator.clipboard.writeText(text)
-    toast.success('AI Reminder draft copied to clipboard!')
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('AI Reminder draft copied to clipboard!')
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch {
+      toast.error('Failed to copy to clipboard', {
+        description: 'Your browser may not support clipboard access. Try copying manually.'
+      })
+      return
+    }
 
     // Log copy event silently
     if (draft) {
@@ -136,7 +145,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     if (!draft) return
     setMarkingSent(true)
 
-    await logReminderEventAction(
+    const result = await logReminderEventAction(
       invoiceId,
       'marked_sent',
       draft.id,
@@ -144,12 +153,20 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     )
 
     setMarkingSent(false)
+
+    if (result && 'error' in result) {
+      toast.error('Failed to mark as sent', {
+        description: result.error || 'Please try again.'
+      })
+      return
+    }
+
     handleClose(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[560px] border-border bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-w-[95vw] border-border bg-card backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-foreground">
             {draft ? 'Reminder Draft' : 'Generate Reminder'}

@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -57,7 +58,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     if (result.success) {
       router.refresh()
     } else {
-      console.error('[Client Deletion Failed]', result.error)
+      toast.error(result.error || 'Failed to delete client')
     }
   }
 

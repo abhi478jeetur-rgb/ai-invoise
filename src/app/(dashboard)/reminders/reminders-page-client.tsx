@@ -62,15 +62,15 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ]
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-muted text-muted-foreground border border-border/40',
-  sent: 'bg-blue-50 text-blue-700 border border-blue-200 dark:border-none dark:bg-blue-500/15 dark:text-blue-400',
-  due_soon: 'bg-amber-50 text-amber-700 border border-amber-200 dark:border-none dark:bg-amber-500/15 dark:text-amber-400',
-  overdue: 'bg-red-50 text-red-700 border border-red-200 dark:border-none dark:bg-red-500/[0.1] dark:text-red-400',
-  paid: 'bg-green-50 text-green-700 border border-green-200 dark:border-none dark:bg-emerald-500/15 dark:text-emerald-400',
-  archived: 'bg-muted text-muted-foreground border border-border/40',
-  promised: 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:border-none dark:bg-indigo-500/15 dark:text-indigo-400',
-  paused: 'bg-slate-100 text-slate-700 border border-slate-200 dark:border-none dark:bg-slate-500/15 dark:text-slate-400',
-  partial: 'bg-amber-50 text-amber-700 border border-amber-200 dark:border-none dark:bg-amber-500/15 dark:text-amber-400',
+  draft: 'bg-accent text-muted-foreground border-border',
+  sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+  due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+  overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+  paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  archived: 'bg-accent/50 text-muted-foreground border-border',
+  promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+  paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+  partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
 }
 
 

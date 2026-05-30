@@ -43,11 +43,6 @@ export default async function DashboardLayout({
       style={{
         '--user-accent': '#10b981',
         '--user-radius': '12px',
-        '--user-bg': '#050505',
-        '--user-card': '#0a0a0a',
-        '--user-border': '#151515',
-        '--user-text': '#a3a3a3',
-        '--user-title': '#f5f5f5',
         '--user-font-scale': '1.0',
       } as React.CSSProperties}
     >

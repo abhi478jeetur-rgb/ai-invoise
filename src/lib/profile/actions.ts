@@ -110,11 +110,22 @@ export async function completeTourAction() {
   }
 }
 
+const REMINDER_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
+const REMINDER_TIMES = ['Morning', 'Afternoon', 'Evening'] as const
+
 const reminderSettingsSchema = z.object({
   reminder_enabled: z.boolean(),
-  reminder_day: z.string(),
-  reminder_time: z.string()
-})
+  reminder_day: z.enum(REMINDER_DAYS).optional(),
+  reminder_time: z.enum(REMINDER_TIMES).optional()
+}).refine(
+  (data) => {
+    if (data.reminder_enabled) {
+      return !!data.reminder_day && !!data.reminder_time
+    }
+    return true
+  },
+  { message: 'Reminder day and time are required when reminders are enabled.' }
+)
 
 export async function updateReminderSettingsAction(formData: FormData) {
   try {
@@ -136,13 +147,17 @@ export async function updateReminderSettingsAction(formData: FormData) {
       return { error: 'Invalid settings data.' }
     }
 
+    const updatePayload: Record<string, unknown> = {
+      reminder_enabled: parsed.data.reminder_enabled,
+    }
+    if (parsed.data.reminder_enabled) {
+      updatePayload.reminder_day = parsed.data.reminder_day
+      updatePayload.reminder_time = parsed.data.reminder_time
+    }
+
     const { error } = await supabase
       .from('profiles')
-      .update({
-        reminder_enabled: parsed.data.reminder_enabled,
-        reminder_day: parsed.data.reminder_day,
-        reminder_time: parsed.data.reminder_time,
-      })
+      .update(updatePayload)
       .eq('id', user.id)
 
     if (error) return { error: sanitizeDatabaseError(error) }

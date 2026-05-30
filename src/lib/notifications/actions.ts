@@ -2,12 +2,13 @@
 
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
+import { sanitizeDatabaseError } from '@/lib/utils/security'
 
 export async function getNotifications() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) return { success: false, error: 'Unauthorized' }
 
     const { data, error } = await supabase
@@ -17,12 +18,12 @@ export async function getNotifications() {
       .order('created_at', { ascending: false })
       .limit(50)
 
-    if (error) throw error
+    if (error) return { success: false, error: sanitizeDatabaseError(error) }
 
     return { success: true, data }
   } catch (error: any) {
     console.error('Error fetching notifications:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: sanitizeDatabaseError(error) }
   }
 }
 
@@ -38,11 +39,11 @@ export async function markAsRead(id: string) {
       .eq('id', id)
       .eq('user_id', user.id)
 
-    if (error) throw error
+    if (error) return { success: false, error: sanitizeDatabaseError(error) }
     revalidatePath('/', 'layout')
     return { success: true }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    return { success: false, error: sanitizeDatabaseError(error) }
   }
 }
 
@@ -58,10 +59,10 @@ export async function clearAllNotifications() {
       .eq('user_id', user.id)
       .eq('is_read', false)
 
-    if (error) throw error
+    if (error) return { success: false, error: sanitizeDatabaseError(error) }
     revalidatePath('/', 'layout')
     return { success: true }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    return { success: false, error: sanitizeDatabaseError(error) }
   }
 }

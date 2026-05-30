@@ -98,7 +98,7 @@ export async function getSettingsAction() {
               base_url: aiSettings.base_url ?? '',
               provider_label: aiSettings.provider_label ?? '',
               model_name: aiSettings.model_name ?? '',
-              temperature: Number(aiSettings.temperature) ?? 0.4,
+              temperature: aiSettings.temperature != null ? Number(aiSettings.temperature) : 0.4,
             }
           : null,
         knowledgeBaseDocuments: kbDocs || [],
@@ -446,7 +446,9 @@ export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
 
     // 2. Upload original file to Storage for backup/reference
     const fileExt = file.type === 'application/pdf' ? 'pdf' : 'txt'
-    const fileName = file.name || `document.${fileExt}`
+    const rawName = file.name || `document.${fileExt}`
+    // L14: Sanitize filename to prevent path traversal
+    const fileName = rawName.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 100)
     const storagePath = `${user.id}/${Date.now()}-${fileName}`
 
     const { error: uploadError } = await supabase.storage
@@ -511,7 +513,7 @@ export async function deleteKnowledgeBaseDocumentAction(documentId: string) {
     revalidatePath('/settings')
     return { success: true }
   } catch (e) {
-    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+    return { error: sanitizeDatabaseError(e) }
   }
 }
 

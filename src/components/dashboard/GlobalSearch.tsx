@@ -50,16 +50,20 @@ export function GlobalSearch() {
       return
     }
 
+    let cancelled = false
     const timer = setTimeout(async () => {
       setLoading(true)
       const res = await searchAllData(query)
-      if (res.success && res.data) {
+      if (!cancelled && res.success && res.data) {
         setResults(res.data)
       }
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }, 300)
 
-    return () => clearTimeout(timer)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [query])
 
   const runCommand = (command: () => void) => {
@@ -85,22 +89,22 @@ export function GlobalSearch() {
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden">
-          <CommandList className="bg-popover text-popover-foreground max-h-[350px] overflow-y-auto p-1">
-            <CommandEmpty className="text-muted-foreground py-6 text-center text-sm">{loading ? 'Searching...' : 'No results found.'}</CommandEmpty>
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#000000] border border-zinc-800 rounded-xl shadow-xl overflow-hidden">
+          <CommandList className="bg-[#000000] text-white max-h-[350px] overflow-y-auto p-1">
+            <CommandEmpty className="text-zinc-400 py-6 text-center text-sm">{loading ? 'Searching...' : 'No results found.'}</CommandEmpty>
           
           {results.clients.length > 0 && (
-            <CommandGroup heading="Clients" className="text-foreground [&_[cmdk-group-heading]]:text-muted-foreground">
+            <CommandGroup heading="Clients" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
               {results.clients.map((client) => (
                 <CommandItem
                   key={client.id}
                   value={client.id}
                   onSelect={() => runCommand(() => router.push(`/clients/${client.id}`))}
-                  className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground"
+                  className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white"
                 >
                   <div className="flex flex-col">
-                    <span>{client.client_name}</span>
-                    <span className="text-xs text-muted-foreground">{client.email}</span>
+                    <span className="text-white">{client.client_name}</span>
+                    <span className="text-xs text-zinc-400">{client.email}</span>
                   </div>
                 </CommandItem>
               ))}
@@ -109,18 +113,18 @@ export function GlobalSearch() {
 
           {results.invoices.length > 0 && (
             <>
-              {results.clients.length > 0 && <CommandSeparator className="bg-border" />}
-              <CommandGroup heading="Invoices" className="text-foreground [&_[cmdk-group-heading]]:text-muted-foreground">
+              {results.clients.length > 0 && <CommandSeparator className="bg-zinc-800" />}
+              <CommandGroup heading="Invoices" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
                 {results.invoices.map((invoice) => (
                   <CommandItem
                     key={invoice.id}
                     value={invoice.id}
                     onSelect={() => runCommand(() => router.push(`/invoices/${invoice.id}`))}
-                    className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground"
+                    className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white"
                   >
                     <div className="flex flex-col">
-                      <span>#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{invoice.status}</span>
+                      <span className="text-white">#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
+                      <span className="text-xs text-zinc-400 capitalize">{invoice.status}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -129,17 +133,17 @@ export function GlobalSearch() {
           )}
 
           {!query && (
-            <CommandGroup heading="Quick Links" className="text-foreground [&_[cmdk-group-heading]]:text-muted-foreground">
-              <CommandItem value="dashboard" onSelect={() => runCommand(() => router.push('/dashboard'))} className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground">
+            <CommandGroup heading="Quick Links" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
+              <CommandItem value="dashboard" onSelect={() => runCommand(() => router.push('/dashboard'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
                 Dashboard
               </CommandItem>
-              <CommandItem value="clients" onSelect={() => runCommand(() => router.push('/clients'))} className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground">
+              <CommandItem value="clients" onSelect={() => runCommand(() => router.push('/clients'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
                 Clients
               </CommandItem>
-              <CommandItem value="invoices" onSelect={() => runCommand(() => router.push('/invoices'))} className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground">
+              <CommandItem value="invoices" onSelect={() => runCommand(() => router.push('/invoices'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
                 Invoices
               </CommandItem>
-              <CommandItem value="settings" onSelect={() => runCommand(() => router.push('/settings'))} className="cursor-pointer text-foreground/80 data-[selected=true]:bg-accent data-[selected=true]:text-foreground aria-selected:bg-accent aria-selected:text-foreground">
+              <CommandItem value="settings" onSelect={() => runCommand(() => router.push('/settings'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
                 Settings
               </CommandItem>
             </CommandGroup>

@@ -20,11 +20,14 @@ export default function SignInPage() {
     setError(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await login(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await login(formData)
 
-    if (result?.error) {
-      setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      }
+    } finally {
       setLoading(false)
     }
   }

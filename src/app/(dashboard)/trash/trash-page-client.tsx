@@ -38,8 +38,7 @@ export function TrashPageClient({
     }
   }
 
-  const handleHardDeleteInvoice = async (id: string) => {
-    if (!confirm('Are you sure? This action cannot be undone.')) return
+  const executeHardDeleteInvoice = async (id: string) => {
     setIsDeleting(id)
     try {
       const result = await hardDeleteInvoiceAction(id)
@@ -51,6 +50,16 @@ export function TrashPageClient({
     } finally {
       setIsDeleting(null)
     }
+  }
+
+  const handleHardDeleteInvoice = (id: string) => {
+    toast.error('Are you sure? This action cannot be undone.', {
+      action: {
+        label: 'Delete Forever',
+        onClick: () => executeHardDeleteInvoice(id),
+      },
+      duration: 5000,
+    })
   }
 
   const handleRestoreClient = async (id: string) => {
@@ -67,8 +76,7 @@ export function TrashPageClient({
     }
   }
 
-  const handleHardDeleteClient = async (id: string) => {
-    if (!confirm('Are you sure? This will permanently delete the client and any remaining soft-deleted invoices for this client.')) return
+  const executeHardDeleteClient = async (id: string) => {
     setIsDeleting(id)
     try {
       const result = await hardDeleteClientAction(id)
@@ -80,6 +88,16 @@ export function TrashPageClient({
     } finally {
       setIsDeleting(null)
     }
+  }
+
+  const handleHardDeleteClient = (id: string) => {
+    toast.error('Are you sure? This will permanently delete the client and any remaining soft-deleted invoices for this client.', {
+      action: {
+        label: 'Delete Forever',
+        onClick: () => executeHardDeleteClient(id),
+      },
+      duration: 5000,
+    })
   }
 
   return (

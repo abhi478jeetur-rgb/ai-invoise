@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { markInvoicePaidAction } from '@/lib/invoices/actions'
 
 interface ChaseCardProps {
@@ -49,13 +50,15 @@ function formatCurrency(amount: number) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
-  due_soon: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
-  overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
-  promised: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
-  paused: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
-  partial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
-  paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  draft: 'bg-accent text-muted-foreground border-border',
+  sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+  due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+  overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+  paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  archived: 'bg-accent/50 text-muted-foreground border-border',
+  promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+  paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+  partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
 }
 
 
@@ -66,8 +69,18 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
 
   async function handleMarkPaid() {
     setMarkingPaid(true)
-    await markInvoicePaidAction(invoice.id)
-    router.refresh()
+    try {
+      const result = await markInvoicePaidAction(invoice.id)
+      if (result.success) {
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to mark invoice as paid')
+        setMarkingPaid(false)
+      }
+    } catch {
+      toast.error('Network error. Failed to update invoice.')
+      setMarkingPaid(false)
+    }
   }
 
   return (

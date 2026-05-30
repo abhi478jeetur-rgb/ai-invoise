@@ -126,12 +126,12 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                   <CardTitle className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Total Paid
                   </CardTitle>
-                  <span className="text-[9px] font-mono bg-emerald-950/30 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-900/50">
+                  <span className="text-[9px] font-mono bg-emerald-600 text-white dark:bg-emerald-950/30 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-700 dark:border-emerald-900/50">
                     Received
                   </span>
                 </CardHeader>
                 <CardContent className="pb-4 px-4">
-                  <p className="text-2xl font-bold tracking-tight text-emerald-400 font-mono">
+                  <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 font-mono">
                     {formatCurrency(summary.paid, cur)}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -148,7 +148,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                   </CardTitle>
                   <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
                     summary.outstanding > 0 
-                      ? 'bg-rose-950/30 text-rose-400 border-rose-900/50' 
+                      ? 'bg-rose-600 text-white border-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50' 
                       : 'bg-accent text-muted-foreground border-border'
                   }`}>
                     Pending
@@ -156,7 +156,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                 </CardHeader>
                 <CardContent className="pb-4 px-4">
                   <p className={`text-2xl font-bold tracking-tight font-mono ${
-                    summary.outstanding > 0 ? 'text-rose-400' : 'text-foreground'
+                    summary.outstanding > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
                   }`}>
                     {formatCurrency(summary.outstanding, cur)}
                   </p>
@@ -311,13 +311,13 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-accent text-muted-foreground border-border',
-  sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
-  due_soon: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
-  overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
-  paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+  due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+  overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+  paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
   archived: 'bg-accent/50 text-muted-foreground border-border',
-  promised: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
-  paused: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
-  partial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
+  promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+  paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+  partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
 }
 

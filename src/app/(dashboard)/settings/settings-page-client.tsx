@@ -139,9 +139,20 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
   async function handleSecuritySubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    // M29: Client-side password match validation
+    const formData = new FormData(e.currentTarget)
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirmPassword') as string
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match', {
+        description: 'Please ensure both password fields are identical.'
+      })
+      return
+    }
+
     setSecuritySaving(true)
     try {
-      const formData = new FormData(e.currentTarget)
       const result = await updatePassword(formData)
       if (result && 'error' in result) {
         toast.error(result.error)
@@ -172,7 +183,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.error(result.error)
       } else {
         toast.success('Document uploaded successfully!')
-        window.location.reload()
+        router.refresh()
       }
     } catch (err: any) {
       console.error(err)

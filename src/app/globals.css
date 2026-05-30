@@ -58,6 +58,13 @@ next-devtools-portal,
 }
 
 :root {
+    /* ── Visual Customizer Defaults (Light) ── */
+    --user-bg: #ffffff;
+    --user-card: #ffffff;
+    --user-border: #e4e4e7;
+    --user-text: #71717a;
+    --user-title: #09090b;
+
     /* ── Light Mode: Pure White ── */
     --background: #ffffff;
     --foreground: #09090b;
@@ -94,6 +101,13 @@ next-devtools-portal,
 }
 
 .dark {
+    /* ── Visual Customizer Defaults (Dark) ── */
+    --user-bg: #050505;
+    --user-card: #0a0a0a;
+    --user-border: #151515;
+    --user-text: #a3a3a3;
+    --user-title: #f5f5f5;
+
     /* ── Dark Mode: Midnight ── */
     --background: #050505;
     --foreground: #f5f5f5;

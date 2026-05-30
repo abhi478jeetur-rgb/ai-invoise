@@ -1,5 +1,6 @@
 'use client'
 
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -44,11 +45,11 @@ export function UserNav({ initials, name, email }: UserNavProps) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent focus:text-accent-foreground">
-            Profile
+          <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent focus:text-accent-foreground" asChild>
+            <Link href="/settings">Profile</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent focus:text-accent-foreground">
-            Settings
+          <DropdownMenuItem className="cursor-pointer hover:bg-accent focus:bg-accent focus:text-accent-foreground" asChild>
+            <Link href="/settings">Settings</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-border" />

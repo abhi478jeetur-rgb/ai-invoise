@@ -34,9 +34,9 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
     taxLabel: invoice.tax_label || (profile?.default_tax_label || 'Tax'),
     discountAmount: invoice.discount_amount || 0,
     discountType: invoice.discount_type || 'flat',
-    lineItems: invoice.line_items && invoice.line_items.length > 0 ? invoice.line_items : [
-      { name: invoice.title || '', description: invoice.description || '', quantity: 1, rate: invoice.amount || 0, total: invoice.amount || 0 }
-    ]
+    lineItems: invoice.line_items && invoice.line_items.length > 0
+      ? invoice.line_items.map((item: any) => ({ ...item, id: item.id || crypto.randomUUID() }))
+      : [{ id: crypto.randomUUID(), name: invoice.title || '', description: invoice.description || '', quantity: 1, rate: invoice.amount || 0, total: invoice.amount || 0 }]
   })
 
   // We still need to pass client and profile data to the PDF.
@@ -89,7 +89,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   const addLineItem = () => {
     setFormData({
       ...formData,
-      lineItems: [...formData.lineItems, { name: '', description: '', quantity: 1, rate: 0, total: 0 }]
+      lineItems: [...formData.lineItems, { id: crypto.randomUUID(), name: '', description: '', quantity: 1, rate: 0, total: 0 }]
     })
     toast.success("Line item added", { duration: 1500 })
   }
@@ -391,7 +391,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
           </div>
           <div className="space-y-4">
             {formData.lineItems.map((item: any, idx: number) => (
-              <div key={idx} className="p-4 bg-secondary/30 rounded-xl border border-white/[0.05] relative group">
+              <div key={item.id} className="p-4 bg-secondary/30 rounded-xl border border-white/[0.05] relative group">
                 <Button 
                   variant="ghost" 
                   size="icon" 

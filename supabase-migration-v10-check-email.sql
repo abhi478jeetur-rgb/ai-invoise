@@ -19,4 +19,6 @@ END;
 $$;
 
 -- Grant execution permissions
-GRANT EXECUTE ON FUNCTION check_email_exists(text) TO anon, authenticated;
+-- SECURITY FIX (C11): Removed anon access to prevent user enumeration.
+-- See supabase-migration-v11-fix-check-email-anon.sql for the patch.
+GRANT EXECUTE ON FUNCTION check_email_exists(text) TO authenticated;

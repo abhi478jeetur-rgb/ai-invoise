@@ -113,7 +113,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
       setDueDate('')
       setPaymentTerm('custom')
     }
-  }, [open, invoice, isEditing])
+  }, [open, invoice, isEditing, defaultProfile])
 
   function handleTermChange(term: string) {
     setPaymentTerm(term)
@@ -164,7 +164,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] border-border bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] border-border bg-card backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-foreground">
             {isEditing ? 'Edit Invoice' : 'New Invoice'}
@@ -263,6 +263,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="amount"
                 type="number"
                 step="0.01"
+                min="0"
                 required
                 defaultValue={invoice?.amount ?? ''}
                 placeholder="2500.00"
@@ -306,6 +307,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="taxRate"
                 type="number"
                 step="0.01"
+                min="0"
+                max="100"
                 defaultValue={invoice?.tax_rate ?? defaultProfile?.default_tax_rate ?? '0'}
                 placeholder="18"
                 className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
@@ -324,6 +327,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="discountAmount"
                 type="number"
                 step="0.01"
+                min="0"
+                max="100"
                 defaultValue={invoice?.discount_amount ?? '0'}
                 placeholder="100.00"
                 className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"

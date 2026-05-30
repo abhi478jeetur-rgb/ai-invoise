@@ -63,6 +63,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   const [config, setConfig] = useState(THEME_PRESETS[0])
   const [mounted, setMounted] = useState(false)
 
+  // L3: Consolidated single useEffect for theme config (prevents localStorage overwrite on theme switch)
   useEffect(() => {
     setMounted(true)
     const saved = localStorage.getItem('chasefree-ui-config')
@@ -70,13 +71,12 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       try {
         const parsed = JSON.parse(saved)
         if (parsed) {
-          // If light mode is active but saved config is dark (or vice versa), override to correct default
           const isSavedLight = parsed.bg === '#ffffff' || parsed.bg === '#fafafa' || parsed.bg === '#f8fafc'
           const shouldOverride = isLight !== isSavedLight
 
           setConfig({
             ...(shouldOverride ? (isLight ? THEME_PRESETS[1] : THEME_PRESETS[0]) : parsed),
-            accent: '#10b981' // Force brand emerald green
+            accent: '#10b981'
           })
           return
         }
@@ -85,16 +85,8 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       }
     }
 
-    // Default to light/dark preset based on resolvedTheme
     setConfig(isLight ? THEME_PRESETS[1] : THEME_PRESETS[0])
   }, [isLight])
-
-  // Sync theme changes after mount
-  useEffect(() => {
-    if (mounted) {
-      setConfig(isLight ? THEME_PRESETS[1] : THEME_PRESETS[0])
-    }
-  }, [isLight, mounted])
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -202,14 +194,14 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
   const STATUS_STYLES: Record<string, string> = {
     draft: 'bg-accent text-muted-foreground border-border',
-    sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
-    due_soon: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
-    overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
-    paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+    sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+    due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+    overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+    paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
     archived: 'bg-accent/50 text-muted-foreground border-border',
-    promised: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
-    paused: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
-    partial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
+    promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+    paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+    partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
   }
 
 

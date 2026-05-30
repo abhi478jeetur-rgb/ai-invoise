@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/db/server'
+import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { z } from 'zod'
 
 // Zod schema for validation and basic XSS prevention (stripping HTML tags)
@@ -77,6 +78,6 @@ export async function searchAllData(rawQuery: string) {
     }
   } catch (error: any) {
     console.error('Search error:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: sanitizeDatabaseError(error) }
   }
 }

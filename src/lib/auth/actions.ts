@@ -78,7 +78,11 @@ export async function signup(formData: FormData) {
   }
 
   // Check if user already exists (use generic message to prevent email enumeration)
-  const { data: emailExists } = await supabase.rpc('check_email_exists', { email_to_check: email })
+  const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', { email_to_check: email })
+  if (checkError) {
+    console.error('Email check failed:', checkError)
+    // Proceed with signup — Supabase will handle duplicate email on insert
+  }
   if (emailExists) {
     return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
   }

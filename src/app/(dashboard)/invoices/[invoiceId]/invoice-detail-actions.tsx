@@ -10,6 +10,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 
+interface Client {
+  id: string
+  client_name: string
+  email: string | null
+  company_name: string | null
+}
+
 interface InvoiceDetailActionsProps {
   invoice: {
     id: string
@@ -24,9 +31,10 @@ interface InvoiceDetailActionsProps {
     notes: string | null
     payment_link: string | null
   }
+  client?: Client | null
 }
 
-export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
+export function InvoiceDetailActions({ invoice, client }: InvoiceDetailActionsProps) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -166,9 +174,9 @@ export function InvoiceDetailActions({ invoice }: InvoiceDetailActionsProps) {
       <InvoiceForm
         open={editOpen}
         onOpenChange={setEditOpen}
-        clients={[{
+        clients={client ? [client] : [{
           id: invoice.client_id,
-          client_name: '',
+          client_name: 'Unknown Client',
           email: null,
           company_name: null,
         }]}

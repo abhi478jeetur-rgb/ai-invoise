@@ -33,6 +33,7 @@ interface ClientFormProps {
 export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [formKey, setFormKey] = useState(0)
 
   const isEditing = !!client
 
@@ -40,6 +41,9 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
     if (!open) {
       setError(null)
       setLoading(false)
+    } else {
+      // M22: Force remount when dialog opens to clear stale defaultValue
+      setFormKey(prev => prev + 1)
     }
   }, [open])
 
@@ -64,7 +68,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] border-border bg-[#0a0a0a] backdrop-blur-xl">
+      <DialogContent className="sm:max-w-[480px] border-border bg-card backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-foreground">
             {isEditing ? 'Edit Client' : 'Add Client'}
@@ -76,7 +80,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-xs font-medium bg-red-500/[0.1] border border-red-500/[0.2] text-red-400 rounded-lg text-center backdrop-blur-md">
               {error}
@@ -132,7 +136,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
               <Input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 defaultValue={client?.email ?? ''}
                 placeholder="billing@acme.com"
                 className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"

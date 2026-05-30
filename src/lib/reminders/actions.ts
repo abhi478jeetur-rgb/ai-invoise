@@ -398,6 +398,7 @@ export async function generateMultipleDraftsAction(
     const rulesLines2: string[] = []
     if (globalRules2.communication_style) rulesLines2.push(`Communication Style: ${globalRules2.communication_style}`)
     if (globalRules2.late_payment_policy) rulesLines2.push(`Late Payment Policy: ${globalRules2.late_payment_policy}`)
+    if (globalRules2.refund_policy) rulesLines2.push(`Refund Policy: ${globalRules2.refund_policy}`)
     const rulesSection2 = rulesLines2.length > 0
       ? `\nBUSINESS RULES:\n${rulesLines2.join('\n')}\n`
       : ''

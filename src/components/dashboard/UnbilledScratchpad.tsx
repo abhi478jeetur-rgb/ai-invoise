@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, CheckCircle2, Clock, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ interface UnbilledTask {
 export function UnbilledScratchpad() {
   const [tasks, setTasks] = useState<UnbilledTask[]>([])
   const [inputValue, setInputValue] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [isAdding, setIsAdding] = useState(false)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -35,23 +35,44 @@ export function UnbilledScratchpad() {
     e.preventDefault()
     if (!inputValue.trim()) return
 
+    const description = inputValue.trim()
     const tempTask: UnbilledTask = {
       id: `temp-${Date.now()}`,
-      description: inputValue.trim(),
+      description,
       status: 'pending',
       created_at: new Date().toISOString()
     }
 
     setTasks(prev => [tempTask, ...prev])
-    setInputValue('')
+    setIsAdding(true)
 
-    startTransition(async () => {
-      await addUnbilledTaskAction(tempTask.description)
+    try {
+      const result = await addUnbilledTaskAction(description)
+      if (result && 'error' in result) {
+        // Rollback: remove temp task and restore input
+        setTasks(prev => prev.filter(t => t.id !== tempTask.id))
+        setInputValue(description)
+        toast.error('Failed to add task', {
+          description: result.error || 'Please try again.'
+        })
+        return
+      }
+      // Only clear input after server confirms success
+      setInputValue('')
       const refresh = await getUnbilledTasksAction()
       if (refresh.success && refresh.data) {
         setTasks(refresh.data as UnbilledTask[])
       }
-    })
+    } catch {
+      // Rollback on unexpected error
+      setTasks(prev => prev.filter(t => t.id !== tempTask.id))
+      setInputValue(description)
+      toast.error('Failed to add task', {
+        description: 'An unexpected error occurred. Please try again.'
+      })
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const handleMarkDone = async (id: string) => {
@@ -59,7 +80,7 @@ export function UnbilledScratchpad() {
     const removedTask = tasks.find(t => t.id === id)
     setTasks(prev => prev.filter(t => t.id !== id))
 
-    startTransition(async () => {
+    try {
       const result = await markUnbilledTaskAsInvoicedAction(id)
 
       // H14: Rollback on failure - re-add the task and show error
@@ -69,7 +90,14 @@ export function UnbilledScratchpad() {
           description: result.error || 'Please try again.'
         })
       }
-    })
+    } catch {
+      if (removedTask) {
+        setTasks(prev => [removedTask, ...prev])
+      }
+      toast.error('Failed to mark task as done', {
+        description: 'An unexpected error occurred. Please try again.'
+      })
+    }
   }
 
   const handleCreateInvoice = (description: string) => {
@@ -106,11 +134,11 @@ export function UnbilledScratchpad() {
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="e.g. Wrote 2 blog articles for Acme Corp..."
           className="w-full rounded-lg border border-border bg-secondary py-2.5 pl-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-border focus:outline-none focus:ring-1 focus:ring-neutral-700"
-          disabled={isPending}
+          disabled={isAdding}
         />
         <button
           type="submit"
-          disabled={!inputValue.trim() || isPending}
+          disabled={!inputValue.trim() || isAdding}
           className="absolute right-1.5 top-1.5 rounded-md bg-[var(--user-accent)] p-1 text-white hover:opacity-90 disabled:opacity-50"
         >
           <Plus className="h-5 w-5" />

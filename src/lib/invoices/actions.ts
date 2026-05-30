@@ -4,6 +4,12 @@ import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 
+// M18: UUID validation helper
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id)
+}
+
 export async function createInvoiceAction(formData: FormData) {
   try {
     const clientId = formData.get('clientId') as string
@@ -41,6 +47,7 @@ export async function createInvoiceAction(formData: FormData) {
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
     if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType === 'percentage' && discountAmount > 100) return { error: 'Percentage discount cannot exceed 100%.' }
     if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
     if (status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
@@ -221,6 +228,8 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
 
 export async function getInvoiceDetailAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -230,6 +239,7 @@ export async function getInvoiceDetailAction(invoiceId: string) {
       .select('*, clients (*)')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .single()
 
     if (error) return { error: sanitizeDatabaseError(error) }
@@ -242,6 +252,8 @@ export async function getInvoiceDetailAction(invoiceId: string) {
 
 export async function updateInvoiceAction(invoiceId: string, formData: FormData) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const clientId = formData.get('clientId') as string
     const invoiceNumber = formData.get('invoiceNumber') as string
     const title = formData.get('title') as string
@@ -273,6 +285,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
     if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType === 'percentage' && discountAmount > 100) return { error: 'Percentage discount cannot exceed 100%.' }
     if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
     if (status && status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
@@ -345,6 +358,8 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
 
 export async function deleteInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -388,6 +403,8 @@ export async function getDeletedInvoicesAction() {
 
 export async function restoreInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -411,6 +428,8 @@ export async function restoreInvoiceAction(invoiceId: string) {
 
 export async function hardDeleteInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -448,9 +467,27 @@ export async function hardDeleteInvoiceAction(invoiceId: string) {
 
 export async function markInvoicePaidAction(invoiceId: string, paidDate?: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // M16: Check current status to prevent double-pay
+    const { data: currentInvoice, error: fetchError } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !currentInvoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    if (currentInvoice.status === 'paid') {
+      return { error: 'Invoice is already marked as paid.' }
+    }
 
     const paid = paidDate || new Date().toISOString().split('T')[0]
 
@@ -511,6 +548,8 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 export async function updateInvoiceStatusAction(invoiceId: string, status: string, amountPaid: number = 0) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     // C2: Validate status against allowed values
     if (!VALID_UPDATE_STATUSES.includes(status as typeof VALID_UPDATE_STATUSES[number])) {
       return { error: `Invalid invoice status. Allowed values: ${VALID_UPDATE_STATUSES.join(', ')}` }

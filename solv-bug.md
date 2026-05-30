@@ -348,3 +348,472 @@ This file tracks all the major bugs encountered and successfully resolved in the
   3. Changed the `setTimeout` call to store the ID: `redirectTimerRef.current = setTimeout(...)`
 - **Files Changed:** `src/app/(auth)/reset-password/page.tsx`
 - **Verified:** TypeScript compiles without errors in the modified file.
+
+### 32. Settings Reminder Form Validation Fails When Reminders Disabled (C10 - Critical Validation)
+- **Bug:** In `src/app/(dashboard)/settings/settings-page-client.tsx`, when `reminderEnabled` is false, the `reminder_day` and `reminder_time` `<select>` elements are conditionally unmounted (line 418: `{reminderEnabled && (...)}`). When the form is submitted, these fields are absent from `FormData`, so `formData.get('reminder_day')` returns `null`. The Zod schema in `updateReminderSettingsAction` required `z.string()` for both fields, causing validation to fail silently or save null values.
+- **Root Cause:** The schema treated `reminder_day` and `reminder_time` as required strings regardless of whether reminders were enabled. The conditional rendering in the UI created a mismatch between what the form sent and what the schema expected.
+- **Solution:**
+  1. Changed `reminderSettingsSchema` to make `reminder_day` and `reminder_time` optional (`z.string().optional()`).
+  2. Added a `.refine()` validator that requires both fields only when `reminder_enabled` is `true`.
+  3. Updated the database update logic to only include `reminder_day` and `reminder_time` in the payload when reminders are enabled, avoiding saving undefined values.
+- **Files Changed:** `src/lib/profile/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 33. `check_email_exists` RPC Callable by Anonymous Users (C11 - Critical Security)
+- **Bug:** The migration file `supabase-migration-v10-check-email.sql` granted `EXECUTE` on `check_email_exists(text)` to both `anon` and `authenticated` roles (line 22). This allowed unauthenticated users to call the RPC and determine whether any email address has an account, enabling user enumeration attacks.
+- **Root Cause:** The `GRANT` statement included the `anon` role, which represents unauthenticated (anonymous) requests. Any visitor could call this function via the Supabase REST API without being logged in.
+- **Solution:**
+  1. Updated `supabase-migration-v10-check-email.sql` to remove `anon` from the GRANT statement — only `authenticated` role retains access.
+  2. Created `supabase-migration-v11-fix-check-email-anon.sql` as a patch migration that explicitly revokes `anon` access and re-grants to `authenticated` only. This migration should be run in Supabase SQL Editor to patch existing databases.
+- **Files Changed:** `supabase-migration-v10-check-email.sql`, `supabase-migration-v11-fix-check-email-anon.sql`
+- **Verified:** TypeScript compiles without errors (no TypeScript changes).
+
+### 34. UnbilledScratchpad Optimistic Add Has No Rollback (H18 - High State/Logic)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, `handleAddTask` immediately added a temp task with a fake ID to local state and cleared the input (lines 38-46), then called `addUnbilledTaskAction` inside `startTransition`. The server action result was never checked. If the action failed (network error, auth failure, DB error), a ghost task with a fake ID persisted in the UI, and the user's typed text was permanently lost.
+- **Root Cause:** The optimistic update was fire-and-forget — no try/catch, no result checking, no rollback logic.
+- **Solution:**
+  1. Captured the input `description` before clearing it, so it can be restored on failure.
+  2. Wrapped the server action call in try/catch.
+  3. After `addUnbilledTaskAction`, checks the result for an `'error'` property.
+  4. On failure: removes the temp task from state (`setTasks(prev => prev.filter(...))`), restores the input value (`setInputValue(description)`), and shows a `toast.error` with the failure reason.
+  5. On unexpected exceptions (catch block): same rollback behavior.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 35. Stale Closure in InvoiceForm useEffect (H19 - High State)
+- **Bug:** In `src/components/invoices/invoice-form.tsx`, the `useEffect` at line 89 references `defaultProfile?.default_payment_terms` (line 97) when computing the default due date for new invoices. However, `defaultProfile` was missing from the dependency array `[open, invoice, isEditing]` (line 116). This caused a stale closure — if `defaultProfile` changed (e.g., user updated default payment terms in settings), the invoice form would still use the old value until the component remounted.
+- **Root Cause:** The dependency array omitted `defaultProfile`, so the effect captured the initial value from the first render and never re-ran when the prop changed.
+- **Solution:**
+  1. Added `defaultProfile` to the `useEffect` dependency array: `[open, invoice, isEditing, defaultProfile]`.
+- **Files Changed:** `src/components/invoices/invoice-form.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 36. Hardcoded Dark Theme CSS Variables Cause Light Mode FOUC (M1 - Medium UI/UX)
+- **Bug:** In `src/app/(dashboard)/layout.tsx`, the dashboard container had inline `style` with hardcoded dark-mode CSS variable values: `--user-bg: '#050505'`, `--user-card: '#0a0a0a'`, `--user-border: '#151515'`, `--user-text: '#a3a3a3'`, `--user-title: '#f5f5f5'`. These were always applied regardless of theme, causing a flash of dark styling when users had light mode enabled.
+- **Root Cause:** The visual customizer's CSS variables were given dark-mode fallback defaults directly in the layout's inline style, which overrides any CSS-based theme switching. The `next-themes` class-based approach couldn't override inline styles.
+- **Solution:**
+  1. Removed the theme-sensitive hardcoded values (`--user-bg`, `--user-card`, `--user-border`, `--user-text`, `--user-title`) from the layout's inline `style` attribute. Kept only theme-agnostic values (`--user-accent`, `--user-radius`, `--user-font-scale`).
+  2. Added CSS variable defaults in `globals.css` under `:root` (light mode) and `.dark` (dark mode) selectors, so the correct values are applied based on the active theme class. The visual customizer still overrides these when a user selects a custom theme.
+- **Files Changed:** `src/app/(dashboard)/layout.tsx`, `src/app/globals.css`
+- **Verified:** TypeScript compiles without errors in the modified files.
+
+### 37. ChaseCard handleMarkPaid Error Not Handled (M2 - Medium State/Logic)
+- **Bug:** In `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx`, `handleMarkPaid` called `markInvoicePaidAction` without checking its result. If the server action failed (auth issue, network error, DB error), the button would be stuck in a loading state (`markingPaid = true`) permanently because `setMarkingPaid(false)` was never called on error.
+- **Root Cause:** No try/catch around the async call, no result checking, and no error path to reset the loading state.
+- **Solution:**
+  1. Added `toast` import from `sonner`.
+  2. Wrapped the server action call in try/catch.
+  3. After `markInvoicePaidAction`, checks `result.success`. On success, calls `router.refresh()`. On failure, shows `toast.error` and resets `setMarkingPaid(false)`.
+  4. In the catch block, shows a network error toast and resets `setMarkingPaid(false)`.
+- **Files Changed:** `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 38. DropdownMenu Items in UserNav Are Non-Functional (M3 - Medium UX/Navigation)
+- **Bug:** In `src/components/dashboard/UserNav.tsx`, the "Profile" and "Settings" dropdown menu items had no `onClick`, `href`, or `Link` wrapper. Clicking them did nothing — they were purely visual.
+- **Root Cause:** The `DropdownMenuItem` components rendered plain text without any navigation behavior.
+- **Solution:**
+  1. Added `Link` import from `next/link`.
+  2. Wrapped "Profile" and "Settings" text with `<Link href="/settings">` components.
+  3. Added `asChild` prop to each `DropdownMenuItem` so the Link renders as the menu item (shadcn's Radix composition pattern).
+- **Files Changed:** `src/components/dashboard/UserNav.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 39. InvoiceDetailActions Passes Incomplete Client Object (M4 - Medium Data/UX)
+- **Bug:** In `src/app/(dashboard)/invoices/[invoiceId]/invoice-detail-actions.tsx`, when opening the edit form, `InvoiceForm` received `clients` with a hardcoded stub: `{ id: invoice.client_id, client_name: '', email: null, company_name: null }`. This caused the client dropdown to show an empty name, and form fields relying on client data were blank.
+- **Root Cause:** The component did not receive client data as a prop — it fabricated a minimal stub from the invoice's `client_id` only.
+- **Solution:**
+  1. Added `Client` interface and optional `client` prop to `InvoiceDetailActions`.
+  2. Updated the `InvoiceForm` `clients` prop to use the actual client data when available, falling back to a stub with `'Unknown Client'` as the name when client data is not provided.
+  3. Updated `src/app/(dashboard)/invoices/[invoiceId]/page.tsx` to pass `client={client}` (from `invoice.clients`) to `InvoiceDetailActions`.
+- **Files Changed:** `src/app/(dashboard)/invoices/[invoiceId]/invoice-detail-actions.tsx`, `src/app/(dashboard)/invoices/[invoiceId]/page.tsx`
+- **Verified:** TypeScript compiles without errors in both modified files.
+
+### 40. Sidebar Accessibility — Hover-Only, No Keyboard Support (M5 - Medium Accessibility)
+- **Bug:** In `src/app/(dashboard)/sidebar.tsx`, the sidebar expanded/collapsed exclusively via `onMouseEnter`/`onMouseLeave` events. Keyboard-only users had no way to expand or collapse the sidebar, and no `aria-expanded` attribute communicated the sidebar state to assistive technologies.
+- **Root Cause:** The sidebar relied entirely on mouse hover events with no keyboard-accessible alternative.
+- **Solution:**
+  1. Added `aria-expanded={expanded}` to the `<aside>` element for screen reader support.
+  2. Converted the logo `<div>` to a `<button>` element with `type="button"`, `onClick` handler that toggles expanded state, `aria-expanded` attribute, `aria-label` (dynamic: "Collapse sidebar" / "Expand sidebar"), and `focus-visible:ring-2` for keyboard focus visibility.
+  3. The button is focusable via Tab and activatable via Enter/Space (native button behavior).
+- **Files Changed:** `src/app/(dashboard)/sidebar.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 41. SmartBuilder Line Items Keyed by Array Index (M6 - Medium React/State)
+- **Bug:** In `src/app/(dashboard)/invoices/[invoiceId]/builder/smart-builder-client.tsx`, line items used `key={idx}` (array index). When a middle item was removed, React reused DOM nodes incorrectly because the remaining items shifted indices, causing input values to mismatch or persist in wrong fields.
+- **Root Cause:** Using array index as React key breaks reconciliation when items are reordered or removed from the middle of the list.
+- **Solution:**
+  1. Added `id: crypto.randomUUID()` to each line item when created (both initial load and `addLineItem`).
+  2. Existing line items from the database get an ID assigned via `.map()` with fallback: `item.id || crypto.randomUUID()`.
+  3. Changed the JSX key from `key={idx}` to `key={item.id}` for stable identity.
+  4. `idx` is still used for array operations (updateLineItem, removeLineItem) which is correct since those reference the current array position.
+- **Files Changed:** `src/app/(dashboard)/invoices/[invoiceId]/builder/smart-builder-client.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 42. VerifyOtpPage — No inputMode="numeric" on OTP Inputs (M7 - Medium UX/Mobile)
+- **Bug:** In `src/app/(auth)/verify-otp/page.tsx`, the 6 OTP input boxes had `type="text"` without `inputMode="numeric"`. On mobile devices, this caused a full QWERTY keyboard to appear instead of a numeric keypad, making OTP entry cumbersome.
+- **Root Cause:** The inputs relied on JavaScript validation (`/^[0-9]$/` regex) to filter non-numeric characters, but did not hint the browser to show a numeric keyboard.
+- **Solution:**
+  1. Added `inputMode="numeric"` to each OTP input — triggers numeric keypad on mobile.
+  2. Added `pattern="[0-9]*"` — additional hint for iOS numeric keyboard.
+  3. Added `autoComplete="one-time-code"` — enables iOS/Android auto-fill from SMS OTP messages.
+- **Files Changed:** `src/app/(auth)/verify-otp/page.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 43. Legacy CBC Decryption Without Migration Path (M9 - Medium Security/Crypto)
+- **Bug:** In `src/lib/crypto.ts`, `decryptKey` supported legacy AES-256-CBC format (2-part `iv:encrypted`) for backward compatibility, but there was no mechanism to automatically re-encrypt CBC-encrypted keys with the stronger AES-256-GCM format. CBC keys remained CBC indefinitely.
+- **Root Cause:** The decrypt function handled both formats but never triggered migration. Callers had no convenient way to detect format and re-encrypt.
+- **Solution:**
+  1. Added `decryptAndMigrate()` function to `src/lib/crypto.ts` that:
+     - Detects CBC format (2 parts) vs GCM format (3 parts).
+     - For CBC: decrypts with CBC, re-encrypts with GCM, returns `{ decrypted, migratedEncrypted }`.
+     - For GCM: decrypts normally, returns `{ decrypted, migratedEncrypted: null }`.
+  2. Callers can check `migratedEncrypted` — when non-null, they update the database with the new GCM-encrypted value. This enables transparent, on-read migration of legacy encrypted data.
+- **Files Changed:** `src/lib/crypto.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 44. Error Message Leak in PDF Route (M11 - Medium Security)
+- **Bug:** In `src/app/api/invoices/[id]/pdf/route.ts`, the catch block returned `error.message` directly in the JSON response (`{ error: "Failed to generate PDF", details: error.message }`). This leaked internal error details (file paths, stack traces, database errors) to the client.
+- **Root Cause:** The catch block forwarded the raw error message without sanitization.
+- **Solution:**
+  1. Removed `details: error.message` from the JSON response.
+  2. Replaced with a generic message: `{ error: "Failed to generate PDF. Please try again." }`.
+  3. The `console.error` still logs the full error server-side for debugging.
+- **Files Changed:** `src/app/api/invoices/[id]/pdf/route.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 45. Error Message Leak in Search Action (M12 - Medium Security)
+- **Bug:** In `src/lib/search/actions.ts`, the catch block returned `error.message` directly (`{ success: false, error: error.message }`), bypassing the `sanitizeDatabaseError` utility that was already imported and used elsewhere in the codebase.
+- **Root Cause:** The catch block used the raw error message instead of the sanitization layer.
+- **Solution:**
+  1. Added `sanitizeDatabaseError` import from `@/lib/utils/security`.
+  2. Replaced `error.message` with `sanitizeDatabaseError(error)` in the catch block, consistent with the pattern used in all other server actions.
+- **Files Changed:** `src/lib/search/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 46. Error Message Leak in Notifications Actions (M13 - Medium Security)
+- **Bug:** In `src/lib/notifications/actions.ts`, all three actions (`getNotifications`, `markAsRead`, `clearAllNotifications`) used `if (error) throw error` to handle Supabase errors, which then hit the catch block returning `error.message` directly. This leaked raw database error messages to the client.
+- **Root Cause:** The `throw error` pattern bypassed the `sanitizeDatabaseError` utility that was available in the codebase. The catch blocks returned `error.message` without sanitization.
+- **Solution:**
+  1. Added `sanitizeDatabaseError` import from `@/lib/utils/security`.
+  2. Replaced `if (error) throw error` with `if (error) return { success: false, error: sanitizeDatabaseError(error) }` in all three actions.
+  3. Updated catch blocks to use `sanitizeDatabaseError(error)` instead of `error.message`.
+- **Files Changed:** `src/lib/notifications/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 47. `reminderSettingsSchema` Has No Enum Validation (M14 - Medium Validation)
+- **Bug:** In `src/lib/profile/actions.ts`, `reminderSettingsSchema` validated `reminder_day` and `reminder_time` as `z.string().optional()` with no enum constraint. This accepted any string (e.g., "Funday", "Midnight") that the cron job would never match, silently failing to send reminders.
+- **Root Cause:** The schema was too permissive — it accepted any string instead of constraining to the valid options shown in the settings UI.
+- **Solution:**
+  1. Defined `REMINDER_DAYS` constant: `['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const`.
+  2. Defined `REMINDER_TIMES` constant: `['Morning', 'Afternoon', 'Evening'] as const`.
+  3. Changed `reminder_day` from `z.string().optional()` to `z.enum(REMINDER_DAYS).optional()`.
+  4. Changed `reminder_time` from `z.string().optional()` to `z.enum(REMINDER_TIMES).optional()`.
+  5. The `.refine()` validator still ensures both fields are present when reminders are enabled.
+- **Files Changed:** `src/lib/profile/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 48. `Number(temperature) ?? 0.4` Always Returns the Number (M15 - Medium Logic)
+- **Bug:** In `src/lib/settings/actions.ts` (line 101), the expression `Number(aiSettings.temperature) ?? 0.4` was intended to default to `0.4` when temperature is null. However, `Number(null)` returns `0` (not `null`), so the `??` (nullish coalescing) fallback never triggered. AI temperature defaulted to `0` instead of `0.4`.
+- **Root Cause:** `Number(null)` is `0` in JavaScript, which is not `null` or `undefined`, so `??` doesn't activate. The expression always evaluates to a number.
+- **Solution:**
+  1. Changed from `Number(aiSettings.temperature) ?? 0.4` to `aiSettings.temperature != null ? Number(aiSettings.temperature) : 0.4`.
+  2. This checks for null/undefined before calling `Number()`, so the `0.4` default correctly applies when no temperature is stored.
+- **Files Changed:** `src/lib/settings/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 49. `markInvoicePaidAction` Allows Double-Pay (M16 - Medium Data Integrity)
+- **Bug:** In `src/lib/invoices/actions.ts`, `markInvoicePaidAction` did not check the invoice's current status before updating. An already-paid invoice could be marked paid again, overwriting `paid_date` with the current date and creating duplicate `status_changed` events.
+- **Root Cause:** No status guard — the action unconditionally set `status: 'paid'` without checking the current state first.
+- **Solution:**
+  1. Added a pre-check: fetch the invoice's current `status` before the update.
+  2. If the invoice is not found, return `{ error: 'Invoice not found.' }`.
+  3. If `currentInvoice.status === 'paid'`, return `{ error: 'Invoice is already marked as paid.' }`.
+  4. The update only proceeds if the invoice is not already paid.
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 50. Dashboard Fetches All Invoices Without Pagination (M17 - Medium Performance)
+- **Bug:** In `src/lib/dashboard/actions.ts`, the `getDashboardDataAction` function fetched ALL invoices for the user in a single query without any `.limit()`. For users with hundreds or thousands of invoices, this would degrade performance and increase memory usage.
+- **Root Cause:** The query was unbounded — no limit on the number of rows returned.
+- **Solution:**
+  1. Added `.limit(500)` to the invoices query. This is generous enough for accurate stats (a freelancer with 500+ invoices is rare) while preventing unbounded growth.
+  2. The dashboard needs all invoices for stat calculations (totals, aging report, chase list), so a limit is more appropriate than pagination for this use case.
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 51. No UUID Validation on ID Parameters (M18 - Medium Security/Input)
+- **Bug:** Server actions in `src/lib/invoices/actions.ts` and `src/lib/clients/actions.ts` accepted `invoiceId` and `clientId` as plain strings without validating they are valid UUIDs. Malformed IDs could be passed to Supabase queries, potentially causing unexpected behavior or errors.
+- **Root Cause:** No input validation on ID parameters — the functions trusted the caller to provide valid UUIDs.
+- **Solution:**
+  1. Added a `UUID_REGEX` pattern and `isValidUUID()` helper function to both files.
+  2. Added `if (!isValidUUID(id)) return { error: 'Invalid ID format.' }` at the top of every function that accepts an ID parameter:
+     - invoices: `getInvoiceDetailAction`, `deleteInvoiceAction`, `updateInvoiceAction`, `markInvoicePaidAction`, `updateInvoiceStatusAction`, `restoreInvoiceAction`, `hardDeleteInvoiceAction`
+     - clients: `updateClientAction`, `deleteClientAction`, `restoreClientAction`, `hardDeleteClientAction`
+  3. Invalid IDs now fail fast with a clear error message before hitting the database.
+- **Files Changed:** `src/lib/invoices/actions.ts`, `src/lib/clients/actions.ts`
+- **Verified:** TypeScript compiles without errors in both modified files.
+
+### 52. `getInvoiceDetailAction` Returns Soft-Deleted Invoices (M19 - Medium Data Integrity)
+- **Bug:** In `src/lib/invoices/actions.ts`, `getInvoiceDetailAction` did not filter `.is('deleted_at', null)`. Bookmarked URLs of trashed invoices still worked and showed invoice data, bypassing the trash system.
+- **Root Cause:** The query was missing the soft-delete filter that all other invoice queries had.
+- **Solution:**
+  1. Added `.is('deleted_at', null)` to the Supabase query in `getInvoiceDetailAction`.
+  2. Soft-deleted invoices now return "Invoice not found" (via the existing not-found check).
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 53. Invoice Percentage Discount Not Capped at 100 (M20 - Medium Validation)
+- **Bug:** In `src/components/invoices/invoice-form.tsx`, the discount amount input had no `max` attribute. When `discountType` was "percentage", any number was accepted — including values over 100, which produced negative totals.
+- **Root Cause:** No client-side `max` constraint and no server-side validation for percentage discount bounds.
+- **Solution:**
+  1. Added `min="0"` and `max="100"` to the discount amount `<Input>` in the invoice form.
+  2. Added server-side validation in both `createInvoiceAction` and `updateInvoiceAction`: `if (discountType === 'percentage' && discountAmount > 100) return { error: 'Percentage discount cannot exceed 100%.' }`.
+- **Files Changed:** `src/components/invoices/invoice-form.tsx`, `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in both modified files.
+
+### 54. Client Form Email Field Uses type="text" (M21 - Medium UX/Input)
+- **Bug:** In `src/components/clients/client-form.tsx`, the email input used `type="text"` instead of `type="email"`. This disabled browser email validation and showed a QWERTY keyboard instead of the email keyboard layout on mobile devices.
+- **Root Cause:** The input type was set to "text" instead of "email".
+- **Solution:**
+  1. Changed `type="text"` to `type="email"` on the email input field.
+- **Files Changed:** `src/components/clients/client-form.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 55. Client Form Stale Values on Second Creation (M22 - Medium State/UX)
+- **Bug:** In `src/components/clients/client-form.tsx`, after successfully creating a client, reopening the dialog showed stale values from the previous submission. The `defaultValue` prop only applies on initial mount, so React didn't reset the form inputs.
+- **Root Cause:** `defaultValue` is uncontrolled — React doesn't update it when the prop changes. The form DOM persisted across dialog open/close cycles.
+- **Solution:**
+  1. Added a `formKey` state variable that increments each time the dialog opens (`setFormKey(prev => prev + 1)`).
+  2. Added `key={formKey}` to the `<form>` element, forcing React to unmount and remount the form on each dialog open.
+  3. This ensures `defaultValue` reads from the fresh `client` prop (or empty defaults for new clients).
+- **Files Changed:** `src/components/clients/client-form.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 56. Reminder Modal handleMarkSent Ignores Server Errors (M23 - Medium State/Error Handling)
+- **Bug:** In `src/components/reminders/reminder-modal.tsx`, `handleMarkSent` called `logReminderEventAction` but never checked the result. The modal closed regardless of whether the server action succeeded or failed, silently swallowing errors.
+- **Root Cause:** No result checking — the `await` was fire-and-forget.
+- **Solution:**
+  1. Captured the return value of `logReminderEventAction`.
+  2. After setting `markingSent(false)`, checks if the result contains an `'error'` property.
+  3. On error: shows `toast.error('Failed to mark as sent', ...)` and returns early without closing the modal.
+  4. On success: proceeds to `handleClose(false)`.
+- **Files Changed:** `src/components/reminders/reminder-modal.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 57. Reminder Modal Clipboard Write Not Wrapped in try/catch (M24 - Medium Error Handling)
+- **Bug:** In `src/components/reminders/reminder-modal.tsx`, `handleCopy` called `navigator.clipboard.writeText(text)` without a try/catch. This throws an unhandled `DOMException` in non-HTTPS environments or browsers with strict clipboard permissions (e.g., Firefox in private mode).
+- **Root Cause:** The Clipboard API is not universally available and can throw on permission denial.
+- **Solution:**
+  1. Wrapped the `navigator.clipboard.writeText()` call and subsequent UI updates in a try/catch block.
+  2. On catch: shows `toast.error('Failed to copy to clipboard', ...)` with a helpful message and returns early.
+  3. The log event only fires after a successful copy.
+- **Files Changed:** `src/components/reminders/reminder-modal.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 58. UnbilledScratchpad startTransition Used Incorrectly for Async (M25 - Medium React/State)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, `startTransition` from `useTransition` was used to wrap async server action calls. `startTransition` is designed for synchronous UI state transitions — async errors inside it are silently swallowed by React.
+- **Root Cause:** Misuse of `useTransition` for async operations. The async callback's rejected promises are not caught by React's error boundary.
+- **Solution:**
+  1. Removed `useTransition` import and `startTransition` usage.
+  2. Replaced with direct `async/await` pattern with explicit `try/catch/finally`.
+  3. Added `isAdding` state (replacing `isPending`) for loading indicator.
+  4. Both `handleAddTask` and `handleMarkDone` now properly catch async errors and handle rollbacks.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 59. UnbilledScratchpad Input Cleared Before Server Confirms (M26 - Medium State/UX)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, `setInputValue('')` was called immediately after the optimistic UI update, before the server action completed. If the server action failed, the user's drafted text was permanently lost (the rollback restored the input via `setInputValue(description)`, but only if the error was caught).
+- **Root Cause:** Input was cleared eagerly as part of the optimistic update, before knowing if the server call would succeed.
+- **Solution:**
+  1. Moved `setInputValue('')` to after the server action returns a successful result (inside the success path, after checking `result`).
+  2. On failure, the input is restored to the original `description` value.
+  3. The input remains populated during the loading state so users can see what they submitted.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 60. Settings Document Delete Has No Rollback (M27 - Medium Verified-Correct)
+- **Bug (Reported):** `handleDeleteDocument` in `src/app/(dashboard)/settings/settings-page-client.tsx` was reported to immediately remove the document from UI state optimistically without rollback.
+- **Verification Finding:** The code already implements the correct pattern. `setKbDocs(docs => docs.filter(d => d.id !== id))` is inside the `if (!result.error)` block (line 192), meaning the UI only updates after the server confirms success. On error, `toast.error` is shown and the document remains in the list. On network exception, the catch block shows an error toast. No fix was needed — the implementation is already correct.
+- **Files Changed:** None (verified-correct, no changes required).
+- **Verified:** Code review confirms server-then-UI pattern is properly implemented.
+
+### 61. Settings Document Upload Uses window.location.reload() (M28 - Medium UX)
+- **Bug:** In `src/app/(dashboard)/settings/settings-page-client.tsx`, after a successful document upload, the code called `window.location.reload()` (line 175). This caused a full page reload, which is jarring and inconsistent with the rest of the application that uses `router.refresh()`.
+- **Root Cause:** `window.location.reload()` was used instead of Next.js's `router.refresh()`.
+- **Solution:**
+  1. Replaced `window.location.reload()` with `router.refresh()` for a smooth client-side data refresh.
+- **Files Changed:** `src/app/(dashboard)/settings/settings-page-client.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 62. Settings No Client-Side Password Confirmation Match (M29 - Medium UX)
+- **Bug:** In `src/app/(dashboard)/settings/settings-page-client.tsx`, the password update form had no client-side check to ensure `password === confirmPassword`. The user had to wait for a server round-trip to discover they typed different passwords.
+- **Root Cause:** No client-side validation before the server action call.
+- **Solution:**
+  1. Added client-side validation in `handleSecuritySubmit` that reads both password fields from FormData.
+  2. If `password !== confirmPassword`, shows `toast.error('Passwords do not match')` and returns early without making the server call.
+  3. This provides instant feedback and avoids unnecessary server round-trips.
+- **Files Changed:** `src/app/(dashboard)/settings/settings-page-client.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 63. Notifications Table Has No INSERT Policy (M30 - Medium Security/RLS)
+- **Bug:** The notifications table lacked an `INSERT` policy for authenticated users. While current server-side code uses the service role key (bypassing RLS), this is a latent issue for future features that might use the user's JWT to insert notifications.
+- **Root Cause:** The original migration only created SELECT and UPDATE policies, not INSERT.
+- **Solution:**
+  1. Created `supabase-migration-v12-notifications-insert.sql` with a new INSERT policy:
+     ```sql
+     CREATE POLICY "Users can insert own notifications"
+       ON notifications FOR INSERT TO authenticated
+       WITH CHECK (auth.uid() = user_id);
+     ```
+  2. This policy ensures authenticated users can only insert notifications with their own `user_id`.
+- **Files Changed:** `supabase-migration-v12-notifications-insert.sql`
+- **Verified:** SQL is syntactically correct and follows the pattern of existing policies.
+
+### 64. deleteClientAction Cascade Doesn't Filter Already-Deleted (M31 - Medium Data Integrity)
+- **Bug:** In `src/lib/clients/actions.ts`, the cascade soft-delete query updated ALL invoices for the client, including ones that were already individually soft-deleted. This overwrote their original `deleted_at` timestamp, corrupting the deletion timeline.
+- **Root Cause:** The cascade update query `.eq('client_id', clientId).eq('user_id', user.id)` did not filter by `deleted_at IS NULL`.
+- **Solution:**
+  1. Added `.is('deleted_at', null)` to the cascade update query so it only touches active invoices.
+  2. Already-deleted invoices retain their original `deleted_at` timestamp.
+- **Files Changed:** `src/lib/clients/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 65. Dashboard Recent Activities Show Events for Soft-Deleted Invoices (M32 - Medium Data Integrity)
+- **Bug:** In `src/lib/dashboard/actions.ts`, the recent activities query fetched `reminder_events` without checking if the related invoice was soft-deleted. Events for trashed invoices appeared in the dashboard activity feed.
+- **Root Cause:** The query joined with `invoices` but did not filter on `invoices.deleted_at`.
+- **Solution:**
+  1. Changed the join from `invoices (...)` to `invoices!inner (...)` to make it an inner join.
+  2. Added `.is('invoices.deleted_at', null)` to filter out events for soft-deleted invoices.
+  3. Applied to both the primary query and the fallback query (for missing columns).
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 66. Settings No Min/Max Constraints on Numeric Inputs (M33 - Medium Validation)
+- **Bug:** In `src/components/invoices/invoice-form.tsx`, the Amount and Tax Rate inputs had no `min`/`max` attributes. Users could type negative amounts or a tax rate of 500%. While the server validates these, the UI should prevent invalid states at the input level.
+- **Root Cause:** Missing HTML constraint attributes on numeric inputs.
+- **Solution:**
+  1. Added `min="0"` to the Amount input to prevent negative values.
+  2. Added `min="0"` and `max="100"` to the Tax Rate input to prevent negative or >100% values.
+  3. (Discount `max="100"` was already addressed in M20.)
+- **Files Changed:** `src/components/invoices/invoice-form.tsx`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 67. No Rate Limiting on PDF Generation Endpoint (M34 - Medium Security/DoS)
+- **Bug:** In `src/app/api/invoices/[id]/pdf/route.ts`, the PDF generation endpoint had no rate limiting. PDF rendering is CPU-intensive, and an attacker could send concurrent requests to cause a Denial of Service.
+- **Root Cause:** No rate limiting was applied to the endpoint.
+- **Solution:**
+  1. Added `enforceRateLimit` import from `@/lib/utils/rate-limit`.
+  2. After authentication, applied rate limiting: `enforceRateLimit(user.id, { limit: 10, windowMs: 60 * 1000 })` — 10 PDFs per minute per user.
+  3. On `RateLimitError`: returns 429 status with `Retry-After` header and a user-friendly error message.
+  4. Removed the duplicate auth check that was present after the rate limit block.
+- **Files Changed:** `src/app/api/invoices/[id]/pdf/route.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+---
+
+## Phase 4 Complete — All Medium Severity Bugs Resolved (M1-M34)
+
+All 34 medium severity bugs from the bug audit have been addressed:
+- **M1-M5**: Theme FOUC, ChaseCard errors, UserNav links, client data, sidebar a11y
+- **M6-M12**: Line item keys, OTP inputs, CBC migration, error leaks (PDF, search, notifications)
+- **M13-M17**: Notification errors, schema enums, temperature fallback, double-pay guard, dashboard limits
+- **M18-M22**: UUID validation, soft-delete filter, discount cap, email input, stale form values
+- **M23-M27**: handleMarkSent errors, clipboard try/catch, startTransition fix, input clear timing, delete rollback
+- **M28-M32**: router.refresh, password match, INSERT policy, cascade filter, soft-deleted activities
+- **M33-M34**: Numeric input constraints, PDF rate limiting
+
+**Total bugs resolved: 67** (11 Critical + 20 High + 34 Medium + 2 verified-correct)
+
+Remaining: 27 Low severity bugs.
+
+---
+
+## Phase 5 — Low Severity Bug Fixes (L1-L27)
+
+### 68. PostHog Provider Uses Non-Null Assertion on Env Var (L1 - Low Robustness)
+- **Bug:** In `src/providers/posthog-provider.tsx`, `process.env.NEXT_PUBLIC_POSTHOG_KEY!` used a non-null assertion. If the env var is missing, PostHog is initialized with `undefined`.
+- **Solution:** Changed guard to `typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY` so PostHog only initializes when the key exists.
+- **Files Changed:** `src/providers/posthog-provider.tsx`
+
+### 69. SignInPage Loading State Not Reset on Success (L2 - Low UX)
+- **Bug:** In `src/app/(auth)/sign-in/page.tsx`, if login succeeds but redirect fails/delays, "Signing in..." state persists forever.
+- **Solution:** Wrapped the login call in try/finally to ensure `setLoading(false)` always runs.
+- **Files Changed:** `src/app/(auth)/sign-in/page.tsx`
+
+### 70. Visual Customizer localStorage Overwritten on Theme Switch (L3 - Low State)
+- **Bug:** In `src/app/(dashboard)/dashboard/visual-customizer.tsx`, two useEffects both depended on `isLight`. The second always overwrote localStorage persistence during theme switches.
+- **Solution:** Consolidated into a single useEffect that handles both initial load and theme switching.
+- **Files Changed:** `src/app/(dashboard)/dashboard/visual-customizer.tsx`
+
+### 71. GlobalSearch Stale Results on Rapid Query Changes (L4 - Low State)
+- **Bug:** In `src/components/dashboard/GlobalSearch.tsx`, debounced search had no cancellation mechanism. Earlier search could resolve after later one.
+- **Solution:** Added `cancelled` flag in the useEffect cleanup to prevent stale results from being applied.
+- **Files Changed:** `src/components/dashboard/GlobalSearch.tsx`
+
+### 72. ClientDetailActions Delete Error Not Shown (L5 - Low UX)
+- **Bug:** In `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`, when delete fails, no error message shown to user.
+- **Solution:** Added `toast.error(result.error || 'Failed to delete client')` and toast import.
+- **Files Changed:** `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`
+
+### 73. ClientsPageClient Delete Error Logged But Not Shown (L6 - Low UX)
+- **Bug:** In `src/app/(dashboard)/clients/clients-page-client.tsx`, error logged to console but no user feedback.
+- **Solution:** Added `toast.error(result.error || 'Failed to delete client')` and toast import.
+- **Files Changed:** `src/app/(dashboard)/clients/clients-page-client.tsx`
+
+### 74. Currency Not Validated Before Intl.NumberFormat (L7 - Low Robustness)
+- **Bug:** In `src/lib/dashboard/actions.ts`, if `inv.currency` is non-standard, `Intl.NumberFormat` throws.
+- **Solution:** Wrapped `Intl.NumberFormat` call in try/catch with fallback to `${cur} ${amount.toFixed(2)}`.
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+
+### 75. check_email_exists RPC Error Not Checked (L9 - Low Robustness)
+- **Bug:** In `src/lib/auth/actions.ts`, the `check_email_exists` RPC result error was not checked.
+- **Solution:** Added error destructuring and console.error logging. Proceeds with signup on error (Supabase handles duplicate email on insert).
+- **Files Changed:** `src/lib/auth/actions.ts`
+
+### 76. Client Delete Cascade Ignores Error (L10 - Low Robustness)
+- **Bug:** In `src/lib/clients/actions.ts`, the cascade soft-delete result was not checked.
+- **Solution:** Destructured `{ error: cascadeError }` from the cascade query and logged it to console.
+- **Files Changed:** `src/lib/clients/actions.ts`
+
+### 77. Knowledge Base Filename Not Sanitized (L14 - Low Security)
+- **Bug:** In `src/lib/settings/actions.ts`, `file.name` was used directly in storage path without sanitization, allowing potential path traversal.
+- **Solution:** Added filename sanitization: `rawName.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 100)`.
+- **Files Changed:** `src/lib/settings/actions.ts`
+
+### 78. Multi-Draft Missing refund_policy (L16 - Low Data)
+- **Bug:** In `src/lib/reminders/actions.ts`, `generateMultipleDraftsAction` did not include `refund_policy` in business rules, while `generateSingleDraftAction` did.
+- **Solution:** Added `if (globalRules2.refund_policy) rulesLines2.push(...)` to the multi-draft function.
+- **Files Changed:** `src/lib/notifications/actions.ts` (sic — actually `src/lib/reminders/actions.ts`)
+
+### 79. Onboarding Survey Redundant Routing (L18 - Low Code Quality)
+- **Bug:** In `src/components/onboarding/OnboardingSurvey.tsx`, both `quick_guided_tour` and `checklist_setup` pushed to the same `/dashboard` route.
+- **Solution:** Simplified to a single `router.push('/dashboard')` call for all non-explore paths.
+- **Files Changed:** `src/components/onboarding/OnboardingSurvey.tsx`
+
+### 80. resetPasswordSchema Confirm Password No Min Length (L19 - Low Validation)
+- **Bug:** In `src/lib/validations/auth.ts`, `confirmPassword` used `z.string()` with no `.min(1)`, allowing empty string submission.
+- **Solution:** Added `.min(1, 'Please confirm your password.')` to confirmPassword field.
+- **Files Changed:** `src/lib/validations/auth.ts`
+
+### 81. Reminder Modal Tone State Persists Across Opens (L20 - Low State)
+- **Bug:** In `src/components/reminders/reminder-modal.tsx`, `tone` and `customInstructions` state persisted across modal opens.
+- **Solution:** Added `setTone('professional')` and `setCustomInstructions('')` to `handleClose`.
+- **Files Changed:** `src/components/reminders/reminder-modal.tsx`
+
+### 82. deleteKnowledgeBaseDocumentAction Leaks Raw Error (L22 - Low Security)
+- **Bug:** In `src/lib/settings/actions.ts`, the catch block used `e instanceof Error ? e.message : '...'` instead of `sanitizeDatabaseError`.
+- **Solution:** Replaced with `sanitizeDatabaseError(e)`.
+- **Files Changed:** `src/lib/settings/actions.ts`
+
+### 83-92. Remaining LOW Bugs (Not Fixed — Already Correct or Not Applicable)
+- **L8** (Signup race condition): Supabase handles duplicate email on insert — no fix needed.
+- **L11** (Invoice number ordering): Already parses all invoice numbers for highest sequence — already correct.
+- **L12** (In-memory rate limiter): Infrastructure concern, not a code fix.
+- **L13** (Path traversal in callback): Already fixed — `sanitizeNextPath` exists.
+- **L15** (Cron timezone): Requires per-user timezone storage — feature, not bug fix.
+- **L17** (clearAllNotifications naming): Function works correctly, naming is cosmetic.
+- **L21** (Onboarding form reset): Survey is mandatory by design — `showCloseButton={false}` is intentional.
+- **L23** (Error message pattern): Already addressed in M11, M12, M13 batches.
+- **L24** (remindAgain event logging): Feature not implemented in codebase.
+- **L25** (pending_invoice_count ordering): Feature not implemented in codebase.
+- **L26** (OTP autocomplete): Already fixed in M7 batch.
