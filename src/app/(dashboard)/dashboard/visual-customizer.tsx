@@ -202,12 +202,16 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
   const STATUS_STYLES: Record<string, string> = {
     draft: 'bg-accent text-muted-foreground border-border',
-    sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
-    due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-    overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
-    paid: 'bg-green-950/40 text-green-400 border-green-900/50',
+    sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+    due_soon: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+    overdue: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+    paid: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
     archived: 'bg-accent/50 text-muted-foreground border-border',
+    promised: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+    paused: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+    partial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
   }
+
 
   const STATUS_LABELS: Record<string, string> = {
     draft: 'Draft',
