@@ -5,8 +5,33 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { signUpSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '@/lib/validations/auth'
+import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+
+// ── Rate limit configs (keyed by IP since user isn't authenticated) ──
+const AUTH_RATE_LIMIT = { limit: 5, windowMs: 15 * 60 * 1000 }  // 5 per 15 min
+const OTP_RATE_LIMIT = { limit: 5, windowMs: 15 * 60 * 1000 }   // 5 per 15 min
+const SIGNUP_RATE_LIMIT = { limit: 3, windowMs: 15 * 60 * 1000 } // 3 per 15 min
+const RESET_RATE_LIMIT = { limit: 3, windowMs: 15 * 60 * 1000 }  // 3 per 15 min
+const OAUTH_RATE_LIMIT = { limit: 10, windowMs: 15 * 60 * 1000 } // 10 per 15 min
+
+/** Wraps RateLimitError into a safe user-facing error object */
+function handleRateLimitError(e: unknown): { error: string } | null {
+  if (e instanceof RateLimitError) {
+    const seconds = Math.ceil(e.retryAfterMs / 1000)
+    return { error: `Too many attempts. Please try again in ${seconds} seconds.` }
+  }
+  return null
+}
 
 export async function login(formData: FormData) {
+  // C4: Rate limit login attempts by IP
+  try {
+    await enforceRateLimit(null, AUTH_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -24,7 +49,8 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    // Don't leak whether the email exists
+    return { error: 'Invalid email or password.' }
   }
 
   revalidatePath('/', 'layout')
@@ -32,6 +58,14 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
+  // C4: Rate limit signup attempts by IP
+  try {
+    await enforceRateLimit(null, SIGNUP_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -44,10 +78,10 @@ export async function signup(formData: FormData) {
     return { error: validation.error.issues[0].message }
   }
 
-  // Check if user already exists
-  const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', { email_to_check: email })
+  // Check if user already exists (use generic message to prevent email enumeration)
+  const { data: emailExists } = await supabase.rpc('check_email_exists', { email_to_check: email })
   if (emailExists) {
-    return { error: 'An account with this email already exists. Please sign in instead.' }
+    return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
   }
 
   // Supabase sign up sends OTP automatically if configured in templates
@@ -68,16 +102,35 @@ export async function signup(formData: FormData) {
   return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
 }
 
+/** C6: Allowed OTP types for this application. Reject any other value. */
+const ALLOWED_OTP_TYPES = ['signup', 'recovery'] as const
+type AllowedOtpType = typeof ALLOWED_OTP_TYPES[number]
+
 export async function verifyOtpAction(formData: FormData) {
+  // C4: Rate limit OTP verification attempts by IP (strictest limit)
+  try {
+    await enforceRateLimit(null, OTP_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
   const email = formData.get('email') as string
   const token = formData.get('otp') as string
-  const type = (formData.get('type') as 'signup' | 'recovery') || 'signup'
+  const rawType = formData.get('type') as string
 
   if (!email || !token) {
     return { error: 'Email and OTP are required.' }
   }
 
+  // C6: Strictly validate the OTP type parameter at runtime
+  if (!rawType || !ALLOWED_OTP_TYPES.includes(rawType as AllowedOtpType)) {
+    return { error: 'Invalid verification type.' }
+  }
+  const type = rawType as AllowedOtpType
+
+  // Use generic error to prevent OTP enumeration
   const { error } = await supabase.auth.verifyOtp({
     email,
     token,
@@ -85,7 +138,7 @@ export async function verifyOtpAction(formData: FormData) {
   })
 
   if (error) {
-    return { error: error.message }
+    return { error: 'Invalid or expired verification code.' }
   }
 
   revalidatePath('/', 'layout')
@@ -112,6 +165,14 @@ export async function logout() {
 }
 
 export async function sendPasswordReset(formData: FormData) {
+  // C4: Rate limit password reset attempts by IP
+  try {
+    await enforceRateLimit(null, RESET_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
   const email = formData.get('email') as string
 
@@ -131,6 +192,14 @@ export async function sendPasswordReset(formData: FormData) {
 }
 
 export async function updatePassword(formData: FormData) {
+  // C4: Rate limit password update attempts by IP
+  try {
+    await enforceRateLimit(null, AUTH_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
@@ -152,6 +221,14 @@ export async function updatePassword(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
+  // C4: Rate limit OAuth attempts by IP
+  try {
+    await enforceRateLimit(null, OAUTH_RATE_LIMIT)
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
   const supabase = await createClient()
   const headersList = await headers()
   const host = headersList.get('host')

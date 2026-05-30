@@ -81,3 +81,32 @@ This file tracks all the major bugs encountered and successfully resolved in the
 - **Files Changed:** `src/lib/invoices/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
 
+### 10. No Rate Limiting on Auth Endpoints (C4 - Critical Security)
+- **Bug:** None of the authentication server actions (`login`, `signup`, `verifyOtpAction`, `sendPasswordReset`, `updatePassword`, `signInWithGoogle`) had rate limiting. A 6-digit OTP has only 1,000,000 combinations and could be brute-forced in minutes. Login attempts could be made at machine speed.
+- **Root Cause:** The rate-limiting utility (`src/lib/utils/rate-limit.ts`) existed and was used by other modules (reminders, settings), but was never imported or applied to auth endpoints.
+- **Solution:**
+  1. Imported `enforceRateLimit` and `RateLimitError` from `@/lib/utils/rate-limit`.
+  2. Added IP-based rate limiting to all 6 auth actions (since user isn't authenticated yet, `userId` is `null` and the limiter falls back to `x-forwarded-for` / `x-real-ip`):
+     - `login`: 5 attempts per 15 minutes
+     - `signup`: 3 attempts per 15 minutes
+     - `verifyOtpAction`: 5 attempts per 15 minutes (strictest, OTP brute-force protection)
+     - `sendPasswordReset`: 3 attempts per 15 minutes
+     - `updatePassword`: 5 attempts per 15 minutes
+     - `signInWithGoogle`: 10 attempts per 15 minutes
+  3. Added `handleRateLimitError()` helper that converts `RateLimitError` into a user-friendly message with retry-after seconds.
+  4. Rate limit is checked first (before any Supabase call), so exceeded requests are rejected instantly.
+- **Files Changed:** `src/lib/auth/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 11. OTP Type Parameter Not Validated at Runtime (C6 - Critical Security)
+- **Bug:** In `verifyOtpAction`, the `type` parameter was cast via TypeScript (`as 'signup' | 'recovery'`) but never validated at runtime. Supabase's `verifyOtp` accepts other types like `'magiclink'`, `'email_change'`, `'phone_change'`, etc. An attacker could submit `type=magiclink` or `type=email_change` to bypass the intended verification flow.
+- **Root Cause:** TypeScript type assertions provide compile-time safety only. The runtime value from `formData.get('type')` could be any string.
+- **Solution:**
+  1. Added `ALLOWED_OTP_TYPES` constant: `['signup', 'recovery'] as const`.
+  2. Added runtime validation: `if (!rawType || !ALLOWED_OTP_TYPES.includes(rawType))` returns an error immediately before hitting Supabase.
+  3. Changed error messages to be generic (`'Invalid or expired verification code.'`) to prevent OTP enumeration attacks.
+  4. Changed login error to generic `'Invalid email or password.'` to prevent email enumeration.
+  5. Changed signup to return success message even when email exists (prevents email enumeration).
+- **Files Changed:** `src/lib/auth/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
