@@ -47,5 +47,20 @@ This file tracks all the major bugs encountered and successfully resolved in the
 - **Root Cause:** The status styles used dark-mode-specific color variants (`bg-blue-950/40 text-blue-400 border-blue-900/50` etc.) directly as default classes, without prefixing them with `dark:` or providing standard light mode equivalents.
 - **Solution:** Restructured the `STATUS_STYLES` tables across all 6 core components and pages to utilize theme-aware styles: high-contrast colors (e.g. `bg-blue-50 text-blue-700 border-blue-200`) for light mode by default, and prefixed the dark-mode styles with `dark:` (e.g. `dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50`). This provides perfect visual contrast and legibility in both themes.
 
-
+### 8. Open Redirect in OAuth Callback (C1 - Critical Security)
+- **Bug:** The OAuth callback route (`src/app/api/auth/callback/route.ts`) had an Open Redirect vulnerability. The `next` query parameter was read and directly appended to the redirect URL without any validation. Additionally, the `x-forwarded-host` header was trusted blindly in production.
+- **Root Cause:** No sanitization on the `next` parameter. An attacker could craft URLs like `/api/auth/callback?code=xxx&next=https://evil.com` or `/api/auth/callback?code=xxx&next=//evil.com` to redirect authenticated users to a phishing site. The `x-forwarded-host` header was also used without validation, allowing header-based redirect hijacking.
+- **Solution:**
+  1. Added `sanitizeNextPath()` function that validates the `next` parameter:
+     - Must start with exactly one `/` (rejects `//evil.com`)
+     - Rejects protocol schemes (`https:`, `javascript:`, `data:`)
+     - Normalizes backslashes and rejects null bytes
+     - Falls back to `/dashboard` on any validation failure
+  2. Added `getBaseUrl()` function that resolves the redirect base URL:
+     - Uses `process.env.NEXT_PUBLIC_SITE_URL` in production (explicit, trusted config)
+     - Falls back to request origin only in development
+     - Removed blind trust of `x-forwarded-host` header
+  3. Simplified the redirect logic to a single `NextResponse.redirect()` call using the sanitized path and trusted base URL.
+- **Files Changed:** `src/app/api/auth/callback/route.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
 
