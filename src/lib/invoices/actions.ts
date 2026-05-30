@@ -444,14 +444,49 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
   }
 }
 
+/** Valid invoice status values that can be set via updateInvoiceStatusAction */
+const VALID_UPDATE_STATUSES = [
+  'draft', 'sent', 'due_soon', 'overdue', 'paid', 'partial', 'promised', 'paused', 'archived'
+] as const
+
 export async function updateInvoiceStatusAction(invoiceId: string, status: string, amountPaid: number = 0) {
   try {
+    // C2: Validate status against allowed values
+    if (!VALID_UPDATE_STATUSES.includes(status as typeof VALID_UPDATE_STATUSES[number])) {
+      return { error: `Invalid invoice status. Allowed values: ${VALID_UPDATE_STATUSES.join(', ')}` }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const updateData: any = { status }
+    // C3: When status is 'partial', validate amountPaid against the invoice's total amount
+    const updateData: Record<string, unknown> = { status }
     if (status === 'partial') {
+      // Validate amountPaid is a valid number
+      if (typeof amountPaid !== 'number' || isNaN(amountPaid) || !isFinite(amountPaid)) {
+        return { error: 'Amount paid must be a valid number.' }
+      }
+      if (amountPaid <= 0) {
+        return { error: 'Amount paid must be greater than zero.' }
+      }
+
+      // Fetch the invoice to validate against its total amount
+      const { data: invoice, error: fetchError } = await supabase
+        .from('invoices')
+        .select('amount')
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError || !invoice) {
+        return { error: 'Invoice not found.' }
+      }
+
+      if (amountPaid >= invoice.amount) {
+        return { error: `Amount paid (${amountPaid}) must be less than the invoice total (${invoice.amount}). Use "Mark as Paid" for full payment.` }
+      }
+
       updateData.amount_paid = amountPaid
     } else if (status === 'paid') {
       updateData.paid_date = new Date().toISOString().split('T')[0]

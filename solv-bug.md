@@ -64,3 +64,20 @@ This file tracks all the major bugs encountered and successfully resolved in the
 - **Files Changed:** `src/app/api/auth/callback/route.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
 
+### 9. No Status & Amount Validation in `updateInvoiceStatusAction` (C2, C3 - Critical)
+- **Bug:** The `updateInvoiceStatusAction` function in `src/lib/invoices/actions.ts` had two critical validation gaps:
+  - **C2:** The `status` parameter was accepted as a raw string with zero validation. Any arbitrary string (e.g., `"admin"`, `"deleted"`, `""`) could be written to the database, bypassing all business logic.
+  - **C3:** When `status === 'partial'`, the `amountPaid` value was written directly to the database with no validation. It could be negative, larger than the invoice amount, NaN, or Infinity, corrupting financial data.
+- **Root Cause:** The function trusted the client entirely -- no server-side validation on either the status enum or the partial payment amount.
+- **Solution:**
+  1. **C2 Fix:** Added `VALID_UPDATE_STATUSES` constant with all 9 valid status values (`draft`, `sent`, `due_soon`, `overdue`, `paid`, `partial`, `promised`, `paused`, `archived`). The function now validates `status` against this allowlist before processing. Invalid values return a clear error message listing allowed values.
+  2. **C3 Fix:** When `status === 'partial'`, the function now:
+     - Validates `amountPaid` is a finite, non-NaN number
+     - Validates `amountPaid > 0`
+     - Fetches the invoice's `amount` from the database
+     - Validates `amountPaid < invoice.amount` (partial means less than full)
+     - Returns descriptive error messages for each failure case
+  3. Changed `updateData` type from `any` to `Record<string, unknown>` for better type safety.
+- **Files Changed:** `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
