@@ -34,11 +34,12 @@ export async function searchAllData(rawQuery: string) {
 
     const searchTerm = `%${safeQuery}%`
 
-    // 1. Search clients
+    // C8: Search clients (exclude soft-deleted)
     const { data: clients, error: clientsError } = await supabase
       .from('clients')
       .select('id, client_name, email')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .or(`client_name.ilike."${searchTerm}",email.ilike."${searchTerm}"`)
       .limit(10)
 
@@ -46,11 +47,12 @@ export async function searchAllData(rawQuery: string) {
 
     const clientIds = clients?.map((c) => c.id) || []
 
-    // 2. Search invoices
+    // C8: Search invoices (exclude soft-deleted)
     let invoiceQuery = supabase
       .from('invoices')
       .select('id, invoice_number, status, amount, client_id, clients(client_name)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .limit(10)
 
     // Search by invoice_number OR by the clients we just found

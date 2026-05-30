@@ -232,19 +232,33 @@ export async function restoreClientAction(clientId: string) {
       return { error: 'You must be authenticated.' }
     }
 
+    // H4: First fetch the client to get its deleted_at timestamp
+    const { data: client, error: fetchError } = await supabase
+      .from('clients')
+      .select('deleted_at')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !client) {
+      return { error: 'Client not found.' }
+    }
+
     const { error } = await supabase
       .from('clients')
       .update({ deleted_at: null })
       .eq('id', clientId)
       .eq('user_id', user.id)
 
-    if (!error) {
-      // Also restore their invoices (note: this might restore invoices that were individually soft deleted before the client was deleted, but it's acceptable for now)
+    if (!error && client.deleted_at) {
+      // H4: Only restore invoices that were cascade-deleted at the same time as the client.
+      // This prevents restoring invoices that were individually soft-deleted before the client was deleted.
       await supabase
         .from('invoices')
         .update({ deleted_at: null })
         .eq('client_id', clientId)
         .eq('user_id', user.id)
+        .eq('deleted_at', client.deleted_at)
     }
 
     if (error) {
@@ -267,6 +281,22 @@ export async function hardDeleteClientAction(clientId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return { error: 'You must be authenticated.' }
+    }
+
+    // H2: Verify the client is soft-deleted before allowing hard delete
+    const { data: client, error: fetchError } = await supabase
+      .from('clients')
+      .select('deleted_at')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !client) {
+      return { error: 'Client not found.' }
+    }
+
+    if (client.deleted_at === null) {
+      return { error: 'Item must be moved to trash before permanently deleting.' }
     }
 
     const { error } = await supabase

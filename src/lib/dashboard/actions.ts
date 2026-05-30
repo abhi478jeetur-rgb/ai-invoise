@@ -11,11 +11,12 @@ export async function getDashboardDataAction() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    // Fetch all invoices for stats
+    // C7: Fetch all invoices for stats (exclude soft-deleted)
     const { data: allInvoices, error: invoicesError } = await supabase
       .from('invoices')
       .select('id, amount, currency, status, due_date, invoice_number, title, client_id, reminder_count, last_reminder_at, created_at, clients (client_name, email, company_name)')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
 
     if (invoicesError) return { error: sanitizeDatabaseError(invoicesError) }
 

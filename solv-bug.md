@@ -182,3 +182,43 @@ This file tracks all the major bugs encountered and successfully resolved in the
   6. All error handlers now log the full error server-side via `console.error` for debugging.
 - **Files Changed:** `src/lib/auth/actions.ts`
 - **Verified:** TypeScript compiles without errors in the modified file.
+
+### 18. Dashboard Includes Soft-Deleted Invoices (C7 - Critical Data)
+- **Bug:** The `getDashboardDataAction` function in `src/lib/dashboard/actions.ts` fetched ALL invoices for the user without filtering `.is('deleted_at', null)`. Soft-deleted (trashed) invoices were included in ALL dashboard calculations: total outstanding, total overdue, total paid, active invoice count, overdue count, chase list ("Who to Chase Today"), aging report, recent invoices, and recent activities.
+- **Root Cause:** The query was missing the `.is('deleted_at', null)` filter. The soft-delete system was implemented but the dashboard queries were never updated to respect it.
+- **Solution:**
+  1. Added `.is('deleted_at', null)` to the main invoices query in `getDashboardDataAction`.
+  2. This single filter now correctly excludes soft-deleted invoices from all downstream calculations: stats, chase list, recent invoices, and aging report.
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 19. Search Returns Soft-Deleted Records (C8 - Critical Data)
+- **Bug:** The `searchAllData` function in `src/lib/search/actions.ts` searched both `clients` and `invoices` tables without filtering `.is('deleted_at', null)`. Soft-deleted (trashed) records appeared in search results, confusing users who expect search to only show active records.
+- **Root Cause:** The search queries were missing the `.is('deleted_at', null)` filter. The soft-delete system was implemented but the search queries were never updated to respect it.
+- **Solution:**
+  1. Added `.is('deleted_at', null)` to the clients search query (line 41).
+  2. Added `.is('deleted_at', null)` to the invoices search query (line 53).
+  3. Both queries now correctly exclude soft-deleted records from search results.
+- **Files Changed:** `src/lib/search/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 20. Hard Delete Bypasses Trash Workflow (H2, H3 - High Data)
+- **Bug:** Both `hardDeleteClientAction` in `src/lib/clients/actions.ts` and `hardDeleteInvoiceAction` in `src/lib/invoices/actions.ts` permanently removed records from the database regardless of whether `deleted_at` was set. This bypassed the trash/restore workflow entirely -- an active client or invoice could be permanently destroyed without going through the trash first.
+- **Root Cause:** The hard delete functions did not verify the record was soft-deleted before allowing permanent deletion.
+- **Solution:**
+  1. **H2 (hardDeleteClientAction):** Added a check that fetches the client's `deleted_at` value. If `deleted_at === null`, returns error: `'Item must be moved to trash before permanently deleting.'`
+  2. **H3 (hardDeleteInvoiceAction):** Added a check that fetches the invoice's `deleted_at` value. If `deleted_at === null`, returns error: `'Item must be moved to trash before permanently deleting.'`
+  3. Both functions now only allow permanent deletion of records that are already in the trash.
+- **Files Changed:** `src/lib/clients/actions.ts`, `src/lib/invoices/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.
+
+### 21. Client Restore Over-Restores Invoices (H4 - High Data)
+- **Bug:** The `restoreClientAction` in `src/lib/clients/actions.ts` restored ALL invoices belonging to a client when restoring the client from trash. This included invoices that were individually soft-deleted BEFORE the client was deleted. A user who deliberately deleted a specific invoice would find it magically restored when they restore the client.
+- **Root Cause:** The restore query used `.eq('client_id', clientId)` without filtering by `deleted_at` timestamp, so it restored all invoices regardless of when they were deleted.
+- **Solution:**
+  1. First fetch the client's `deleted_at` timestamp before restoring.
+  2. When restoring invoices, add `.eq('deleted_at', client.deleted_at)` to the query.
+  3. This ensures only invoices that were cascade-deleted at the same time as the client are restored.
+  4. Invoices that were individually soft-deleted before the client deletion remain in the trash.
+- **Files Changed:** `src/lib/clients/actions.ts`
+- **Verified:** TypeScript compiles without errors in the modified file.

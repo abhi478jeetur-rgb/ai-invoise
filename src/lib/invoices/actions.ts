@@ -384,6 +384,22 @@ export async function hardDeleteInvoiceAction(invoiceId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
+    // H3: Verify the invoice is soft-deleted before allowing hard delete
+    const { data: invoice, error: fetchError } = await supabase
+      .from('invoices')
+      .select('deleted_at')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !invoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    if (invoice.deleted_at === null) {
+      return { error: 'Item must be moved to trash before permanently deleting.' }
+    }
+
     const { error } = await supabase
       .from('invoices')
       .delete()
