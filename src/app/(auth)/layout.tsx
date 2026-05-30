@@ -14,7 +14,7 @@ export default async function AuthLayout({
   }
 
   return (
-    <div className="w-full min-h-screen bg-neutral-950">
+    <div className="w-full min-h-screen bg-background">
       {children}
     </div>
   )

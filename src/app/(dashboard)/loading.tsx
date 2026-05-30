@@ -13,14 +13,14 @@ export default function DashboardRootLoading() {
       </div>
 
       {/* Generic Card Body */}
-      <div className="border border-neutral-900 bg-neutral-900/40 backdrop-blur-xl rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+      <div className="border border-border bg-card/40 backdrop-blur-xl rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <Skeleton className="h-3 w-32" />
           <Skeleton className="h-3 w-16" />
         </div>
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 py-2.5 border-t border-neutral-800">
+            <div key={i} className="flex items-center gap-4 py-2.5 border-t border-border">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3.5 w-24" />
               <Skeleton className="h-3.5 w-20 ml-auto" />

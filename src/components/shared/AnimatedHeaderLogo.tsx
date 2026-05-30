@@ -27,6 +27,7 @@ export default function AnimatedHeaderLogo() {
       <div className="relative w-8 h-8 rounded-lg bg-neutral-900/60 border border-neutral-800/80 flex items-center justify-center overflow-hidden">
         {/* Glow ambient circle inside background */}
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={logoRef}
           src="/logo.svg"

@@ -43,17 +43,24 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
     <aside
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
-      className={`h-screen sticky top-0 z-40 border-r border-neutral-900 bg-neutral-950 flex flex-col items-start py-4 justify-between shrink-0 overflow-hidden transition-all duration-200 ease-in-out ${
+      aria-expanded={expanded}
+      className={`h-screen sticky top-0 z-40 border-r border-border bg-background flex flex-col items-start py-4 justify-between shrink-0 overflow-hidden transition-all duration-200 ease-in-out ${
         expanded ? 'w-56' : 'w-14'
       }`}
     >
       {/* Top Logo */}
       <div className={`flex items-center ${expanded ? 'w-full px-3' : 'w-14 justify-center'} shrink-0`}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white hover:bg-neutral-900 cursor-pointer transition-colors shrink-0">
+          <button
+            type="button"
+            onClick={() => setExpanded(prev => !prev)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-accent cursor-pointer transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain" />
-          </div>
-          <span className={`font-sans font-bold text-lg tracking-tight text-white whitespace-nowrap transition-all duration-150 ${
+          </button>
+          <span className={`font-sans font-bold text-lg tracking-tight text-foreground whitespace-nowrap transition-all duration-150 ${
             expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
           }`}>
             ChaseFree AI
@@ -70,8 +77,8 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
               <div
                 className={`flex items-center gap-3 h-9 rounded-lg px-2.5 transition-all cursor-pointer border ${
                   isActive
-                    ? 'text-neutral-100 bg-white/[0.06] border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
-                    : 'text-neutral-500 border-transparent hover:text-neutral-200 hover:bg-neutral-900/60'
+                    ? 'text-foreground bg-accent border-border shadow-sm'
+                    : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent'
                 }`}
                 style={{ width: expanded ? '100%' : '36px' }}
               >
@@ -93,10 +100,10 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
       <div className="flex flex-col items-center gap-3 w-full px-2">
         <Link href="/settings" title="Workspace Settings" className="w-full">
           <div
-            className="flex items-center gap-3 rounded-md bg-neutral-900 border border-neutral-800 px-2.5 text-[10px] font-bold text-neutral-400 hover:text-white hover:border-neutral-700 transition-all cursor-pointer h-9"
+            className="flex items-center gap-3 rounded-md bg-secondary border border-border px-2.5 text-[10px] font-bold text-muted-foreground hover:text-foreground hover:border-ring transition-all cursor-pointer h-9"
             style={{ width: expanded ? '100%' : '36px' }}
           >
-            <span className="shrink-0 w-5 h-5 flex items-center justify-center bg-neutral-800 rounded text-neutral-300 text-xs font-semibold uppercase">
+            <span className="shrink-0 w-5 h-5 flex items-center justify-center bg-muted rounded text-muted-foreground text-xs font-semibold uppercase">
               {companyName ? companyName.trim().charAt(0) : 'W'}
             </span>
             <span

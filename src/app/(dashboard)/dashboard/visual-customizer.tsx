@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
-import { UnbilledScratchpad } from '@/components/dashboard/UnbilledScratchpad'
+import { useTheme } from 'next-themes'
+
 
 interface DashboardData {
   stats: {
@@ -39,37 +40,15 @@ const THEME_PRESETS = [
     accent: '#10b981',
   },
   {
-    name: 'Charcoal Slate',
-    bg: '#171717',
-    cardBg: '#262626',
-    border: '#404040',
-    text: '#d4d4d4',
-    titleText: '#ffffff',
-    radius: 16,
-    fontScale: 1.0,
-    accent: '#3b82f6',
-  },
-  {
     name: 'Nordic Light',
-    bg: '#f8fafc',
+    bg: '#ffffff',
     cardBg: '#ffffff',
-    border: '#e2e8f0',
-    text: '#475569',
-    titleText: '#0f172a',
-    radius: 10,
+    border: '#f3f4f6',
+    text: '#4b5563',
+    titleText: '#111827',
+    radius: 12,
     fontScale: 1.0,
-    accent: '#6366f1',
-  },
-  {
-    name: 'Retro Amber',
-    bg: '#0c0a09',
-    cardBg: '#1c1917',
-    border: '#292524',
-    text: '#d6d3d1',
-    titleText: '#f5f5f4',
-    radius: 6,
-    fontScale: 1.05,
-    accent: '#f59e0b',
+    accent: '#10b981',
   }
 ]
 
@@ -77,10 +56,14 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   const { stats, chaseList, recentActivities, recentInvoices, agingReport = {} } = initialData as any
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
 
+  const { resolvedTheme } = useTheme()
+  const isLight = resolvedTheme === 'light'
+
   // Load styling configuration with a hydration-safe pattern
   const [config, setConfig] = useState(THEME_PRESETS[0])
   const [mounted, setMounted] = useState(false)
 
+  // L3: Consolidated single useEffect for theme config (prevents localStorage overwrite on theme switch)
   useEffect(() => {
     setMounted(true)
     const saved = localStorage.getItem('chasefree-ui-config')
@@ -88,16 +71,22 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       try {
         const parsed = JSON.parse(saved)
         if (parsed) {
+          const isSavedLight = parsed.bg === '#ffffff' || parsed.bg === '#fafafa' || parsed.bg === '#f8fafc'
+          const shouldOverride = isLight !== isSavedLight
+
           setConfig({
-            ...parsed,
-            accent: '#10b981' // Force brand emerald green
+            ...(shouldOverride ? (isLight ? THEME_PRESETS[1] : THEME_PRESETS[0]) : parsed),
+            accent: '#10b981'
           })
+          return
         }
       } catch (e) {
         // ignore error
       }
     }
-  }, [])
+
+    setConfig(isLight ? THEME_PRESETS[1] : THEME_PRESETS[0])
+  }, [isLight])
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -113,8 +102,9 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   }
 
   const resetToDefault = () => {
-    setConfig({ ...THEME_PRESETS[0] })
+    setConfig({ ...THEME_PRESETS[isLight ? 1 : 0] })
   }
+
 
   // Create style variable payload
   const styleVariables = {
@@ -142,11 +132,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   }
 
   function getUrgencyInfo(dueDateStr: string, status: string) {
-    if (!dueDateStr) return { text: 'No due date', color: 'text-neutral-500 bg-neutral-900/40 border-neutral-900/60' };
+    if (!dueDateStr) return { text: 'No due date', color: 'text-muted-foreground bg-card/40 border-border/60' };
     const now = new Date(); now.setHours(0, 0, 0, 0);
     const parseStr = (dueDateStr.includes('T') || dueDateStr.includes(' ')) ? dueDateStr : dueDateStr + 'T00:00:00';
     const due = new Date(parseStr); due.setHours(0, 0, 0, 0);
-    if (isNaN(due.getTime())) return { text: 'Invalid Date', color: 'text-neutral-500 bg-neutral-900/40 border-neutral-900/60' };
+    if (isNaN(due.getTime())) return { text: 'Invalid Date', color: 'text-muted-foreground bg-card/40 border-border/60' };
     
     const diffDays = Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     if (status === 'overdue' || diffDays < 0) {
@@ -154,8 +144,8 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       return { text: days === 0 ? 'Overdue today' : `Overdue by ${days} days`, color: 'text-red-400 bg-red-950/30 border-red-900/40' };
     }
     if (diffDays === 0) return { text: 'Due today', color: 'text-yellow-400 bg-yellow-950/30 border-yellow-900/40' };
-    if (diffDays === 1) return { text: 'Due tomorrow', color: 'text-neutral-400 bg-neutral-900 border-neutral-800' };
-    return { text: `Due in ${diffDays} days`, color: 'text-neutral-500 bg-neutral-900/40 border-neutral-900/60' };
+    if (diffDays === 1) return { text: 'Due tomorrow', color: 'text-muted-foreground bg-secondary border-border' };
+    return { text: `Due in ${diffDays} days`, color: 'text-muted-foreground bg-card/40 border-border/60' };
   }
 
   function getLastRemindedText(lastRemindedAtStr: string | null) {
@@ -203,13 +193,17 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   }
 
   const STATUS_STYLES: Record<string, string> = {
-    draft: 'bg-neutral-800 text-neutral-400 border-neutral-700',
-    sent: 'bg-blue-950/40 text-blue-400 border-blue-900/50',
-    due_soon: 'bg-yellow-950/40 text-yellow-400 border-yellow-900/50',
-    overdue: 'bg-red-500/[0.1] text-red-400 border-red-500/[0.2]',
-    paid: 'bg-green-950/40 text-green-400 border-green-900/50',
-    archived: 'bg-neutral-800/50 text-neutral-500 border-neutral-700/50',
+    draft: 'bg-accent text-muted-foreground border-border',
+    sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+    due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+    overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+    paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+    archived: 'bg-accent/50 text-muted-foreground border-border',
+    promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+    paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+    partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
   }
+
 
   const STATUS_LABELS: Record<string, string> = {
     draft: 'Draft',
@@ -258,14 +252,14 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           <div className="flex items-center gap-2">
             <Link
               href="/invoices"
-              className="px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-all hover:opacity-80"
+              className="px-3 py-1.5 rounded-lg border text-sm font-medium transition-all hover:opacity-80"
               style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', color: 'var(--user-text)' }}
             >
               View Invoices
             </Link>
             <Link
               href="/invoices?new=true"
-              className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:opacity-90"
+              className="px-3 py-1.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
               style={{ backgroundColor: 'var(--user-accent)', color: '#000' }}
             >
               + Add Invoice
@@ -275,7 +269,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
         {/* 2. Quick Start Banner (empty state) or Summary Cards */}
         <div>
-          {setupPreference !== 'completed' && <QuickStartBanner />}
+          {setupPreference !== 'completed' && stats.totalInvoiceCount === 0 && <QuickStartBanner />}
         </div>
         
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -285,11 +279,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             className="border p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
             <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
               {(stats as any).totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
             </p>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.activeInvoicesCount} unpaid invoices
             </p>
           </div>
@@ -299,11 +293,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             className="border p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
             <p className="text-xl font-semibold tracking-tight mt-2 text-rose-500 font-mono">
               {(stats as any).totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
             </p>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.overdueCount} overdue invoices
             </p>
           </div>
@@ -313,11 +307,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             className="border p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due This Week</p>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due This Week</p>
             <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
               {formatDueThisWeekAmount()}
             </p>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {dueThisWeekInvoices.length} due in 7 days
             </p>
           </div>
@@ -327,11 +321,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
             className="border p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Clients to Chase</p>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Clients to Chase</p>
             <p className="text-2xl font-semibold tracking-tight mt-2" style={{ color: 'var(--user-title)' }}>
               {stats.clientsToChaseCount}
             </p>
-            <p className="text-[11px] mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.clientsToChaseCount} follow-ups recommended
             </p>
           </div>
@@ -339,7 +333,6 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-                <UnbilledScratchpad />
                 
                 {/* 3. Who to Chase Today */}
                 <div
@@ -347,11 +340,11 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
-            <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase">
+            <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase">
               Who to Chase Today
             </h3>
             {displayChaseList.length > 0 && (
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
+              <span className="text-xs uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
                 {displayChaseList.length} invoice{displayChaseList.length !== 1 ? 's' : ''}
               </span>
             )}
@@ -364,7 +357,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                   <span className="text-sm" style={{ color: 'var(--user-accent)' }}>&#10003;</span>
                 </div>
                 <h4 className="text-xs font-semibold mb-1" style={{ color: 'var(--user-title)' }}>All clear</h4>
-                <p className="text-[11px] max-w-xs mx-auto" style={{ color: 'var(--user-text)', opacity: 0.7 }}>
+                <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--user-text)', opacity: 0.7 }}>
                   No invoices need chasing right now. When invoices become due soon or overdue, they&apos;ll appear here.
                 </p>
               </div>
@@ -393,19 +386,19 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                             <p className="text-sm font-semibold truncate" style={{ color: 'var(--user-title)' }}>
                               {invoice.client_name}
                             </p>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[10px] font-mono shrink-0" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary border border-border text-xs font-mono shrink-0" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
                               {invoice.invoice_number}
                             </span>
                           </div>
                           {/* Bottom row: Urgency badge + Due date + Last reminded */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border ${urgency.color}`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${urgency.color}`}>
                               {urgency.text}
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900/60 border border-neutral-800/60 text-[10px] font-mono" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary/60 border border-border/60 text-xs font-mono" style={{ color: 'var(--user-text)', opacity: 0.6 }}>
                               {new Date(invoice.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900/40 border border-neutral-800/40 text-[10px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-card/40 border border-border/40 text-xs" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                               {getLastRemindedText(invoice.last_reminder_at)}
                             </span>
                           </div>
@@ -418,14 +411,14 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                         <div className="flex items-center gap-1.5">
                           <Link
                             href={`/invoices/${invoice.id}?reminder=true`}
-                            className="px-2.5 py-1.5 rounded-md text-[10px] font-semibold transition-all hover:opacity-80"
+                            className="px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all hover:opacity-80"
                             style={{ backgroundColor: 'var(--user-accent)', color: '#000' }}
                           >
                             Generate Reminder
                           </Link>
                           <Link
                             href={`/invoices/${invoice.id}`}
-                            className="px-2.5 py-1.5 rounded-md border text-[10px] font-medium transition-all hover:opacity-80"
+                            className="px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all hover:opacity-80"
                             style={{ borderColor: 'var(--user-border)', color: 'var(--user-text)' }}
                           >
                             View Details
@@ -446,10 +439,10 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
-            <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase">
+            <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase">
               Recent Invoices
             </h3>
-            <Link href="/invoices" className="text-[10px] hover:underline" style={{ color: 'var(--user-accent)' }}>
+            <Link href="/invoices" className="text-xs hover:underline" style={{ color: 'var(--user-accent)' }}>
               View all
             </Link>
           </div>
@@ -457,7 +450,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           <div className="mt-4 overflow-x-auto">
             {recentInvoices.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                <p className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                   No invoices created yet.
                 </p>
               </div>
@@ -465,22 +458,22 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b" style={{ borderColor: 'var(--user-border)' }}>
-                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Client</th>
-                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider text-right" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Amount</th>
-                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due Date</th>
-                    <th className="py-2 pr-4 font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Status</th>
+                    <th className="py-2 pr-4 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Client</th>
+                    <th className="py-2 pr-4 font-semibold text-xs uppercase tracking-wider text-right" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Amount</th>
+                    <th className="py-2 pr-4 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due Date</th>
+                    <th className="py-2 pr-4 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: 'var(--user-border)', opacity: 0.8 }}>
                   {recentInvoices.map((inv: any) => (
                     <tr key={inv.id} className="transition-colors hover:opacity-80">
-                      <td className="py-2.5 pr-4 text-[11px]" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
-                      <td className="py-2.5 pr-4 text-[11px] font-medium font-mono text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
-                      <td className="py-2.5 pr-4 text-[11px] font-mono" style={{ color: 'var(--user-text)' }}>
+                      <td className="py-2.5 pr-4 text-sm" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
+                      <td className="py-2.5 pr-4 text-sm font-medium font-mono text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
+                      <td className="py-2.5 pr-4 text-sm font-mono" style={{ color: 'var(--user-text)' }}>
                         {new Date(inv.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </td>
                       <td className="py-2.5 pr-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded border ${STATUS_STYLES[inv.status] ?? ''}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${STATUS_STYLES[inv.status] ?? ''}`}>
                           {STATUS_LABELS[inv.status] ?? inv.status}
                         </span>
                       </td>
@@ -497,7 +490,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           className="border p-6 mt-8"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
-          <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
+          <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
             Recent Reminder Activity
           </h3>
 
@@ -507,7 +500,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg border mb-3" style={{ backgroundColor: 'var(--user-bg)', borderColor: 'var(--user-border)' }}>
                   <span className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.4 }}>&#9993;</span>
                 </div>
-                <p className="text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                <p className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                   No reminder activity yet. Generate a draft to see it here.
                 </p>
               </div>
@@ -538,21 +531,21 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                     </div>
                     <div className="pb-4 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--user-text)' }}>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--user-text)' }}>
                           {activity.description || activity.event_type}
                         </p>
                         {activity.invoice_number && (
-                          <span className="text-[10px] font-mono" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
+                          <span className="text-xs font-mono" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
                             #{activity.invoice_number}
                           </span>
                         )}
                         {activity.tone && (
-                          <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded border capitalize ${toneStyles[activity.tone] ?? ''}`}>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded border capitalize ${toneStyles[activity.tone] ?? ''}`}>
                             {activity.tone.replace('_', ' ')}
                           </span>
                         )}
                       </div>
-                      <p className="text-[9px] mt-0.5 font-mono" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
+                      <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--user-text)', opacity: 0.4 }}>
                         {formatRelativeTime(activity.created_at)}
                       </p>
                     </div>
@@ -571,14 +564,14 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
-            <h3 className="tracking-wider font-semibold text-[10px] text-neutral-500 uppercase">
+            <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase">
               Outstanding Aging
             </h3>
           </div>
 
           <div className="mt-6 space-y-8">
             {Object.keys(agingReport).length === 0 ? (
-              <div className="py-8 text-center text-[11px]" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+              <div className="py-8 text-center text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                 No outstanding aging balances.
               </div>
             ) : (
@@ -599,7 +592,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                 return (
                   <div key={cur} className="space-y-4">
                     {Object.keys(agingReport).length > 1 && (
-                      <h4 className="text-[10px] font-bold font-mono text-zinc-400 uppercase tracking-wider">
+                      <h4 className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">
                         {cur} Aging Portfolio
                       </h4>
                     )}
@@ -610,12 +603,12 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                         return (
                           <div key={b.label} className="space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-zinc-500 font-medium text-[10px]">{b.label}</span>
-                              <span className="font-mono font-semibold text-[10px]" style={{ color: 'var(--user-title)' }}>
+                              <span className="text-muted-foreground font-medium text-xs">{b.label}</span>
+                              <span className="font-mono font-semibold text-xs" style={{ color: 'var(--user-title)' }}>
                                 {formatCurrencyWithCode(b.value, cur)}
                               </span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-zinc-950/80 overflow-hidden border border-white/[0.03]">
+                            <div className="w-full h-1.5 rounded-full bg-background/80 overflow-hidden border border-white/[0.03]">
                               <div
                                 className="h-full rounded-full transition-all duration-500"
                                 style={{
@@ -656,7 +649,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
               </h3>
               <button 
                 onClick={() => setSelectedActivity(null)}
-                className="text-xs hover:opacity-80 px-2 py-1 rounded bg-neutral-900 border border-neutral-800 text-zinc-400 cursor-pointer"
+                className="text-xs hover:opacity-80 px-2 py-1 rounded bg-secondary border border-border text-muted-foreground cursor-pointer"
               >
                 Close
               </button>
@@ -664,31 +657,31 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
             <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               <div className="space-y-1">
-                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Activity Description</p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Activity Description</p>
                 <p className="text-xs" style={{ color: 'var(--user-title)' }}>{selectedActivity.description}</p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Event Type</p>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-[10px] font-mono capitalize">
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Event Type</p>
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-secondary border border-border text-xs font-mono capitalize">
                   {selectedActivity.event_type.replace('_', ' ')}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] text-neutral-500 uppercase font-semibold">Timestamp</p>
+                <p className="text-xs text-muted-foreground uppercase font-semibold">Timestamp</p>
                 <p className="text-xs font-mono">{new Date(selectedActivity.created_at).toLocaleString()}</p>
               </div>
 
               {selectedActivity.mail_subject ? (
                 <>
                   <div className="space-y-1 pt-2 border-t" style={{ borderColor: 'var(--user-border)' }}>
-                    <p className="text-[10px] text-neutral-500 uppercase font-semibold">Archived Subject</p>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">Archived Subject</p>
                     <p className="text-xs font-semibold" style={{ color: 'var(--user-title)' }}>{selectedActivity.mail_subject}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] text-neutral-500 uppercase font-semibold">Archived Body Text</p>
-                    <div className="p-4 bg-zinc-950/60 rounded-lg border border-white/[0.03] text-xs font-sans whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">Archived Body Text</p>
+                    <div className="p-4 bg-background/60 rounded-lg border border-white/[0.03] text-xs font-sans whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
                       {selectedActivity.mail_body}
                     </div>
                   </div>

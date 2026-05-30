@@ -4,6 +4,12 @@ import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 
+// M18: UUID validation helper
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isValidUUID(id: string): boolean {
+  return UUID_REGEX.test(id)
+}
+
 export async function createInvoiceAction(formData: FormData) {
   try {
     const clientId = formData.get('clientId') as string
@@ -41,6 +47,7 @@ export async function createInvoiceAction(formData: FormData) {
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
     if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType === 'percentage' && discountAmount > 100) return { error: 'Percentage discount cannot exceed 100%.' }
     if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
     if (status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
@@ -76,29 +83,54 @@ export async function createInvoiceAction(formData: FormData) {
       return { error: 'Invalid client reference.' }
     }
 
-    const { data, error } = await supabase
-      .from('invoices')
-      .insert({
-        user_id: user.id,
-        client_id: clientId,
-        invoice_number: finalInvoiceNumber.trim(),
-        title: title?.trim() || null,
-        description: description?.trim() || null,
-        amount,
-        currency,
-        status: status as any,
-        due_date: dueDate,
-        notes: notes?.trim() || null,
-        payment_link: paymentLink?.trim() || null,
-        po_number: poNumber?.trim() || null,
-        line_items: lineItems,
-        tax_rate: taxRate,
-        tax_label: taxLabel.trim() || 'Tax',
-        discount_amount: discountAmount,
-        discount_type: discountType,
-      })
-      .select()
-      .single()
+    // H6: Retry mechanism for unique constraint violation on invoice_number
+    const MAX_RETRIES = 3
+    let data: any = null
+    let error: any = null
+    let currentInvoiceNumber = finalInvoiceNumber.trim()
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const result = await supabase
+        .from('invoices')
+        .insert({
+          user_id: user.id,
+          client_id: clientId,
+          invoice_number: currentInvoiceNumber,
+          title: title?.trim() || null,
+          description: description?.trim() || null,
+          amount,
+          currency,
+          status: status as any,
+          due_date: dueDate,
+          notes: notes?.trim() || null,
+          payment_link: paymentLink?.trim() || null,
+          po_number: poNumber?.trim() || null,
+          line_items: lineItems,
+          tax_rate: taxRate,
+          tax_label: taxLabel.trim() || 'Tax',
+          discount_amount: discountAmount,
+          discount_type: discountType,
+        })
+        .select()
+        .single()
+
+      data = result.data
+      error = result.error
+
+      // If no error or error is not a unique constraint violation, break
+      if (!error || !error.message?.includes('unique constraint') || !error.message?.includes('invoice_number')) {
+        break
+      }
+
+      // Unique constraint violation - get a fresh number and retry
+      console.warn(`Invoice number collision on attempt ${attempt + 1}, retrying...`)
+      const freshNumber = await getNextInvoiceNumberAction()
+      if (freshNumber.success && freshNumber.data) {
+        currentInvoiceNumber = freshNumber.data
+      } else {
+        break // Can't get a new number, fail with original error
+      }
+    }
 
     if (error) return { error: sanitizeDatabaseError(error) }
 
@@ -125,25 +157,29 @@ export async function getNextInvoiceNumberAction() {
     const prefix = profile?.global_rules?.invoice_prefix?.trim() || 'INV-'
     const format = profile?.global_rules?.invoice_format || 'PREFIX-[SEQUENCE]'
 
-    // Fetch highest invoice number created by this user (including soft deleted to prevent gaps!)
-    const { data: lastInvoice } = await supabase
+    // H6: Fetch highest invoice number by parsing all invoice numbers
+    // This is more robust than ordering by created_at which can be wrong
+    // if invoices are created out of order or restored from trash
+    const { data: allInvoices } = await supabase
       .from('invoices')
       .select('invoice_number')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
 
     const yearStr = new Date().getFullYear().toString()
-    let nextSeq = 1
+    let maxSeq = 0
 
-    if (lastInvoice?.invoice_number) {
-      const numMatch = lastInvoice.invoice_number.match(/(\d+)$/)
-      if (numMatch) {
-        nextSeq = parseInt(numMatch[1], 10) + 1
+    if (allInvoices && allInvoices.length > 0) {
+      for (const inv of allInvoices) {
+        if (!inv.invoice_number) continue
+        const numMatch = inv.invoice_number.match(/(\d+)$/)
+        if (numMatch) {
+          const seq = parseInt(numMatch[1], 10)
+          if (seq > maxSeq) maxSeq = seq
+        }
       }
     }
 
+    const nextSeq = maxSeq + 1
     const seqPad = String(nextSeq).padStart(3, '0')
 
     let nextNumber = ''
@@ -192,6 +228,8 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
 
 export async function getInvoiceDetailAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -201,6 +239,7 @@ export async function getInvoiceDetailAction(invoiceId: string) {
       .select('*, clients (*)')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .single()
 
     if (error) return { error: sanitizeDatabaseError(error) }
@@ -213,6 +252,8 @@ export async function getInvoiceDetailAction(invoiceId: string) {
 
 export async function updateInvoiceAction(invoiceId: string, formData: FormData) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const clientId = formData.get('clientId') as string
     const invoiceNumber = formData.get('invoiceNumber') as string
     const title = formData.get('title') as string
@@ -233,6 +274,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     const discountAmount = parseFloat(formData.get('discountAmount') as string) || 0
     const discountType = (formData.get('discountType') as string) || 'flat'
     const status = formData.get('status') as string | null
+    const poNumber = formData.get('poNumber') as string | null  // H7: Read PO number from form
 
     if (!clientId) return { error: 'Client is required.' }
     if (!invoiceNumber || invoiceNumber.trim().length === 0) return { error: 'Invoice number is required.' }
@@ -243,6 +285,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     if (currency.trim().length > 10) return { error: 'Currency must be 10 characters or less.' }
     if (isNaN(taxRate) || taxRate < 0 || taxRate > 100) return { error: 'Tax rate must be between 0 and 100.' }
     if (isNaN(discountAmount) || discountAmount < 0) return { error: 'Discount must be 0 or greater.' }
+    if (discountType === 'percentage' && discountAmount > 100) return { error: 'Percentage discount cannot exceed 100%.' }
     if (discountType !== 'flat' && discountType !== 'percentage') return { error: 'Invalid discount type.' }
     if (status && status !== 'draft' && status !== 'sent') return { error: 'Invalid invoice status.' }
     if (!dueDate) return { error: 'Due date is required.' }
@@ -289,6 +332,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
         due_date: dueDate,
         notes: notes?.trim() || null,
         payment_link: paymentLink?.trim() || null,
+        po_number: poNumber?.trim() || null,  // H7: Include PO number in update
         line_items: lineItems,
         tax_rate: taxRate,
         tax_label: taxLabel.trim() || 'Tax',
@@ -314,6 +358,8 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
 
 export async function deleteInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -357,6 +403,8 @@ export async function getDeletedInvoicesAction() {
 
 export async function restoreInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -380,9 +428,27 @@ export async function restoreInvoiceAction(invoiceId: string) {
 
 export async function hardDeleteInvoiceAction(invoiceId: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // H3: Verify the invoice is soft-deleted before allowing hard delete
+    const { data: invoice, error: fetchError } = await supabase
+      .from('invoices')
+      .select('deleted_at')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !invoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    if (invoice.deleted_at === null) {
+      return { error: 'Item must be moved to trash before permanently deleting.' }
+    }
 
     const { error } = await supabase
       .from('invoices')
@@ -401,9 +467,27 @@ export async function hardDeleteInvoiceAction(invoiceId: string) {
 
 export async function markInvoicePaidAction(invoiceId: string, paidDate?: string) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // M16: Check current status to prevent double-pay
+    const { data: currentInvoice, error: fetchError } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !currentInvoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    if (currentInvoice.status === 'paid') {
+      return { error: 'Invoice is already marked as paid.' }
+    }
 
     const paid = paidDate || new Date().toISOString().split('T')[0]
 
@@ -444,14 +528,88 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
   }
 }
 
+/** Valid invoice status values that can be set via updateInvoiceStatusAction */
+const VALID_UPDATE_STATUSES = [
+  'draft', 'sent', 'due_soon', 'overdue', 'paid', 'partial', 'promised', 'paused', 'archived'
+] as const
+
+/** H1: Valid status transitions - defines which statuses can transition to which */
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  'draft':    ['sent'],
+  'sent':     ['paid', 'partial', 'overdue', 'due_soon', 'promised', 'paused', 'archived'],
+  'due_soon': ['paid', 'partial', 'overdue', 'promised', 'paused', 'archived'],
+  'overdue':  ['paid', 'partial', 'promised', 'paused', 'archived'],
+  'partial':  ['paid', 'overdue', 'promised', 'paused', 'archived'],
+  'promised': ['paid', 'partial', 'overdue', 'paused', 'archived'],
+  'paused':   ['sent', 'paid', 'partial', 'overdue', 'due_soon', 'promised', 'archived'],
+  'paid':     [],      // Terminal state - no transitions allowed
+  'archived': [],      // Terminal state - no transitions allowed
+}
+
 export async function updateInvoiceStatusAction(invoiceId: string, status: string, amountPaid: number = 0) {
   try {
+    if (!isValidUUID(invoiceId)) return { error: 'Invalid invoice ID format.' }
+
+    // C2: Validate status against allowed values
+    if (!VALID_UPDATE_STATUSES.includes(status as typeof VALID_UPDATE_STATUSES[number])) {
+      return { error: `Invalid invoice status. Allowed values: ${VALID_UPDATE_STATUSES.join(', ')}` }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const updateData: any = { status }
+    // H1: Fetch current status to validate the transition
+    const { data: currentInvoice, error: fetchCurrentError } = await supabase
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchCurrentError || !currentInvoice) {
+      return { error: 'Invoice not found.' }
+    }
+
+    const currentStatus = currentInvoice.status
+    const allowedTransitions = VALID_TRANSITIONS[currentStatus] || []
+
+    if (!allowedTransitions.includes(status)) {
+      return {
+        error: `Cannot change status from '${currentStatus}' to '${status}'. ` +
+          (allowedTransitions.length > 0
+            ? `Allowed transitions: ${allowedTransitions.join(', ')}`
+            : `'${currentStatus}' is a terminal status and cannot be changed.`)
+      }
+    }
+
+    // C3: When status is 'partial', validate amountPaid against the invoice's total amount
+    const updateData: Record<string, unknown> = { status }
     if (status === 'partial') {
+      // Validate amountPaid is a valid number
+      if (typeof amountPaid !== 'number' || isNaN(amountPaid) || !isFinite(amountPaid)) {
+        return { error: 'Amount paid must be a valid number.' }
+      }
+      if (amountPaid <= 0) {
+        return { error: 'Amount paid must be greater than zero.' }
+      }
+
+      // Fetch the invoice to validate against its total amount
+      const { data: invoice, error: fetchError } = await supabase
+        .from('invoices')
+        .select('amount')
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError || !invoice) {
+        return { error: 'Invoice not found.' }
+      }
+
+      if (amountPaid >= invoice.amount) {
+        return { error: `Amount paid (${amountPaid}) must be less than the invoice total (${invoice.amount}). Use "Mark as Paid" for full payment.` }
+      }
+
       updateData.amount_paid = amountPaid
     } else if (status === 'paid') {
       updateData.paid_date = new Date().toISOString().split('T')[0]

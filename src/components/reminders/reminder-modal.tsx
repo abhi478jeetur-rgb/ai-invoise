@@ -96,6 +96,8 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     if (!open) {
       setDraft(null)
       setError(null)
+      setTone('professional')
+      setCustomInstructions('')
       setEditMode(false)
       setEditedBody('')
       setCopiedField(null)
@@ -121,10 +123,17 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
   }
 
   async function handleCopy(field: 'subject' | 'body', text: string) {
-    await navigator.clipboard.writeText(text)
-    toast.success('AI Reminder draft copied to clipboard!')
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('AI Reminder draft copied to clipboard!')
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch {
+      toast.error('Failed to copy to clipboard', {
+        description: 'Your browser may not support clipboard access. Try copying manually.'
+      })
+      return
+    }
 
     // Log copy event silently
     if (draft) {
@@ -136,7 +145,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     if (!draft) return
     setMarkingSent(true)
 
-    await logReminderEventAction(
+    const result = await logReminderEventAction(
       invoiceId,
       'marked_sent',
       draft.id,
@@ -144,17 +153,25 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     )
 
     setMarkingSent(false)
+
+    if (result && 'error' in result) {
+      toast.error('Failed to mark as sent', {
+        description: result.error || 'Please try again.'
+      })
+      return
+    }
+
     handleClose(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-w-[95vw] border-border bg-card backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-neutral-100">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {draft ? 'Reminder Draft' : 'Generate Reminder'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-sm text-muted-foreground">
             {draft
               ? `AI-generated ${tone} reminder for Invoice ${invoiceNumber}`
               : `Create an AI-drafted follow-up for Invoice ${invoiceNumber}`}
@@ -172,7 +189,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
 
             {/* Tone Selector */}
             <div className="space-y-2">
-              <Label className="text-neutral-400 text-sm">Select Tone</Label>
+              <Label className="text-muted-foreground text-sm">Select Tone</Label>
               <div className="grid grid-cols-2 gap-2">
                 {TONE_OPTIONS.map((option) => (
                   <button
@@ -181,14 +198,14 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                     onClick={() => setTone(option.value)}
                     className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                       tone === option.value
-                        ? 'border-neutral-600 bg-neutral-800/80'
-                        : 'border-neutral-800/60 bg-neutral-900/30 hover:bg-neutral-900/50'
+                        ? 'border-neutral-600 bg-accent/80'
+                        : 'border-border/60 bg-secondary/30 hover:bg-card/50'
                     }`}
                   >
-                    <p className={`text-sm font-medium ${tone === option.value ? 'text-neutral-100' : 'text-neutral-300'}`}>
+                    <p className={`text-sm font-medium ${tone === option.value ? 'text-foreground' : 'text-foreground/80'}`}>
                       {option.label}
                     </p>
-                    <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                       {option.description}
                     </p>
                   </button>
@@ -198,15 +215,15 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
 
             {/* Custom Instructions */}
             <div className="space-y-1.5">
-              <Label className="text-neutral-400 text-sm">
-                Custom Instructions <span className="text-neutral-600">(optional)</span>
+              <Label className="text-muted-foreground text-sm">
+                Custom Instructions <span className="text-muted-foreground/60">(optional)</span>
               </Label>
               <Textarea
                 value={customInstructions}
                 onChange={(e) => setCustomInstructions(e.target.value)}
                 placeholder="e.g., Mention the updated bank details, keep it under 3 sentences..."
                 rows={3}
-                className="border-neutral-800 bg-neutral-950 text-neutral-200 placeholder:text-neutral-600 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none text-sm"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus-visible:border-border focus-visible:ring-ring/50 resize-none text-sm"
               />
             </div>
 
@@ -214,7 +231,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
             <Button
               onClick={handleGenerate}
               disabled={generating}
-              className="w-full h-10 bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {generating ? (
                 <span className="flex items-center gap-2">
@@ -238,32 +255,32 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-neutral-500 mb-1">Invoice</p>
-                <p className="text-sm font-medium text-neutral-300">{invoiceNumber}</p>
+                <p className="text-xs text-muted-foreground mb-1">Invoice</p>
+                <p className="text-sm font-medium text-foreground/80">{invoiceNumber}</p>
               </div>
             </div>
 
             {/* Subject */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-neutral-400 text-sm">Subject</Label>
+                <Label className="text-muted-foreground text-sm">Subject</Label>
                 <button
                   type="button"
                   onClick={() => handleCopy('subject', draft.subject)}
-                  className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
                 >
                   {copiedField === 'subject' ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-              <div className="p-3 rounded-lg border border-neutral-800/60 bg-neutral-900/40">
-                <p className="text-sm text-neutral-200">{draft.subject}</p>
+              <div className="p-3 rounded-lg border border-border/60 bg-card/40">
+                <p className="text-sm text-foreground">{draft.subject}</p>
               </div>
             </div>
 
             {/* Body */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-neutral-400 text-sm">Email Body</Label>
+                <Label className="text-muted-foreground text-sm">Email Body</Label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -273,14 +290,14 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                       }
                       setEditMode(!editMode)
                     }}
-                    className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                    className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
                   >
                     {editMode ? 'Save' : 'Edit'}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleCopy('body', editMode ? editedBody : draft.body)}
-                    className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                    className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors cursor-pointer"
                   >
                     {copiedField === 'body' ? 'Copied!' : 'Copy'}
                   </button>
@@ -291,11 +308,11 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                   value={editedBody}
                   onChange={(e) => setEditedBody(e.target.value)}
                   rows={10}
-                  className="border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none text-sm leading-relaxed"
+                  className="border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50 resize-none text-sm leading-relaxed"
                 />
               ) : (
-                <div className="p-3.5 rounded-lg border border-neutral-800/60 bg-neutral-900/40 max-h-[320px] overflow-y-auto">
-                  <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">
+                <div className="p-3.5 rounded-lg border border-border/60 bg-card/40 max-h-[320px] overflow-y-auto">
+                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                     {draft.body}
                   </p>
                 </div>
@@ -318,7 +335,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                   setError(null)
                   setEditMode(false)
                 }}
-                className="h-9 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 text-sm cursor-pointer"
+                className="h-9 text-muted-foreground hover:text-foreground hover:bg-accent text-sm cursor-pointer"
               >
                 New Draft
               </Button>
@@ -327,12 +344,12 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
             {/* Send Email via... */}
             {clientEmail && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-neutral-500">Send Email via...</p>
+                <p className="text-xs font-medium text-muted-foreground">Send Email via...</p>
                 <div className="flex gap-2">
                   {[
                     { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
                     { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
-                    { key: 'default' as const, label: 'Mail App', color: 'hover:border-neutral-500/40 hover:bg-neutral-500/10' },
+                    { key: 'default' as const, label: 'Mail App', color: 'hover:border-border/40 hover:bg-neutral-500/10' },
                   ].map((provider) => (
                     <a
                       key={provider.key}
@@ -344,7 +361,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/50 px-3 py-2.5 text-xs font-medium text-neutral-300 transition-colors ${provider.color}`}
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-xs font-medium text-foreground/80 transition-colors ${provider.color}`}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       {provider.label}

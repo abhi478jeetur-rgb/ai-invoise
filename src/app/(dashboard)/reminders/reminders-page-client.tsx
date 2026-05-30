@@ -62,13 +62,17 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ]
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-zinc-700/50 text-zinc-400',
-  sent: 'bg-blue-500/15 text-blue-400',
-  due_soon: 'bg-amber-500/15 text-amber-400',
-  overdue: 'bg-red-500/[0.1] text-red-400',
-  paid: 'bg-emerald-500/15 text-emerald-400',
-  archived: 'bg-zinc-700/50 text-zinc-500',
+  draft: 'bg-accent text-muted-foreground border-border',
+  sent: 'bg-blue-600 text-white border-blue-700 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50',
+  due_soon: 'bg-amber-500 text-white border-amber-600 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-900/50',
+  overdue: 'bg-red-600 text-white border-red-700 dark:bg-red-500/[0.1] dark:text-red-400 dark:border-red-500/[0.2]',
+  paid: 'bg-emerald-600 text-white border-emerald-700 dark:bg-green-950/40 dark:text-green-400 dark:border-green-900/50',
+  archived: 'bg-accent/50 text-muted-foreground border-border',
+  promised: 'bg-indigo-600 text-white border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50',
+  paused: 'bg-slate-600 text-white border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-900/50',
+  partial: 'bg-amber-500 text-white border-amber-600 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50',
 }
+
 
 const TONE_LABELS: Record<string, string> = {
   friendly: 'Friendly',
@@ -198,7 +202,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
       const { tone } = getFollowupRecommendation(selectedInvoice)
       setSelectedTone(tone as ToneKey)
     }
-  }, [selectedInvoiceId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedInvoiceId])
 
   // Reset workspace when invoice changes
   useEffect(() => {
@@ -338,8 +342,8 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-100">AI Reminders</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-semibold text-foreground">AI Reminders</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Select an invoice to generate AI-powered follow-up emails.
         </p>
       </div>
@@ -358,16 +362,16 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
         {/* Left Column */}
         <div className="flex flex-col gap-4">
           {/* Search & Filters */}
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
+          <div className="rounded-lg border border-border bg-card/50">
             <div className="p-3 space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search invoices..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-md border border-zinc-800 bg-zinc-950 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-600 focus:outline-none"
+                  className="w-full rounded-md border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none"
                 />
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -378,8 +382,8 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                     onClick={() => setActiveFilter(filter.key)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       activeFilter === filter.key
-                        ? 'bg-zinc-700 text-zinc-200'
-                        : 'bg-zinc-800/50 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                        ? 'bg-accent text-foreground'
+                        : 'bg-accent/50 text-muted-foreground hover:bg-accent hover:text-foreground/80'
                     }`}
                   >
                     {filter.label}
@@ -389,13 +393,13 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
             </div>
 
             {/* Invoice List */}
-            <div className="max-h-[400px] overflow-y-auto border-t border-zinc-800">
+            <div className="max-h-[400px] overflow-y-auto border-t border-border">
               {filteredInvoices.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                   {initialInvoices.length === 0 ? 'No invoices found.' : 'No invoices match your filters.'}
                 </div>
               ) : (
-                <ul className="divide-y divide-zinc-800">
+                <ul className="divide-y divide-border">
                   {filteredInvoices.map((invoice) => {
                     const isSelected = invoice.id === selectedInvoiceId
                     return (
@@ -404,22 +408,22 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                           type="button"
                           onClick={() => setSelectedInvoiceId(invoice.id)}
                           className={`flex w-full flex-col gap-1 px-4 py-4 text-left transition-colors ${
-                            isSelected ? 'bg-zinc-800/80' : 'hover:bg-zinc-800/40'
+                            isSelected ? 'bg-accent/80' : 'hover:bg-accent/40'
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-zinc-200">
+                            <span className="text-sm font-medium text-foreground">
                               {invoice.invoice_number}
                             </span>
                             <span
                               className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                                STATUS_STYLES[invoice.status] ?? 'bg-zinc-700/50 text-zinc-400'
+                                STATUS_STYLES[invoice.status] ?? 'bg-muted text-muted-foreground'
                               }`}
                             >
                               {invoice.status.replace('_', ' ')}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-zinc-500">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>{invoice.clients?.client_name ?? 'Unknown client'}</span>
                             <span>
                               {invoice.currency} {Number(invoice.amount).toFixed(2)}
@@ -436,12 +440,12 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
 
           {/* Selected Invoice Context Card */}
           {selectedInvoice && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 space-y-4">
-              <h3 className="text-sm font-medium text-zinc-300">Invoice Details</h3>
+            <div className="rounded-lg border border-border bg-card/50 p-4 space-y-4">
+              <h3 className="text-sm font-medium text-foreground/80">Invoice Details</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-zinc-500">Due Date</span>
-                  <p className="text-zinc-200">
+                  <span className="text-muted-foreground">Due Date</span>
+                  <p className="text-foreground">
                     {new Date(selectedInvoice.due_date + 'T00:00:00').toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -450,18 +454,18 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                   </p>
                 </div>
                 <div>
-                  <span className="text-zinc-500">Amount</span>
-                  <p className="text-zinc-200">
+                  <span className="text-muted-foreground">Amount</span>
+                  <p className="text-foreground">
                     {selectedInvoice.currency} {Number(selectedInvoice.amount).toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-zinc-500">Reminders Sent</span>
-                  <p className="text-zinc-200">{selectedInvoice.reminder_count ?? 0}</p>
+                  <span className="text-muted-foreground">Reminders Sent</span>
+                  <p className="text-foreground">{selectedInvoice.reminder_count ?? 0}</p>
                 </div>
                 <div>
-                  <span className="text-zinc-500">Last Reminded</span>
-                  <p className="text-zinc-200">
+                  <span className="text-muted-foreground">Last Reminded</span>
+                  <p className="text-foreground">
                     {selectedInvoice.last_reminder_at
                       ? new Date(selectedInvoice.last_reminder_at).toLocaleDateString('en-US', {
                           month: 'short',
@@ -476,13 +480,13 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
               {(() => {
                 const { message, tone } = getFollowupRecommendation(selectedInvoice)
                 return (
-                  <div className="rounded-md border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+                  <div className="rounded-md border border-border bg-background/50 px-3 py-2.5">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                       <div>
-                        <p className="text-xs text-zinc-300">{message}</p>
-                        <p className="mt-0.5 text-xs text-zinc-500">
-                          Suggested tone: <span className="text-zinc-400">{TONE_LABELS[tone] ?? tone}</span>
+                        <p className="text-xs text-foreground/80">{message}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Suggested tone: <span className="text-muted-foreground">{TONE_LABELS[tone] ?? tone}</span>
                         </p>
                       </div>
                     </div>
@@ -494,13 +498,13 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
 
           {/* Reminder History Timeline */}
           {selectedInvoice && (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
-              <h3 className="mb-3 text-sm font-medium text-zinc-300">Reminder History</h3>
+            <div className="rounded-lg border border-border bg-card/50 p-4">
+              <h3 className="mb-3 text-sm font-medium text-foreground/80">Reminder History</h3>
 
               {historyLoading ? (
                 <div className="flex items-center justify-center py-6">
-                  <Clock className="h-4 w-4 animate-spin text-zinc-500" />
-                  <span className="ml-2 text-xs text-zinc-500">Loading history...</span>
+                  <Clock className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-xs text-muted-foreground">Loading history...</span>
                 </div>
               ) : historyError ? (
                 <div className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
@@ -508,27 +512,27 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                 </div>
               ) : history.length === 0 ? (
                 <div className="py-6 text-center">
-                  <Clock className="mx-auto h-5 w-5 text-zinc-700" />
-                  <p className="mt-2 text-xs text-zinc-600">No reminder activity yet.</p>
+                  <Clock className="mx-auto h-5 w-5 text-muted-foreground/40" />
+                  <p className="mt-2 text-xs text-muted-foreground/60">No reminder activity yet.</p>
                 </div>
               ) : (
                 <div className="relative pl-4">
-                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-zinc-800" />
+                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-accent" />
 
                   <ul className="space-y-3">
                     {history.map((event) => {
                       const Icon = EVENT_ICONS[event.event_type] ?? Clock
                       return (
                         <li key={event.id} className="relative flex items-start gap-3">
-                          <div className="relative z-10 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-zinc-900 ring-1 ring-zinc-700">
-                            <Icon className="h-2.5 w-2.5 text-zinc-400" />
+                          <div className="relative z-10 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
+                            <Icon className="h-2.5 w-2.5 text-muted-foreground" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs text-zinc-300">
+                            <p className="text-xs text-foreground/80">
                               {event.event_type === 'draft_generated' && (
                                 <>
                                   Generated{' '}
-                                  <span className="text-zinc-400">
+                                  <span className="text-muted-foreground">
                                     {event.tone ? (TONE_LABELS[event.tone] ?? event.tone) : 'reminder'}
                                   </span>{' '}
                                   draft
@@ -538,11 +542,11 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                               {event.event_type === 'marked_sent' && 'Marked as sent'}
                             </p>
                             {event.draft_subject && (
-                              <p className="mt-0.5 truncate text-xs text-zinc-600">
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground/60">
                                 {event.draft_subject}
                               </p>
                             )}
-                            <p className="mt-0.5 text-[11px] text-zinc-600">
+                            <p className="mt-0.5 text-[11px] text-muted-foreground/60">
                               {formatRelativeDate(event.created_at)}
                             </p>
                           </div>
@@ -557,11 +561,11 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
         </div>
 
         {/* Right Column — Workspace */}
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
+        <div className="rounded-lg border border-border bg-card/50">
           {!selectedInvoice ? (
             <div className="flex h-full min-h-[300px] items-center justify-center px-6 text-center">
               <div>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   Select an invoice to begin drafting follow-ups.
                 </p>
               </div>
@@ -570,10 +574,10 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
             <div className="p-6 space-y-6">
               {/* Header */}
               <div>
-                <h3 className="text-lg font-medium text-zinc-100">
+                <h3 className="text-lg font-medium text-foreground">
                   {selectedInvoice.invoice_number}
                 </h3>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {selectedInvoice.clients?.client_name ?? 'Unknown client'} &middot;{' '}
                   {selectedInvoice.currency} {Number(selectedInvoice.amount).toFixed(2)}
                 </p>
@@ -581,7 +585,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
 
               {/* Tone Preset Selection */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                <label className="mb-2 block text-sm font-medium text-foreground/80">
                   Select Tone
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -596,8 +600,8 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                         onClick={() => setSelectedTone(preset.key)}
                         className={`relative rounded-lg border px-3 py-2.5 text-left transition-colors ${
                           isSelected
-                            ? 'border-zinc-500 bg-zinc-800'
-                            : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+                            ? 'border-ring bg-accent'
+                            : 'border-border bg-background/50 hover:border-border'
                         }`}
                       >
                         {isRecommended && (
@@ -605,10 +609,10 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                             Recommended
                           </span>
                         )}
-                        <p className={`text-xs font-medium ${isSelected ? 'text-zinc-100' : 'text-zinc-300'}`}>
+                        <p className={`text-xs font-medium ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
                           {preset.label}
                         </p>
-                        <p className="mt-0.5 text-[11px] leading-tight text-zinc-500">
+                        <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
                           {preset.sub}
                         </p>
                       </button>
@@ -622,7 +626,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                 type="button"
                 onClick={handleGenerate}
                 disabled={generating || needsSetup}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {generating ? (
                   <>
@@ -646,17 +650,17 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
 
               {/* Generating Skeleton */}
               {generating && (
-                <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
+                <div className="space-y-3 rounded-lg border border-border bg-background/50 p-4">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-accent" />
                   <div className="space-y-2">
-                    <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-                    <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-                    <div className="h-3 w-5/6 animate-pulse rounded bg-zinc-800/70" />
-                    <div className="h-3 w-full animate-pulse rounded bg-zinc-800/70" />
-                    <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-800/70" />
+                    <div className="h-3 w-full animate-pulse rounded bg-accent/70" />
+                    <div className="h-3 w-full animate-pulse rounded bg-accent/70" />
+                    <div className="h-3 w-5/6 animate-pulse rounded bg-accent/70" />
+                    <div className="h-3 w-full animate-pulse rounded bg-accent/70" />
+                    <div className="h-3 w-2/3 animate-pulse rounded bg-accent/70" />
                   </div>
                   <div className="pt-2">
-                    <div className="h-3 w-1/2 animate-pulse rounded bg-zinc-800/50" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-accent/50" />
                   </div>
                 </div>
               )}
@@ -664,7 +668,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
               {/* Draft Variant Cards */}
               {hasDrafts && !generating && (
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  <label className="mb-2 block text-sm font-medium text-foreground/80">
                     Choose a Variant
                   </label>
                   <div className="grid gap-2 sm:grid-cols-3">
@@ -677,20 +681,20 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                           onClick={() => selectVariant(drafts, draft.variantIndex)}
                           className={`rounded-lg border p-3 text-left transition-colors ${
                             isSelected
-                              ? 'border-zinc-400 bg-zinc-800 ring-1 ring-zinc-500'
-                              : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+                              ? 'border-ring bg-accent ring-1 ring-ring'
+                              : 'border-border bg-background/50 hover:border-border'
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <FileText className="h-3.5 w-3.5 text-zinc-500" />
-                            <span className={`text-xs font-medium ${isSelected ? 'text-zinc-100' : 'text-zinc-300'}`}>
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className={`text-xs font-medium ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
                               Variant {draft.variantIndex + 1}: {VARIANT_LABELS[draft.variantIndex] ?? 'Draft'}
                             </span>
                           </div>
-                          <p className="mt-1.5 truncate text-xs text-zinc-500">
+                          <p className="mt-1.5 truncate text-xs text-muted-foreground">
                             {draft.subject}
                           </p>
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-zinc-600">
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/60">
                             {draft.body.slice(0, 100)}...
                           </p>
                         </button>
@@ -704,38 +708,38 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
               {selectedDraft && !generating && (
                 <div className="space-y-4">
                   {/* Email Editor */}
-                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 space-y-3">
+                  <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-zinc-500" />
-                      <span className="text-sm font-medium text-zinc-300">Email Draft</span>
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground/80">Email Draft</span>
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-xs text-zinc-500">Subject</label>
+                      <label className="mb-1 block text-xs text-muted-foreground">Subject</label>
                       <input
                         type="text"
                         value={editSubject}
                         onChange={(e) => setEditSubject(e.target.value)}
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                        className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-xs text-zinc-500">Body</label>
+                      <label className="mb-1 block text-xs text-muted-foreground">Body</label>
                       <textarea
                         value={editBody}
                         onChange={(e) => setEditBody(e.target.value)}
                         rows={10}
-                        className="w-full resize-y rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm leading-relaxed text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                        className="w-full resize-y rounded-md border border-border bg-secondary px-3 py-2 text-sm leading-relaxed text-foreground focus:border-ring focus:outline-none"
                       />
                     </div>
                   </div>
 
                   {/* SMS / WhatsApp Version */}
-                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 space-y-3">
+                  <div className="rounded-lg border border-border bg-background/50 p-4 space-y-3">
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-zinc-500" />
-                      <span className="text-sm font-medium text-zinc-300">Short SMS / WhatsApp Version</span>
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground/80">Short SMS / WhatsApp Version</span>
                     </div>
 
                     <div>
@@ -743,7 +747,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                         value={editSms}
                         onChange={(e) => setEditSms(e.target.value)}
                         rows={3}
-                        className="w-full resize-y rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm leading-relaxed text-zinc-200 focus:border-zinc-600 focus:outline-none"
+                        className="w-full resize-y rounded-md border border-border bg-secondary px-3 py-2 text-sm leading-relaxed text-foreground focus:border-ring focus:outline-none"
                       />
                     </div>
                   </div>
@@ -754,7 +758,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                       <button
                         type="button"
                         onClick={handleCopy}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-700"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-accent px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                       >
                         {copied ? (
                           <>
@@ -771,7 +775,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                       <button
                         type="button"
                         onClick={handleMarkSent}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-700"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-accent px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                       >
                         <Send className="h-4 w-4" />
                         Mark as Sent
@@ -794,12 +798,12 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                   {/* Send Email via... */}
                   {selectedInvoice?.clients?.email && (
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-zinc-400">Send Email via...</p>
+                      <p className="text-xs font-medium text-muted-foreground">Send Email via...</p>
                       <div className="flex gap-2">
                         {[
                           { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
                           { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
-                          { key: 'default' as const, label: 'Mail App', color: 'hover:border-zinc-500/40 hover:bg-zinc-500/10' },
+                          { key: 'default' as const, label: 'Mail App', color: 'hover:border-ring/40 hover:bg-zinc-500/10' },
                         ].map((provider) => (
                           <a
                             key={provider.key}
@@ -811,7 +815,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-xs font-medium text-zinc-300 transition-colors ${provider.color}`}
+                            className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-xs font-medium text-foreground/80 transition-colors ${provider.color}`}
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                             {provider.label}

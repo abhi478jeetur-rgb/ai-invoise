@@ -133,14 +133,14 @@ export default function AskLLMSection() {
   ]
 
   return (
-    <div ref={containerRef} className="w-full max-w-4xl mx-auto py-16 px-4 text-center border-t border-neutral-900/60 relative overflow-hidden">
+    <div ref={containerRef} className="w-full max-w-4xl mx-auto py-16 px-4 text-center border-t border-border/60 relative overflow-hidden">
       {/* Dynamic ambient backdrop glowing filter */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-40 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-100 mb-3 relative z-10">
+      <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-3 relative z-10">
         Still wondering if ChaseFree is right for you?
       </h3>
-      <p className="text-xs sm:text-sm text-neutral-500 max-w-xl mx-auto mb-10 relative z-10 leading-relaxed">
+      <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mb-10 relative z-10 leading-relaxed">
         Check out what your favorite LLM has to say about us, then make an informed decision.
       </p>
 
@@ -154,8 +154,9 @@ export default function AskLLMSection() {
             rel="noopener noreferrer"
             onMouseEnter={(e) => handleMouseEnter(e, llm.color, llm.id)}
             onMouseLeave={handleMouseLeave}
-            className="llm-btn flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-neutral-900 bg-neutral-950/60 backdrop-blur-md text-xs font-semibold text-neutral-300 hover:text-white transition-colors duration-300 shadow-md cursor-pointer select-none"
+            className="llm-btn flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-border bg-background/60 backdrop-blur-md text-xs font-semibold text-foreground/80 hover:text-foreground transition-colors duration-300 shadow-md cursor-pointer select-none"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={llm.iconSrc}
               alt={llm.name}

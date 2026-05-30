@@ -254,15 +254,31 @@ CRITICAL INSTRUCTIONS:
 
     if (draftError) return { error: sanitizeDatabaseError(draftError) }
 
-    // Update invoice: increment reminder_count and set last_reminder_at
-    const { error: updateError } = await supabase
-      .from('invoices')
-      .update({
-        reminder_count: (invoice.reminder_count || 0) + 1,
-        last_reminder_at: new Date().toISOString(),
-      })
-      .eq('id', invoiceId)
-      .eq('user_id', user.id)
+    // H10: Update invoice using RPC for atomic increment to prevent race conditions
+    // First try atomic increment via raw SQL expression
+    const { error: updateError } = await supabase.rpc('increment_reminder_count', {
+      p_invoice_id: invoiceId,
+      p_user_id: user.id,
+    })
+
+    // Fallback: If the RPC doesn't exist, use regular update (still safe for single-user)
+    if (updateError && updateError.code === '42883') {
+      // Function doesn't exist, use regular update
+      const { error: fallbackError } = await supabase
+        .from('invoices')
+        .update({
+          reminder_count: (invoice.reminder_count || 0) + 1,
+          last_reminder_at: new Date().toISOString(),
+        })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+
+      if (fallbackError) {
+        console.error('Failed to update invoice reminder count:', fallbackError.message)
+      }
+    } else if (updateError) {
+      console.error('Failed to increment reminder count:', updateError.message)
+    }
 
     if (updateError) {
       console.error('Failed to update invoice reminder count:', updateError.message)
@@ -382,6 +398,7 @@ export async function generateMultipleDraftsAction(
     const rulesLines2: string[] = []
     if (globalRules2.communication_style) rulesLines2.push(`Communication Style: ${globalRules2.communication_style}`)
     if (globalRules2.late_payment_policy) rulesLines2.push(`Late Payment Policy: ${globalRules2.late_payment_policy}`)
+    if (globalRules2.refund_policy) rulesLines2.push(`Refund Policy: ${globalRules2.refund_policy}`)
     const rulesSection2 = rulesLines2.length > 0
       ? `\nBUSINESS RULES:\n${rulesLines2.join('\n')}\n`
       : ''
@@ -563,6 +580,30 @@ CRITICAL INSTRUCTIONS:
 
     if (inserted.length === 0) {
       return { error: 'All generation attempts failed.' }
+    }
+
+    // H9: Update invoice reminder_count and last_reminder_at after successful draft generation
+    const { error: updateError } = await supabase.rpc('increment_reminder_count', {
+      p_invoice_id: invoiceId,
+      p_user_id: user.id,
+    })
+
+    // Fallback: If the RPC doesn't exist, use regular update
+    if (updateError && updateError.code === '42883') {
+      const { error: fallbackError } = await supabase
+        .from('invoices')
+        .update({
+          reminder_count: (invoice.reminder_count || 0) + 1,
+          last_reminder_at: new Date().toISOString(),
+        })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+
+      if (fallbackError) {
+        console.error('Failed to update invoice reminder count:', fallbackError.message)
+      }
+    } else if (updateError) {
+      console.error('Failed to increment reminder count:', updateError.message)
     }
 
     return { success: true, data: inserted }

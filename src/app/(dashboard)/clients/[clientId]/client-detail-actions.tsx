@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { ClientForm } from '@/components/clients/client-form'
 import { deleteClientAction } from '@/lib/clients/actions'
 
@@ -32,6 +33,7 @@ export function ClientDetailActions({ client }: ClientDetailActionsProps) {
     if (result.success) {
       router.push('/clients')
     } else {
+      toast.error(result.error || 'Failed to delete client')
       setDeleting(false)
     }
   }
@@ -43,7 +45,7 @@ export function ClientDetailActions({ client }: ClientDetailActionsProps) {
           variant="ghost"
           size="sm"
           onClick={() => setFormOpen(true)}
-          className="text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 cursor-pointer"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
         >
           Edit
         </Button>

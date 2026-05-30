@@ -113,7 +113,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
       setDueDate('')
       setPaymentTerm('custom')
     }
-  }, [open, invoice, isEditing])
+  }, [open, invoice, isEditing, defaultProfile])
 
   function handleTermChange(term: string) {
     setPaymentTerm(term)
@@ -164,12 +164,12 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] border-neutral-800 bg-[#0a0a0a] backdrop-blur-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] border-border bg-card backdrop-blur-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-neutral-100">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {isEditing ? 'Edit Invoice' : 'New Invoice'}
           </DialogTitle>
-          <DialogDescription className="text-sm text-neutral-500">
+          <DialogDescription className="text-sm text-muted-foreground">
             {isEditing
               ? 'Update the invoice details below.'
               : 'Create a new invoice to track payments and generate reminders.'}
@@ -186,35 +186,35 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Client Select */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-neutral-400">
+              <Label className="text-muted-foreground">
                 Client <span className="text-red-500">*</span>
               </Label>
               <button
                 type="button"
                 onClick={() => setShowClientModal(true)}
-                className="text-xs text-neutral-500 hover:text-neutral-200 transition-colors cursor-pointer"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 + Add New Client
               </button>
             </div>
             <Select value={selectedClientId} onValueChange={(val) => setSelectedClientId(val ?? '')} required>
-              <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
+              <SelectTrigger className="h-9 border-border bg-background text-foreground focus:ring-ring/50">
                 <SelectValue placeholder="Select a client">
                   {selectedClientId
                     ? localClients.find((c) => c.id === selectedClientId)?.client_name
                     : undefined}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
+              <SelectContent className="border-border bg-background/95 backdrop-blur-xl">
                 {localClients.map((client) => (
                   <SelectItem
                     key={client.id}
                     value={client.id}
-                    className="text-neutral-200 focus:bg-neutral-800 focus:text-neutral-100"
+                    className="text-foreground focus:bg-accent focus:text-foreground"
                   >
                     {client.client_name}
                     {client.company_name && (
-                      <span className="text-neutral-500 ml-1">({client.company_name})</span>
+                      <span className="text-muted-foreground ml-1">({client.company_name})</span>
                     )}
                   </SelectItem>
                 ))}
@@ -225,7 +225,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Invoice Number & Title */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="invoiceNumber">
+              <Label className="text-muted-foreground" htmlFor="invoiceNumber">
                 Invoice Number <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -235,11 +235,11 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 required
                 defaultValue={invoice?.invoice_number ?? ''}
                 placeholder="INV-001"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="title">
+              <Label className="text-muted-foreground" htmlFor="title">
                 Title
               </Label>
               <Input
@@ -247,7 +247,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="title"
                 defaultValue={invoice?.title ?? ''}
                 placeholder="Website Redesign"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
           </div>
@@ -255,7 +255,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Amount & Currency */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="amount">
+              <Label className="text-muted-foreground" htmlFor="amount">
                 Amount <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -263,21 +263,22 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="amount"
                 type="number"
                 step="0.01"
+                min="0"
                 required
                 defaultValue={invoice?.amount ?? ''}
                 placeholder="2500.00"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="currency">
+              <Label className="text-muted-foreground" htmlFor="currency">
                 Currency
               </Label>
               <select
                 id="currency"
                 name="currency"
                 defaultValue={invoice?.currency ?? defaultProfile?.default_currency ?? 'USD'}
-                className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -286,7 +287,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Tax Label & Rate */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="taxLabel">
+              <Label className="text-muted-foreground" htmlFor="taxLabel">
                 Tax Label
               </Label>
               <Input
@@ -294,11 +295,11 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="taxLabel"
                 defaultValue={invoice?.tax_label ?? defaultProfile?.default_tax_label ?? 'Tax'}
                 placeholder="GST"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="taxRate">
+              <Label className="text-muted-foreground" htmlFor="taxRate">
                 Tax Rate (%)
               </Label>
               <Input
@@ -306,9 +307,11 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="taxRate"
                 type="number"
                 step="0.01"
+                min="0"
+                max="100"
                 defaultValue={invoice?.tax_rate ?? defaultProfile?.default_tax_rate ?? '0'}
                 placeholder="18"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
           </div>
@@ -316,7 +319,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Discount Amount & Type */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="discountAmount">
+              <Label className="text-muted-foreground" htmlFor="discountAmount">
                 Discount
               </Label>
               <Input
@@ -324,20 +327,22 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 name="discountAmount"
                 type="number"
                 step="0.01"
+                min="0"
+                max="100"
                 defaultValue={invoice?.discount_amount ?? '0'}
                 placeholder="100.00"
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="discountType">
+              <Label className="text-muted-foreground" htmlFor="discountType">
                 Discount Type
               </Label>
               <select
                 id="discountType"
                 name="discountType"
                 defaultValue={invoice?.discount_type ?? 'flat'}
-                className="w-full h-9 rounded-md border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-700/50 focus:border-neutral-700">
+                className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
                 <option value="flat">Flat</option>
                 <option value="percentage">Percentage (%)</option>
               </select>
@@ -347,22 +352,22 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
           {/* Payment Terms & Due Date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-neutral-400">Payment Terms</Label>
+              <Label className="text-muted-foreground">Payment Terms</Label>
               <Select value={paymentTerm} onValueChange={(val) => handleTermChange(val ?? 'custom')}>
-                <SelectTrigger className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus:ring-neutral-700/50">
+                <SelectTrigger className="h-9 border-border bg-background text-foreground focus:ring-ring/50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-neutral-800 bg-neutral-950/95 backdrop-blur-xl">
-                  <SelectItem value="receipt" className="text-neutral-200 focus:bg-neutral-800">Due on Receipt</SelectItem>
-                  <SelectItem value="net_15" className="text-neutral-200 focus:bg-neutral-800">Net 15</SelectItem>
-                  <SelectItem value="net_30" className="text-neutral-200 focus:bg-neutral-800">Net 30</SelectItem>
-                  <SelectItem value="net_60" className="text-neutral-200 focus:bg-neutral-800">Net 60</SelectItem>
-                  <SelectItem value="custom" className="text-neutral-200 focus:bg-neutral-800">Custom Date</SelectItem>
+                <SelectContent className="border-border bg-background/95 backdrop-blur-xl">
+                  <SelectItem value="receipt" className="text-foreground focus:bg-accent">Due on Receipt</SelectItem>
+                  <SelectItem value="net_15" className="text-foreground focus:bg-accent">Net 15</SelectItem>
+                  <SelectItem value="net_30" className="text-foreground focus:bg-accent">Net 30</SelectItem>
+                  <SelectItem value="net_60" className="text-foreground focus:bg-accent">Net 60</SelectItem>
+                  <SelectItem value="custom" className="text-foreground focus:bg-accent">Custom Date</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-neutral-400" htmlFor="dueDate">
+              <Label className="text-muted-foreground" htmlFor="dueDate">
                 Due Date <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -374,14 +379,14 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
                 onChange={handleDateChange}
                 min={minDateStr}
                 max={maxDateStr}
-                className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+                className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
               />
             </div>
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="description">
+            <Label className="text-muted-foreground" htmlFor="description">
               Description
             </Label>
             <Textarea
@@ -390,27 +395,27 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
               defaultValue={invoice?.description ?? ''}
               placeholder="Brief description of work or services..."
               rows={2}
-              className="border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none"
+              className="border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50 resize-none"
             />
           </div>
 
           {/* PO Number */}
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="poNumber">
-              PO Number <span className="text-neutral-600 text-xs">(optional)</span>
+            <Label className="text-muted-foreground" htmlFor="poNumber">
+              PO Number <span className="text-muted-foreground/60 text-xs">(optional)</span>
             </Label>
             <Input
               id="poNumber"
               name="poNumber"
               defaultValue={invoice?.po_number ?? ''}
               placeholder="PO-2024-001"
-              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
             />
           </div>
 
           {/* Payment Link */}
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="paymentLink">
+            <Label className="text-muted-foreground" htmlFor="paymentLink">
               Payment Link
             </Label>
             <Input
@@ -419,13 +424,13 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
               type="url"
               defaultValue={invoice?.payment_link ?? (defaultProfile?.payment_link_default ?? '')}
               placeholder="https://stripe.com/pay/..."
-              className="h-9 border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50"
+              className="h-9 border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50"
             />
           </div>
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <Label className="text-neutral-400" htmlFor="notes">
+            <Label className="text-muted-foreground" htmlFor="notes">
               Notes
             </Label>
             <Textarea
@@ -434,7 +439,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
               defaultValue={invoice?.notes ?? ''}
               placeholder="Internal notes..."
               rows={2}
-              className="border-neutral-800 bg-neutral-950 text-neutral-200 focus-visible:border-neutral-700 focus-visible:ring-neutral-700/50 resize-none"
+              className="border-border bg-background text-foreground focus-visible:border-border focus-visible:ring-ring/50 resize-none"
             />
           </div>
 
@@ -442,14 +447,14 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
             <Button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="bg-black text-white hover:bg-neutral-900 hover:text-white border border-neutral-800 cursor-pointer"
+              className="bg-black text-white hover:bg-secondary hover:text-foreground border border-border cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || !selectedClientId}
-              className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? isEditing ? 'Saving...' : 'Creating...'

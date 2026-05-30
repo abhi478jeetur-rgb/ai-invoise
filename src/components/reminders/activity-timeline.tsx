@@ -49,9 +49,9 @@ const EVENT_META: Record<string, { icon: string; color: string; bg: string; bord
   },
   invoice_imported: {
     icon: 'I',
-    color: 'text-neutral-400',
-    bg: 'bg-neutral-800/40',
-    border: 'border-neutral-700/50',
+    color: 'text-muted-foreground',
+    bg: 'bg-accent/40',
+    border: 'border-border',
   },
 }
 
@@ -75,8 +75,8 @@ export function ActivityTimeline({ events, showInvoiceRef = false }: ActivityTim
   if (events.length === 0) {
     return (
       <div className="py-6 text-center">
-        <p className="text-sm text-neutral-500">No activity yet.</p>
-        <p className="text-xs text-neutral-600 mt-1">
+        <p className="text-sm text-muted-foreground">No activity yet.</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">
           Generate a reminder to see activity here.
         </p>
       </div>
@@ -88,9 +88,9 @@ export function ActivityTimeline({ events, showInvoiceRef = false }: ActivityTim
       {events.map((event, idx) => {
         const meta = EVENT_META[event.event_type] ?? {
           icon: '?',
-          color: 'text-neutral-400',
-          bg: 'bg-neutral-800/40',
-          border: 'border-neutral-700/50',
+          color: 'text-muted-foreground',
+          bg: 'bg-accent/40',
+          border: 'border-border',
         }
 
         return (
@@ -101,22 +101,22 @@ export function ActivityTimeline({ events, showInvoiceRef = false }: ActivityTim
                 <span className={`text-[9px] font-bold ${meta.color}`}>{meta.icon}</span>
               </div>
               {idx < events.length - 1 && (
-                <div className="w-px flex-1 bg-neutral-800 my-1" />
+                <div className="w-px flex-1 bg-accent my-1" />
               )}
             </div>
 
             {/* Content */}
             <div className="pb-4 min-w-0 flex-1">
-              <p className="text-xs text-neutral-300 leading-relaxed">
+              <p className="text-xs text-foreground/80 leading-relaxed">
                 {event.description || event.event_type}
               </p>
               {showInvoiceRef && event.invoice_number && (
-                <p className="text-[11px] text-neutral-500 mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   Invoice {event.invoice_number}
                   {event.invoice_title && ` - ${event.invoice_title}`}
                 </p>
               )}
-              <p className="text-[10px] text-neutral-600 mt-1">
+              <p className="text-[10px] text-muted-foreground/60 mt-1">
                 {formatRelativeTime(event.created_at)}
               </p>
             </div>
