@@ -23,7 +23,7 @@ export async function searchAllData(rawQuery: string) {
   const query = validation.data.query
 
   // Prevent wildcard injection by stripping % and _
-  const safeQuery = query.replace(/[%_]/g, '')
+  const safeQuery = query.replace(/[%_"]/g, '')
   if (!safeQuery) {
     return { success: true, data: { clients: [], invoices: [] } }
   }

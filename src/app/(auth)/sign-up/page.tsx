@@ -24,28 +24,38 @@ export default function SignUpPage() {
     setSuccess(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await signup(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await signup(formData)
 
-    if (result && 'error' in result) {
-      setError(result.error)
-      setLoading(false)
-    } else if (result && 'success' in result) {
-      setSuccess(result.message || 'Verification link sent!')
-      setLoading(false)
-      // Redirect to OTP verification screen
-      if (result.email) {
-        router.push(`/verify-otp?email=${encodeURIComponent(result.email)}&type=signup`)
+      if (result && 'error' in result) {
+        setError(result.error)
+      } else if (result && 'success' in result) {
+        setSuccess(result.message || 'Verification link sent!')
+        // Redirect to OTP verification screen
+        if (result.email) {
+          router.push(`/verify-otp?email=${encodeURIComponent(result.email)}&type=signup`)
+        }
       }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
   async function handleGoogleSignUp() {
     setError(null)
     setGoogleLoading(true)
-    const result = await signInWithGoogle()
-    if (result?.error) {
-      setError(result.error)
+
+    try {
+      const result = await signInWithGoogle()
+      if (result?.error) {
+        setError(result.error)
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
       setGoogleLoading(false)
     }
   }

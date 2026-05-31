@@ -280,10 +280,6 @@ CRITICAL INSTRUCTIONS:
       console.error('Failed to increment reminder count:', updateError.message)
     }
 
-    if (updateError) {
-      console.error('Failed to update invoice reminder count:', updateError.message)
-    }
-
     // Log the event
     let eventRes: any = await supabase
       .from('reminder_events')
@@ -582,6 +578,38 @@ CRITICAL INSTRUCTIONS:
       return { error: 'All generation attempts failed.' }
     }
 
+    // M10: Log draft_generated events for each inserted draft (audit trail)
+    for (const draft of inserted) {
+      let eventRes: any = await supabase
+        .from('reminder_events')
+        .insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          draft_id: draft.id,
+          event_type: 'draft_generated',
+          description: `Generated ${tone} reminder for Invoice ${invoice.invoice_number}`,
+          mail_subject: draft.subject,
+          mail_body: draft.body,
+        })
+
+      // Fallback if mail_subject or mail_body columns do not exist yet
+      if (eventRes.error && (eventRes.error.code === '42703' || eventRes.error.message?.includes('mail_subject'))) {
+        eventRes = await supabase
+          .from('reminder_events')
+          .insert({
+            user_id: user.id,
+            invoice_id: invoiceId,
+            draft_id: draft.id,
+            event_type: 'draft_generated',
+            description: `Generated ${tone} reminder for Invoice ${invoice.invoice_number}`,
+          })
+      }
+
+      if (eventRes.error) {
+        console.error('Failed to log draft_generated event:', eventRes.error.message)
+      }
+    }
+
     // H9: Update invoice reminder_count and last_reminder_at after successful draft generation
     const { error: updateError } = await supabase.rpc('increment_reminder_count', {
       p_invoice_id: invoiceId,
@@ -605,6 +633,11 @@ CRITICAL INSTRUCTIONS:
     } else if (updateError) {
       console.error('Failed to increment reminder count:', updateError.message)
     }
+
+    // M9: Revalidate paths so UI reflects updated reminder counts
+    revalidatePath('/dashboard')
+    revalidatePath('/invoices')
+    revalidatePath(`/invoices/${invoiceId}`)
 
     return { success: true, data: inserted }
   } catch (e) {

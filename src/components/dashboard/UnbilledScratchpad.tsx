@@ -118,7 +118,7 @@ export function UnbilledScratchpad() {
   return (
     <div className="rounded-xl border border-border bg-background p-6 flex flex-col gap-4">
       <div>
-        <h3 className="text-lg font-medium text-white flex items-center gap-2">
+        <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
           <Clock className="h-5 w-5 text-[var(--user-accent)]" />
           Unbilled Work (Scratchpad)
         </h3>
@@ -150,8 +150,9 @@ export function UnbilledScratchpad() {
           {tasks.map(task => (
             <div key={task.id} className="group relative flex items-center justify-between rounded-lg border border-border bg-card/50 p-3 hover:border-border transition-colors">
               <span className="text-sm text-foreground/80 pr-20">{task.description}</span>
-              
-              <div className="absolute right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+              {/* M22: Buttons visible on touch devices, hidden on desktop until hover */}
+              <div className="absolute right-3 flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleCreateInvoice(task.description)}
                   title="Create Invoice from this"

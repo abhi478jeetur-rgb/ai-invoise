@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/lib/auth/actions"
+import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { Sun, Moon, Monitor } from "lucide-react"
 
@@ -97,8 +98,14 @@ export function UserNav({ initials, name, email }: UserNavProps) {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuItem 
-          onClick={() => { logout() }}
+        <DropdownMenuItem
+          onClick={async () => {
+            try {
+              await logout()
+            } catch {
+              toast.error('Failed to log out. Please try again.')
+            }
+          }}
           className="cursor-pointer text-red-500 hover:bg-accent hover:text-red-400 focus:bg-accent focus:text-red-400"
         >
           Log out

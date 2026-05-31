@@ -303,6 +303,8 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     if (notes && notes.trim().length > 1000) return { error: 'Notes must be 1000 characters or less.' }
     if (paymentLink && paymentLink.trim().length > 500) return { error: 'Payment link must be 500 characters or less.' }
     if (paymentLink && !/^https?:\/\//i.test(paymentLink.trim())) return { error: 'Payment link must be a valid HTTP or HTTPS URL.' }
+    // M15: PO number length validation (same as createInvoiceAction)
+    if (poNumber && poNumber.trim().length > 100) return { error: 'PO Number must be 100 characters or less.' }
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

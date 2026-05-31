@@ -32,13 +32,6 @@ export default async function DashboardPage() {
     )
   }
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-
   return (
     <DashboardVisualCustomizer 
       initialData={result.data!} 

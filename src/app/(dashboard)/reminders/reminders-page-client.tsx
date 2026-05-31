@@ -313,10 +313,18 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   // Copy to clipboard
   async function handleCopy() {
     const text = `Subject: ${editSubject}\n\n${editBody}`
-    await navigator.clipboard.writeText(text)
-    toast.success('AI Reminder draft copied to clipboard!')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('AI Reminder draft copied to clipboard!')
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error('Failed to copy to clipboard', {
+        description: 'Your browser may not support clipboard access. Try selecting and copying manually.',
+      })
+      return
+    }
 
     const selectedDraft = drafts.find((d) => d.variantIndex === selectedVariantIndex)
     if (selectedDraft && selectedInvoiceId) {
@@ -330,7 +338,15 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
     const selectedDraft = drafts.find((d) => d.variantIndex === selectedVariantIndex)
     if (!selectedDraft || !selectedInvoiceId) return
 
-    await logReminderEventAction(selectedInvoiceId, 'marked_sent', selectedDraft.id)
+    const result = await logReminderEventAction(selectedInvoiceId, 'marked_sent', selectedDraft.id)
+
+    if (result && 'error' in result) {
+      toast.error('Failed to mark as sent', {
+        description: result.error || 'Please try again.',
+      })
+      return
+    }
+
     setSentFeedback(true)
     setTimeout(() => setSentFeedback(false), 2500)
     fetchHistory()

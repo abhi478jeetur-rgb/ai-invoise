@@ -188,6 +188,7 @@ export async function getDashboardDataAction() {
     const agingReport: Record<string, { current: number; bucket30: number; bucket60: number; bucket90: number; bucket90Plus: number }> = {}
 
     activeInvoices.forEach((inv) => {
+      if (!inv.due_date) return
       const cur = inv.currency || 'USD'
       if (!agingReport[cur]) {
         agingReport[cur] = { current: 0, bucket30: 0, bucket60: 0, bucket90: 0, bucket90Plus: 0 }

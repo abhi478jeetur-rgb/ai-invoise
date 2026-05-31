@@ -155,6 +155,14 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
     .eq('id', user.id)
     .single()
 
+  // L7: Fetch all clients for the user so the edit form can reassign invoices
+  const { data: allClients } = await supabase
+    .from('clients')
+    .select('id, client_name, email, company_name')
+    .eq('user_id', user.id)
+    .is('deleted_at', null)
+    .order('client_name')
+
   // Fetch activity events
   const { data: events } = await supabase
     .from('reminder_events')
@@ -224,7 +232,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <InvoiceDetailActions invoice={invoice} client={client} />
+              <InvoiceDetailActions invoice={invoice} client={client} allClients={allClients ?? []} />
             </div>
           </div>
         </CardContent>

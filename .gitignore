@@ -70,3 +70,15 @@ pnpm-debug.log*
 
 # Dev Tools Isolation (Agentation, Understand-Anything)
 .understand-anything/
+
+# Obsidian
+.obsidian/
+obsidian-vault/
+obsidian-mcp-config.json
+
+# Internal Research and Tasks
+My research docs/
+BUG-HUNT-REPORT.md
+solv-bug.md
+github_issue.md
+tracked_files.txt

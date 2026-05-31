@@ -97,9 +97,11 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
         const defaultTerms = defaultProfile?.default_payment_terms || 'net_30'
         handleTermChange(defaultTerms)
       }
-      if (!isEditing) {
+      // L5: Only auto-fill invoice number if the field is empty to avoid overwriting user input
+      if (!isEditing && invoiceNumberRef.current && !invoiceNumberRef.current.value) {
         getNextInvoiceNumberAction().then((res) => {
-          if (res.success && invoiceNumberRef.current) {
+          // Re-check field is still empty when the async call returns
+          if (res.success && invoiceNumberRef.current && !invoiceNumberRef.current.value) {
             invoiceNumberRef.current.value = res.data
           }
         })

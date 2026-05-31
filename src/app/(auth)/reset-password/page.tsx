@@ -31,19 +31,23 @@ export default function ResetPasswordPage() {
     setSuccess(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await updatePassword(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await updatePassword(formData)
 
-    if (result && 'error' in result) {
-      setError(result.error)
+      if (result && 'error' in result) {
+        setError(result.error)
+      } else if (result && 'success' in result) {
+        setSuccess(result.message || 'Password successfully updated!')
+        // H16: Store timeout ID for cleanup
+        redirectTimerRef.current = setTimeout(() => {
+          router.push('/sign-in')
+        }, 2000)
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
       setLoading(false)
-    } else if (result && 'success' in result) {
-      setSuccess(result.message || 'Password successfully updated!')
-      setLoading(false)
-      // H16: Store timeout ID for cleanup
-      redirectTimerRef.current = setTimeout(() => {
-        router.push('/sign-in')
-      }, 2000)
     }
   }
 

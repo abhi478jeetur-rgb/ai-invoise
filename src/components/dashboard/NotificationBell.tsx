@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { Bell, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   Popover,
   PopoverContent,
@@ -32,10 +33,18 @@ export function NotificationBell() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
+  // M21: Check result of markAsRead and handle errors
   const handleNotificationClick = async (notif: any) => {
     if (!notif.is_read) {
-      await markAsRead(notif.id)
+      const previousNotifications = [...notifications]
       setNotifications(notifications.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
+
+      const res = await markAsRead(notif.id)
+      if (res && 'error' in res) {
+        // Revert optimistic update on failure
+        setNotifications(previousNotifications)
+        toast.error('Failed to mark notification as read')
+      }
     }
     setOpen(false)
     if (notif.link) {
@@ -43,9 +52,17 @@ export function NotificationBell() {
     }
   }
 
+  // M21: Check result of clearAllNotifications and handle errors
   const handleClearAll = async () => {
-    await clearAllNotifications()
+    const previousNotifications = [...notifications]
     setNotifications(notifications.map(n => ({ ...n, is_read: true })))
+
+    const res = await clearAllNotifications()
+    if (res && 'error' in res) {
+      // Revert optimistic update on failure
+      setNotifications(previousNotifications)
+      toast.error('Failed to clear notifications')
+    }
   }
 
   return (

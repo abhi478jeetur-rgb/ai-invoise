@@ -32,9 +32,10 @@ interface InvoiceDetailActionsProps {
     payment_link: string | null
   }
   client?: Client | null
+  allClients?: Client[]
 }
 
-export function InvoiceDetailActions({ invoice, client }: InvoiceDetailActionsProps) {
+export function InvoiceDetailActions({ invoice, client, allClients }: InvoiceDetailActionsProps) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -45,7 +46,8 @@ export function InvoiceDetailActions({ invoice, client }: InvoiceDetailActionsPr
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
   async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+    // L8: Clarify that deletion is soft and can be undone from Trash
+    if (!confirm('Are you sure you want to delete this invoice? You can restore it from the Trash later.')) {
       return
     }
     setDeleting(true)
@@ -171,10 +173,11 @@ export function InvoiceDetailActions({ invoice, client }: InvoiceDetailActionsPr
         </Button>
       </div>
 
+      {/* L7: Use full client list when available so user can reassign invoices */}
       <InvoiceForm
         open={editOpen}
         onOpenChange={setEditOpen}
-        clients={client ? [client] : [{
+        clients={allClients && allClients.length > 0 ? allClients : client ? [client] : [{
           id: invoice.client_id,
           client_name: 'Unknown Client',
           email: null,

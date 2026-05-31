@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { login, signInWithGoogle } from '@/lib/auth/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,11 +10,20 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
 
-export default function SignInPage() {
+function SignInForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const searchParams = useSearchParams()
+
+  // H5: Read OAuth error from URL params
+  useEffect(() => {
+    const urlError = searchParams.get('error')
+    if (urlError) {
+      setError(urlError)
+    }
+  }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -35,9 +45,15 @@ export default function SignInPage() {
   async function handleGoogleSignIn() {
     setError(null)
     setGoogleLoading(true)
-    const result = await signInWithGoogle()
-    if (result?.error) {
-      setError(result.error)
+
+    try {
+      const result = await signInWithGoogle()
+      if (result?.error) {
+        setError(result.error)
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
       setGoogleLoading(false)
     }
   }
@@ -159,5 +175,17 @@ export default function SignInPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="relative min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground" />
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   )
 }

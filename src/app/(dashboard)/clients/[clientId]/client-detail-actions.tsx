@@ -24,16 +24,23 @@ export function ClientDetailActions({ client }: ClientDetailActionsProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // M17: Wrapped in try/catch/finally for proper error handling
   async function handleDelete() {
-    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+    // L8: Clarify that deletion is soft and can be undone from Trash
+    if (!confirm('Are you sure you want to delete this client? You can restore it from the Trash later.')) {
       return
     }
     setDeleting(true)
-    const result = await deleteClientAction(client.id)
-    if (result.success) {
-      router.push('/clients')
-    } else {
-      toast.error(result.error || 'Failed to delete client')
+    try {
+      const result = await deleteClientAction(client.id)
+      if (result.success) {
+        router.push('/clients')
+      } else {
+        toast.error(result.error || 'Failed to delete client')
+      }
+    } catch {
+      toast.error('An unexpected error occurred while deleting the client.')
+    } finally {
       setDeleting(false)
     }
   }

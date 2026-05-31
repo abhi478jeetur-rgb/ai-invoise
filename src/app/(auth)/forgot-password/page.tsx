@@ -21,19 +21,23 @@ export default function ForgotPasswordPage() {
     setSuccess(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await sendPasswordReset(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await sendPasswordReset(formData)
 
-    if (result && 'error' in result) {
-      setError(result.error)
-      setLoading(false)
-    } else if (result && 'success' in result) {
-      setSuccess(result.message || 'Password reset email sent!')
-      setLoading(false)
-      // Redirect to OTP verification screen for recovery
-      if (result.email) {
-        router.push(`/verify-otp?email=${encodeURIComponent(result.email)}&type=recovery`)
+      if (result && 'error' in result) {
+        setError(result.error)
+      } else if (result && 'success' in result) {
+        setSuccess(result.message || 'Password reset email sent!')
+        // Redirect to OTP verification screen for recovery
+        if (result.email) {
+          router.push(`/verify-otp?email=${encodeURIComponent(result.email)}&type=recovery`)
+        }
       }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 

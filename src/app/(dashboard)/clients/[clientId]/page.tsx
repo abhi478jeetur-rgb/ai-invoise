@@ -18,11 +18,13 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     redirect('/sign-in')
   }
 
+  // M14: Filter out soft-deleted clients
   const { data: client, error } = await supabase
     .from('clients')
     .select('*')
     .eq('id', clientId)
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .single()
 
   if (error || !client) {
@@ -31,7 +33,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
 
   const { data: invoicesData } = await supabase
     .from('invoices')
-    .select('id, invoice_number, title, amount, currency, status, due_date, paid_date')
+    .select('id, invoice_number, title, amount, amount_paid, currency, status, due_date, paid_date')
     .eq('client_id', clientId)
     .eq('user_id', user.id)
     .is('deleted_at', null)
@@ -50,11 +52,15 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
     }
 
     const amt = inv.amount || 0
+    const paidAmt = inv.amount_paid || 0
     if (inv.status !== 'draft') {
       financialSummaries[cur].billed += amt
     }
     if (inv.status === 'paid') {
       financialSummaries[cur].paid += amt
+    } else if (inv.status === 'partial') {
+      financialSummaries[cur].paid += paidAmt
+      financialSummaries[cur].outstanding += (amt - paidAmt)
     } else if (inv.status !== 'draft') {
       financialSummaries[cur].outstanding += amt
     }
@@ -307,6 +313,9 @@ const STATUS_LABELS: Record<string, string> = {
   overdue: 'Overdue',
   paid: 'Paid',
   archived: 'Archived',
+  promised: 'Promised',
+  paused: 'Paused',
+  partial: 'Partial',
 }
 
 const STATUS_STYLES: Record<string, string> = {

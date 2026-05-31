@@ -131,15 +131,18 @@ export function checkRateLimit(
  *
  * @param userId  - Authenticated user's ID, if available. Falls back to IP.
  * @param options - Limit and window configuration.
+ * @param action  - Optional action namespace to prevent cross-action collisions.
  * @returns       - A rate-limit result.
  * @throws        - `RateLimitError` if the limit is exceeded.
  */
 export async function enforceRateLimit(
   userId: string | null | undefined,
   options: RateLimitOptions,
+  action?: string,
 ): Promise<RateLimitResult> {
   const identifier = userId ?? (await getClientIp())
-  const result = checkRateLimit(identifier, options)
+  const namespacedIdentifier = action ? `${action}:${identifier}` : identifier
+  const result = checkRateLimit(namespacedIdentifier, options)
 
   if (!result.success) {
     throw new RateLimitError(result)

@@ -251,8 +251,13 @@ export async function saveBusinessProfileAction(formData: FormData) {
 }
 
 // H7: Save AI Settings Action - persists AI provider configuration to user_ai_settings table
+const SETTINGS_RATE_LIMIT = { limit: 10, windowMs: 60 * 1000 } // 10 per minute
+
 export async function saveAISettingsAction(formData: FormData) {
   try {
+    // M12: Actually enforce rate limit so the catch block works
+    await enforceRateLimit('save_ai_settings', SETTINGS_RATE_LIMIT)
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
@@ -270,7 +275,7 @@ export async function saveAISettingsAction(formData: FormData) {
     if (providerLabel.trim().length > 100) {
       return { error: 'Provider label must be 100 characters or less.' }
     }
-    if (baseUrl && !isSafeUrl(baseUrl)) {
+    if (baseUrl && !(await isSafeUrl(baseUrl))) {
       return { error: 'Invalid base URL.' }
     }
 

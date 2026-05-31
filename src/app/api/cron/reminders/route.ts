@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// L3: Prevent Vercel 10s timeout for cron jobs
+export const maxDuration = 60
+
 export async function GET(request: Request) {
   try {
     // 1. Verify authorization (optional but recommended for cron jobs)
@@ -53,9 +56,26 @@ export async function GET(request: Request) {
     }
 
     // 5. For each scheduled user, check if they have unbilled tasks
+    // M13: Simple idempotency - check if reminder was already sent today for this time block
+    const today = now.toISOString().split('T')[0]
     const notificationsSent = []
 
     for (const user of users) {
+      // Check if we already sent a reminder to this user today in this time block
+      const { data: existingReminder } = await supabaseAdmin
+        .from('reminder_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('event_type', 'reminder_sent')
+        .gte('created_at', `${today}T00:00:00`)
+        .limit(1)
+        .maybeSingle()
+
+      if (existingReminder) {
+        console.log(`[CRON] Skipping ${user.email} - already reminded today`)
+        continue
+      }
+
       const { data: unbilled, error: unbilledError } = await supabaseAdmin
         .from('unbilled_tasks')
         .select('id, description')
@@ -69,6 +89,15 @@ export async function GET(request: Request) {
         console.log(`[CRON] You have ${unbilled.length} pending unbilled tasks:`)
         unbilled.forEach(task => console.log(`   - ${task.description}`))
         console.log(`[CRON] Click here to generate invoices: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard\n`)
+
+        // M13: Log reminder_sent event for idempotency tracking
+        await supabaseAdmin
+          .from('reminder_events')
+          .insert({
+            user_id: user.id,
+            event_type: 'reminder_sent',
+            description: `Reminder sent for ${unbilled.length} unbilled tasks`,
+          })
 
         notificationsSent.push({
           userId: user.id,

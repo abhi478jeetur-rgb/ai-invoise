@@ -6,6 +6,14 @@ import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
 import { useTheme } from 'next-themes'
 
 
+interface AgingBucket {
+  current: number
+  bucket30: number
+  bucket60: number
+  bucket90: number
+  bucket90Plus: number
+}
+
 interface DashboardData {
   stats: {
     totalOutstanding: number
@@ -20,6 +28,10 @@ interface DashboardData {
   chaseList: any[]
   recentActivities: any[]
   recentInvoices: any[]
+  agingReport?: Record<string, AgingBucket>
+  totalOutstandingFormatted?: string
+  totalOverdueFormatted?: string
+  totalPaidFormatted?: string
 }
 
 interface CustomizerProps {
@@ -53,7 +65,7 @@ const THEME_PRESETS = [
 ]
 
 export default function DashboardVisualCustomizer({ initialData, setupPreference }: CustomizerProps) {
-  const { stats, chaseList, recentActivities, recentInvoices, agingReport = {} } = initialData as any
+  const { stats, chaseList, recentActivities, recentInvoices, agingReport = {}, totalOutstandingFormatted, totalOverdueFormatted, totalPaidFormatted } = initialData
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
 
   const { resolvedTheme } = useTheme()
@@ -87,8 +99,6 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
     setConfig(isLight ? THEME_PRESETS[1] : THEME_PRESETS[0])
   }, [isLight])
-
-  const [isOpen, setIsOpen] = useState(false)
 
   // Persist settings once mounted
   useEffect(() => {
@@ -281,7 +291,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
             <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
-              {(stats as any).totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
+              {totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
             </p>
             <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.activeInvoicesCount} unpaid invoices
@@ -295,7 +305,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
             <p className="text-xl font-semibold tracking-tight mt-2 text-rose-500 font-mono">
-              {(stats as any).totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
+              {totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
             </p>
             <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.overdueCount} overdue invoices

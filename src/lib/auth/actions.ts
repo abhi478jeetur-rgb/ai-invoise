@@ -25,7 +25,7 @@ function handleRateLimitError(e: unknown): { error: string } | null {
 export async function login(formData: FormData) {
   // C4: Rate limit login attempts by IP
   try {
-    await enforceRateLimit(null, AUTH_RATE_LIMIT)
+    await enforceRateLimit(null, AUTH_RATE_LIMIT, 'login')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr
@@ -59,7 +59,7 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   // C4: Rate limit signup attempts by IP
   try {
-    await enforceRateLimit(null, SIGNUP_RATE_LIMIT)
+    await enforceRateLimit(null, SIGNUP_RATE_LIMIT, 'signup')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr
@@ -113,7 +113,7 @@ type AllowedOtpType = typeof ALLOWED_OTP_TYPES[number]
 export async function verifyOtpAction(formData: FormData) {
   // C4: Rate limit OTP verification attempts by IP (strictest limit)
   try {
-    await enforceRateLimit(null, OTP_RATE_LIMIT)
+    await enforceRateLimit(null, OTP_RATE_LIMIT, 'otp')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr
@@ -124,7 +124,14 @@ export async function verifyOtpAction(formData: FormData) {
   const token = formData.get('otp') as string
   const rawType = formData.get('type') as string
 
-  if (!email || !token) {
+  // L1: Validate email format using Zod
+  const emailValidation = forgotPasswordSchema.shape.email.safeParse(email)
+  if (!emailValidation.success) {
+    return { error: 'Please enter a valid email address.' }
+  }
+  const validatedEmail = emailValidation.data
+
+  if (!token) {
     return { error: 'Email and OTP are required.' }
   }
 
@@ -136,7 +143,7 @@ export async function verifyOtpAction(formData: FormData) {
 
   // Use generic error to prevent OTP enumeration
   const { error } = await supabase.auth.verifyOtp({
-    email,
+    email: validatedEmail,
     token,
     type,
   })
@@ -172,7 +179,7 @@ export async function logout() {
 export async function sendPasswordReset(formData: FormData) {
   // C4: Rate limit password reset attempts by IP
   try {
-    await enforceRateLimit(null, RESET_RATE_LIMIT)
+    await enforceRateLimit(null, RESET_RATE_LIMIT, 'reset')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr
@@ -201,7 +208,7 @@ export async function sendPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   // C4: Rate limit password update attempts by IP
   try {
-    await enforceRateLimit(null, AUTH_RATE_LIMIT)
+    await enforceRateLimit(null, AUTH_RATE_LIMIT, 'update-password')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr
@@ -253,7 +260,7 @@ export async function updatePassword(formData: FormData) {
 export async function signInWithGoogle() {
   // C4: Rate limit OAuth attempts by IP
   try {
-    await enforceRateLimit(null, OAUTH_RATE_LIMIT)
+    await enforceRateLimit(null, OAUTH_RATE_LIMIT, 'oauth')
   } catch (e) {
     const rateLimitErr = handleRateLimitError(e)
     if (rateLimitErr) return rateLimitErr

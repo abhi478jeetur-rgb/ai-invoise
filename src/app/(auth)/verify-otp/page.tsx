@@ -72,22 +72,26 @@ export default function VerifyOtpPage() {
     setError(null)
     setLoading(true)
 
-    const finalOtp = otpValues.join('')
-    if (finalOtp.length !== 6) {
-      setError('Please enter a valid 6-digit code.')
-      setLoading(false)
-      return
-    }
+    try {
+      const finalOtp = otpValues.join('')
+      if (finalOtp.length !== 6) {
+        setError('Please enter a valid 6-digit code.')
+        return
+      }
 
-    const formData = new FormData()
-    formData.set('email', email)
-    formData.set('otp', finalOtp)
-    formData.set('type', typeParam)
+      const formData = new FormData()
+      formData.set('email', email)
+      formData.set('otp', finalOtp)
+      formData.set('type', typeParam)
 
-    const result = await verifyOtpAction(formData)
+      const result = await verifyOtpAction(formData)
 
-    if (result?.error) {
-      setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
       setLoading(false)
     }
   }

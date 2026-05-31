@@ -54,10 +54,15 @@ export function GlobalSearch() {
     const timer = setTimeout(async () => {
       setLoading(true)
       const res = await searchAllData(query)
-      if (!cancelled && res.success && res.data) {
-        setResults(res.data)
+      if (!cancelled) {
+        if (res.success && res.data) {
+          setResults(res.data)
+        } else {
+          // M20: Clear stale results on search failure
+          setResults({ clients: [], invoices: [] })
+        }
+        setLoading(false)
       }
-      if (!cancelled) setLoading(false)
     }, 300)
 
     return () => {

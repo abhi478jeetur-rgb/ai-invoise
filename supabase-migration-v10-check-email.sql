@@ -9,9 +9,9 @@ DECLARE
   user_exists boolean;
 BEGIN
   SELECT EXISTS (
-    SELECT 1 
-    FROM auth.users 
-    WHERE email = email_to_check
+    SELECT 1
+    FROM auth.users
+    WHERE LOWER(email) = LOWER(email_to_check)
   ) INTO user_exists;
   
   RETURN user_exists;

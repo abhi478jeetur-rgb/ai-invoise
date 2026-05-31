@@ -142,6 +142,22 @@ export async function updateClientAction(clientId: string, formData: FormData) {
       return { error: 'You must be authenticated.' }
     }
 
+    // M18: Verify client is not soft-deleted before allowing update
+    const { data: existingClient, error: fetchError } = await supabase
+      .from('clients')
+      .select('deleted_at')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !existingClient) {
+      return { error: 'Client not found.' }
+    }
+
+    if (existingClient.deleted_at !== null) {
+      return { error: 'Cannot edit a deleted client. Restore it first.' }
+    }
+
     const { data, error } = await supabase
       .from('clients')
       .update({
@@ -181,11 +197,13 @@ export async function deleteClientAction(clientId: string) {
 
     const deletedAt = new Date().toISOString()
 
+    // M16: Only update if not already soft-deleted to prevent timestamp corruption
     const { error } = await supabase
       .from('clients')
       .update({ deleted_at: deletedAt })
       .eq('id', clientId)
       .eq('user_id', user.id)
+      .is('deleted_at', null)
 
     if (!error) {
       // Cascade soft delete to invoices (M31: only touch active invoices)
