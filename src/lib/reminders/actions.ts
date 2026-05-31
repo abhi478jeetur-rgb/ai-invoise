@@ -157,14 +157,16 @@ ${kbSection}
 
 IMPORTANT RULES:
 - Write as if you are ${senderName} sending to ${clientName}.
-- Keep the email concise (3-5 short paragraphs max).
+- Keep the email concise but professional (2-4 paragraphs).
 - Include the invoice number and amount clearly.
 ${invoice.payment_link ? '- Include the payment link prominently.' : ''}
 - Be human-sounding, not robotic.
 - Do NOT include a subject line in the body text.
 
-Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
-{"subject": "Your subject line here", "body": "The full email body here"}`
+Respond ONLY using this exact format (no markdown code blocks):
+SUBJECT: Your subject line here
+BODY:
+The full email body here (with normal paragraphs and line breaks)`
 
     // Call the LLM
     const normalizedUrl = baseUrl.replace(/\/+$/, '')
@@ -194,8 +196,10 @@ CRITICAL INSTRUCTIONS:
    - A direct, clean call-to-action (prominently referencing the payment link if provided).
    - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
 3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
-4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
-{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
+4. Output formatting: You MUST respond ONLY in the following plain text format. Do not use JSON or markdown code blocks.
+SUBJECT: The email subject line
+BODY:
+The full email body including salutations, paragraphs, and sign-off.`
             },
             { role: 'user', content: prompt },
           ],
@@ -218,24 +222,22 @@ CRITICAL INSTRUCTIONS:
     let body: string = ''
 
     try {
-      let jsonStr = rawContent
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        jsonStr = jsonMatch[0]
-      }
+      const subjectMatch = rawContent.match(/SUBJECT:\s*([^\n]+)/i)
+      const bodyMatch = rawContent.match(/BODY:\s*([\s\S]+)/i)
+
+      if (subjectMatch) subject = subjectMatch[1].trim()
       
-      const parsed = JSON.parse(jsonStr)
-      if (parsed.subject) subject = parsed.subject
-      if (parsed.body) body = parsed.body
-      else throw new Error('JSON parsed but missing body')
-    } catch (e) {
-      console.error('Failed to parse AI response as JSON:', e)
-      // Prevent raw JSON string from dumping into the UI
-      if (rawContent.includes('{') || rawContent.includes('}')) {
-        body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+      if (bodyMatch) {
+        body = bodyMatch[1].trim()
       } else {
-        body = rawContent || 'Please find the payment reminder details enclosed.'
+        // Fallback if the model ignores the BODY tag
+        body = rawContent.replace(/SUBJECT:\s*[^\n]+\n/i, '').trim()
       }
+
+      if (!body) throw new Error('Missing body content')
+    } catch (e) {
+      console.error('Failed to parse AI response:', e)
+      body = rawContent || 'Please find the payment reminder details enclosed.'
     }
 
     // Insert the draft
@@ -443,14 +445,16 @@ STYLE: ${styleInstruction}
 
 IMPORTANT RULES:
 - Write as if you are ${senderName} sending to ${clientName}.
-- Keep the email concise (3-5 short paragraphs max).
+- Keep the email concise but professional (2-4 paragraphs).
 - Include the invoice number and amount clearly.
 ${invoice.payment_link ? '- Include the payment link prominently.' : ''}
 - Be human-sounding, not robotic.
 - Do NOT include a subject line in the body text.
 
-Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
-{"subject": "Your subject line here", "body": "The full email body here"}`
+Respond ONLY using this exact format (no markdown code blocks):
+SUBJECT: Your subject line here
+BODY:
+The full email body here (with normal paragraphs and line breaks)`
 
     const normalizedUrl = baseUrl.replace(/\/+$/, '')
     const endpoint = `${normalizedUrl}/chat/completions`
@@ -480,8 +484,10 @@ CRITICAL INSTRUCTIONS:
    - A direct, clean call-to-action (prominently referencing the payment link if provided).
    - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
 3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
-4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
-{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
+4. Output formatting: You MUST respond ONLY in the following plain text format. Do not use JSON or markdown code blocks.
+SUBJECT: The email subject line
+BODY:
+The full email body including salutations, paragraphs, and sign-off.`
             },
             { role: 'user', content: buildPrompt(styleInstruction) },
           ],
@@ -502,23 +508,22 @@ CRITICAL INSTRUCTIONS:
       let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
       let body: string = ''
       try {
-        let jsonStr = rawContent
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          jsonStr = jsonMatch[0]
-        }
+        const subjectMatch = rawContent.match(/SUBJECT:\s*([^\n]+)/i)
+        const bodyMatch = rawContent.match(/BODY:\s*([\s\S]+)/i)
+
+        if (subjectMatch) subject = subjectMatch[1].trim()
         
-        const parsed = JSON.parse(jsonStr)
-        if (parsed.subject) subject = parsed.subject
-        if (parsed.body) body = parsed.body
-        else throw new Error('JSON parsed but missing body')
-      } catch (e) {
-        console.error('Failed to parse AI response as JSON:', e)
-        if (rawContent.includes('{') || rawContent.includes('}')) {
-          body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+        if (bodyMatch) {
+          body = bodyMatch[1].trim()
         } else {
-          body = rawContent || 'Please find the payment reminder details enclosed.'
+          // Fallback if the model ignores the BODY tag
+          body = rawContent.replace(/SUBJECT:\s*[^\n]+\n/i, '').trim()
         }
+
+        if (!body) throw new Error('Missing body content')
+      } catch (e) {
+        console.error('Failed to parse AI response:', e)
+        body = rawContent || 'Please find the payment reminder details enclosed.'
       }
 
       return { subject, body }

@@ -255,12 +255,12 @@ const SETTINGS_RATE_LIMIT = { limit: 10, windowMs: 60 * 1000 } // 10 per minute
 
 export async function saveAISettingsAction(formData: FormData) {
   try {
-    // M12: Actually enforce rate limit so the catch block works
-    await enforceRateLimit('save_ai_settings', SETTINGS_RATE_LIMIT)
-
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    // M12: Actually enforce rate limit so the catch block works
+    await enforceRateLimit(user.id, SETTINGS_RATE_LIMIT, 'save_ai_settings')
 
     const baseUrl = (formData.get('aiBaseUrl') as string) || ''
     const providerLabel = (formData.get('aiProviderLabel') as string) || ''
