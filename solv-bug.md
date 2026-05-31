@@ -817,3 +817,279 @@ Remaining: 27 Low severity bugs.
 - **L24** (remindAgain event logging): Feature not implemented in codebase.
 - **L25** (pending_invoice_count ordering): Feature not implemented in codebase.
 - **L26** (OTP autocomplete): Already fixed in M7 batch.
+
+---
+
+## [2026-05-31] Second Bug Hunt Fixes (43 Bugs)
+
+### Phase 1 — Critical & High (8 Bugs)
+
+### 93. SSRF Protection Bypassed in AI Settings (C1/C3 - Critical Security)
+- **Bug:** In `src/lib/settings/actions.ts`, `isSafeUrl()` was called without `await`. Since `isSafeUrl` is async and returns a `Promise<boolean>`, the check `!isSafeUrl(baseUrl)` always evaluated to `false` (Promise objects are truthy), completely bypassing SSRF protection.
+- **Root Cause:** Missing `await` on async function call made the SSRF validation dead code.
+- **Solution:** Changed `if (baseUrl && !isSafeUrl(baseUrl))` to `if (baseUrl && !(await isSafeUrl(baseUrl)))`.
+- **Files Changed:** `src/lib/settings/actions.ts`
+
+### 94. Null due_date Crash in Dashboard Aging Report (C2 - Critical Runtime)
+- **Bug:** In `src/lib/dashboard/actions.ts`, the `activeInvoices.forEach` loop called `inv.due_date.includes('T')` without a null check. If any active invoice had a null `due_date`, this threw a `TypeError`, crashing the entire dashboard server action.
+- **Root Cause:** Missing null guard before accessing `.includes()` on a potentially null property.
+- **Solution:** Added `if (!inv.due_date) return` as the first line inside the `activeInvoices.forEach` callback.
+- **Files Changed:** `src/lib/dashboard/actions.ts`
+
+### 95. Auth Rate Limiter Shares Counter Across All Actions (H1 - High Security)
+- **Bug:** In `src/lib/auth/actions.ts`, all 6 auth actions called `enforceRateLimit(null, ...)` which fell back to IP-based key `rl:${identifier}` with no action-specific component. All per-action limits (AUTH=5, SIGNUP=3, OTP=5, RESET=3, OAUTH=10) shared a single counter. Effective limit per IP was the minimum of all configured limits (3).
+- **Root Cause:** Rate limit key had no action namespace, causing cross-action counter collision.
+- **Solution:** Added optional `action` parameter to `enforceRateLimit()` in `rate-limit.ts`. All 6 auth calls now pass unique namespace strings (`'login'`, `'signup'`, `'otp'`, `'reset'`, `'update-password'`, `'oauth'`).
+- **Files Changed:** `src/lib/utils/rate-limit.ts`, `src/lib/auth/actions.ts`
+
+### 96. Double-Quote Character Breaks PostgREST Search Filter (H2 - High Database)
+- **Bug:** In `src/lib/search/actions.ts`, the `.or()` filter used string interpolation with double-quote delimiters. The `SearchSchema` stripped `%` and `_` but not `"`. A search containing `"` (e.g., `5" bolt`) produced malformed PostgREST syntax, causing HTTP 500.
+- **Root Cause:** Sanitization regex `/[%_]/g` did not include double-quote characters.
+- **Solution:** Changed regex to `/[%_"]/g` to also strip double quotes from search queries.
+- **Files Changed:** `src/lib/search/actions.ts`
+
+### 97. Hardcoded text-white Invisible in Light Mode (H3 - High UI)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, the "Unbilled Work (Scratchpad)" heading used `className="text-white"` which was invisible against light mode's white background.
+- **Root Cause:** Hardcoded color class instead of theme-aware token.
+- **Solution:** Changed `text-white` to `text-foreground`.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+
+### 98. Partial Payments Invisible in Client Financial Summary (H4 - High Financial)
+- **Bug:** In `src/app/(dashboard)/clients/[clientId]/page.tsx`, the query did not include `amount_paid`. An invoice with status `partial` (amount=1000, amount_paid=500) counted full 1000 as "outstanding" and 0 as "paid."
+- **Root Cause:** Missing `amount_paid` in select query and no handling for `partial` status in calculation logic.
+- **Solution:** Added `amount_paid` to the select query and added a `partial` status branch that splits `paidAmt` into paid and `(amt - paidAmt)` into outstanding.
+- **Files Changed:** `src/app/(dashboard)/clients/[clientId]/page.tsx`
+
+### 99. OAuth Callback Error Message Silently Lost (H5 - High UX)
+- **Bug:** In `src/app/api/auth/callback/route.ts`, OAuth errors redirected to `/sign-in?error=...` but the sign-in page never read the `error` query parameter. Users saw no error message after a failed OAuth flow.
+- **Root Cause:** Sign-in page did not use `useSearchParams` to read URL query parameters.
+- **Solution:** Added `useSearchParams` with a `useEffect` to read the `error` param on mount. Wrapped the form in a `<Suspense>` boundary as required by Next.js for client components using `useSearchParams`.
+- **Files Changed:** `src/app/(auth)/sign-in/page.tsx`
+
+### 100. OAuth Error Display (H6 - High UX)
+- **Bug:** Same as H5 — covered by the same fix. The sign-in page now displays OAuth errors from URL parameters.
+- **Root Cause:** See H5.
+- **Solution:** See H5.
+- **Files Changed:** `src/app/(auth)/sign-in/page.tsx`
+
+---
+
+### Phase 2A — Medium Auth & Reminders (10 Bugs)
+
+### 101. Sign-Up Page Loading State Stall (M1 - Medium UX)
+- **Bug:** In `src/app/(auth)/sign-up/page.tsx`, `handleSubmit` lacked try/catch/finally. If `signup()` threw an exception, `setLoading(false)` was never called, leaving the button permanently disabled.
+- **Root Cause:** No try/catch/finally wrapper around async server action call.
+- **Solution:** Wrapped `signup()` call and `handleGoogleSignUp()` in try/catch/finally blocks with `setLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/sign-up/page.tsx`
+
+### 102. Forgot-Password Page Loading State Stall (M2 - Medium UX)
+- **Bug:** In `src/app/(auth)/forgot-password/page.tsx`, `handleSubmit` lacked try/catch/finally. If `sendPasswordReset()` threw, the button stayed permanently disabled.
+- **Root Cause:** No try/catch/finally wrapper.
+- **Solution:** Wrapped in try/catch/finally with `setLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/forgot-password/page.tsx`
+
+### 103. Verify-OTP Page Loading State Stall (M3 - Medium UX)
+- **Bug:** In `src/app/(auth)/verify-otp/page.tsx`, `handleSubmit` lacked try/catch/finally. If `verifyOtpAction()` threw, the button stayed permanently disabled.
+- **Root Cause:** No try/catch/finally wrapper.
+- **Solution:** Wrapped in try/catch/finally with `setLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/verify-otp/page.tsx`
+
+### 104. Reset-Password Page Loading State Stall (M4 - Medium UX)
+- **Bug:** In `src/app/(auth)/reset-password/page.tsx`, `handleSubmit` lacked try/catch/finally. If `updatePassword()` threw, the button stayed permanently disabled.
+- **Root Cause:** No try/catch/finally wrapper.
+- **Solution:** Wrapped in try/catch/finally with `setLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/reset-password/page.tsx`
+
+### 105. Google Sign-In Handler Loading State Stall (M5 - Medium UX)
+- **Bug:** In `src/app/(auth)/sign-in/page.tsx`, `handleGoogleSignIn` lacked try/catch. If `signInWithGoogle()` threw, `setGoogleLoading(false)` was never called.
+- **Root Cause:** No try/catch/finally wrapper around async call.
+- **Solution:** Wrapped in try/catch/finally with `setGoogleLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/sign-in/page.tsx`
+
+### 106. Google Sign-Up Handler Loading State Stall (M6 - Medium UX)
+- **Bug:** In `src/app/(auth)/sign-up/page.tsx`, `handleGoogleSignUp` lacked try/catch. If `signInWithGoogle()` threw, `setGoogleLoading(false)` was never called.
+- **Root Cause:** No try/catch/finally wrapper.
+- **Solution:** Wrapped in try/catch/finally with `setGoogleLoading(false)` in `finally`.
+- **Files Changed:** `src/app/(auth)/sign-up/page.tsx`
+
+### 107. Clipboard Write Not Wrapped in try/catch on Reminders Page (M7 - Medium Error Handling)
+- **Bug:** In `src/app/(dashboard)/reminders/reminders-page-client.tsx`, `handleCopy()` called `navigator.clipboard.writeText()` without try/catch. In non-HTTPS environments or when clipboard permissions are denied, this throws an unhandled `DOMException`.
+- **Root Cause:** Same bug as M24 (fixed in reminder-modal.tsx) but not applied to the reminders page.
+- **Solution:** Wrapped clipboard write in try/catch with error toast and early return.
+- **Files Changed:** `src/app/(dashboard)/reminders/reminders-page-client.tsx`
+
+### 108. handleMarkSent Ignores Server Errors on Reminders Page (M8 - Medium Error Handling)
+- **Bug:** In `src/app/(dashboard)/reminders/reminders-page-client.tsx`, `handleMarkSent()` called `logReminderEventAction()` but never checked its return value. The success feedback showed even if the server action failed.
+- **Root Cause:** Same bug as M23 (fixed in reminder-modal.tsx) but not applied to the reminders page.
+- **Solution:** Captured the return value, checked for error property, showed error toast on failure.
+- **Files Changed:** `src/app/(dashboard)/reminders/reminders-page-client.tsx`
+
+### 109. generateMultipleDraftsAction Missing revalidation (M9 - Medium State)
+- **Bug:** In `src/lib/reminders/actions.ts`, after generating multiple drafts and updating `reminder_count`, the function returned without calling `revalidatePath`. The dashboard and invoices pages showed stale reminder counts.
+- **Root Cause:** Missing `revalidatePath` calls (which existed in `generateReminderAction`).
+- **Solution:** Added `revalidatePath('/dashboard')`, `revalidatePath('/invoices')`, and `revalidatePath('/invoices/${invoiceId}')` before the return statement.
+- **Files Changed:** `src/lib/reminders/actions.ts`
+
+### 110. generateMultipleDraftsAction Missing Audit Trail (M10 - Medium Data Integrity)
+- **Bug:** In `src/lib/reminders/actions.ts`, `generateMultipleDraftsAction` inserted drafts into `reminder_drafts` but never created corresponding `reminder_events` entries. The reminder history showed no generation activity for multi-draft flows.
+- **Root Cause:** `generateReminderAction` logged `draft_generated` events but `generateMultipleDraftsAction` did not.
+- **Solution:** Added a loop after inserting drafts that logs a `draft_generated` event into `reminder_events` for each inserted draft.
+- **Files Changed:** `src/lib/reminders/actions.ts`
+
+---
+
+### Phase 2B — Medium Settings, Soft-Delete & UI (12 Bugs)
+
+### 111. Settings UI Currency Selector Shows Unsupported Currencies (M11 - Medium Validation)
+- **Bug:** In `src/app/(dashboard)/settings/settings-page-client.tsx`, the `CURRENCIES` array included SGD, CHF, and AED, but the database only supports 7 currencies (USD, EUR, GBP, INR, CAD, AUD, JPY). Selecting unsupported currencies caused cryptic errors.
+- **Root Cause:** UI array not aligned with `ALLOWED_CURRENCIES` on the server.
+- **Solution:** Removed SGD, CHF, and AED from the `CURRENCIES` array.
+- **Files Changed:** `src/app/(dashboard)/settings/settings-page-client.tsx`
+
+### 112. saveAISettingsAction Dead Rate Limit Catch Block (M12 - Medium Security)
+- **Bug:** In `src/lib/settings/actions.ts`, `saveAISettingsAction` had a catch block for `RateLimitError` but never called `enforceRateLimit()`. The AI settings save endpoint had zero rate limiting.
+- **Root Cause:** Rate limit enforcement call was missing; only the catch handler existed.
+- **Solution:** Added `await enforceRateLimit('save_ai_settings', SETTINGS_RATE_LIMIT)` at the beginning of the action.
+- **Files Changed:** `src/lib/settings/actions.ts`
+
+### 113. Cron Reminder Route Has No Idempotency Protection (M13 - Medium Logic)
+- **Bug:** In `src/app/api/cron/reminders/route.ts`, there was no deduplication mechanism. If the cron job ran twice in the same time window, users received duplicate reminder emails.
+- **Root Cause:** No check for previously sent reminders before processing.
+- **Solution:** Added a check against `reminder_events` table for existing `reminder_sent` events today. Also added event logging after sending to track sent reminders.
+- **Files Changed:** `src/app/api/cron/reminders/route.ts`
+
+### 114. Soft-Deleted Clients Accessible via Direct URL (M14 - Medium Data Integrity)
+- **Bug:** In `src/app/(dashboard)/clients/[clientId]/page.tsx`, the client query did not filter by `deleted_at`. Soft-deleted clients rendered with full edit/delete controls when accessed directly.
+- **Root Cause:** Missing `.is('deleted_at', null)` filter on the Supabase query.
+- **Solution:** Added `.is('deleted_at', null)` to the client select query.
+- **Files Changed:** `src/app/(dashboard)/clients/[clientId]/page.tsx`
+
+### 115. Missing PO Number Length Validation on Invoice Update (M15 - Medium Validation)
+- **Bug:** In `src/lib/invoices/actions.ts`, `updateInvoiceAction` did not validate PO number length. `createInvoiceAction` enforced a 100-character limit but the update path allowed arbitrarily long PO numbers.
+- **Root Cause:** Validation logic existed in create but was missing in update.
+- **Solution:** Added `if (poNumber && poNumber.trim().length > 100) return { error: 'PO Number must be 100 characters or less.' }` to `updateInvoiceAction`.
+- **Files Changed:** `src/lib/invoices/actions.ts`
+
+### 116. Double-Delete of Client Corrupts Cascade Restore Timestamps (M16 - Medium Data Integrity)
+- **Bug:** In `src/lib/clients/actions.ts`, `deleteClientAction` did not check `.is('deleted_at', null)`. If called twice, the `deleted_at` timestamp was overwritten. Later, `restoreClientAction` used the new timestamp to match invoices, but invoices had the original timestamp, so they remained in trash.
+- **Root Cause:** Missing idempotency guard on soft-delete operation.
+- **Solution:** Added `.is('deleted_at', null)` to the client update query so it only touches non-deleted clients.
+- **Files Changed:** `src/lib/clients/actions.ts`
+
+### 117. Client Delete Error Handling Missing (M17 - Medium Error Handling)
+- **Bug:** In `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`, `handleDelete` had no try/catch. A network error left the Delete button stuck in "Deleting..." state permanently.
+- **Root Cause:** No try/catch/finally wrapper around the async delete call.
+- **Solution:** Wrapped in try/catch/finally with `setDeleting(false)` in `finally` and toast error on catch.
+- **Files Changed:** `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`
+
+### 118. Update Action Allows Modifying Soft-Deleted Client (M18 - Medium Data Integrity)
+- **Bug:** In `src/lib/clients/actions.ts`, `updateClientAction` did not check whether the client was soft-deleted before allowing updates.
+- **Root Cause:** Missing `deleted_at` check before the update operation.
+- **Solution:** Added a pre-check that fetches `deleted_at` and returns an error if the client is soft-deleted.
+- **Files Changed:** `src/lib/clients/actions.ts`
+
+### 119. Inconsistent Date Parsing Creates Invalid Date (M19 - Medium Logic)
+- **Bug:** In `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx`, `new Date(dueDate + 'T00:00:00')` unconditionally appended `'T00:00:00'`. If `dueDate` was already an ISO timestamp (containing 'T'), this produced an invalid date string.
+- **Root Cause:** No check for existing 'T' before appending time component.
+- **Solution:** Added conditional: `const dueDateStr = dueDate.includes('T') ? dueDate : dueDate + 'T00:00:00'`.
+- **Files Changed:** `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx`
+
+### 120. GlobalSearch Shows Stale Results on Server Error (M20 - Medium UX)
+- **Bug:** In `src/components/dashboard/GlobalSearch.tsx`, when `searchAllData` returned `{ success: false }`, the previous query's results remained displayed, giving misleading search results.
+- **Root Cause:** Results were only cleared on success, not on failure.
+- **Solution:** Added `else` branch that clears results on failure: `setResults({ clients: [], invoices: [] })`.
+- **Files Changed:** `src/components/dashboard/GlobalSearch.tsx`
+
+### 121. NotificationBell Silently Discards Server Errors (M21 - Medium Error Handling)
+- **Bug:** In `src/components/dashboard/NotificationBell.tsx`, both `handleNotificationClick` and `handleClearAll` optimistically updated UI state without checking server action results. On failure, notifications reappeared as unread on next refresh.
+- **Root Cause:** No result checking or rollback on server action failure.
+- **Solution:** Added error checking with optimistic state rollback and toast error messages on failure.
+- **Files Changed:** `src/components/dashboard/NotificationBell.tsx`
+
+### 122. UnbilledScratchpad Action Buttons Inaccessible on Touch Devices (M22 - Medium Accessibility)
+- **Bug:** In `src/components/dashboard/UnbilledScratchpad.tsx`, action buttons used `opacity-0 group-hover:opacity-100` which made them invisible on mobile/touch devices where `:hover` doesn't fire reliably.
+- **Root Cause:** Desktop-only hover interaction pattern applied to all screen sizes.
+- **Solution:** Changed to `md:opacity-0 md:group-hover:opacity-100` so buttons are always visible on small screens.
+- **Files Changed:** `src/components/dashboard/UnbilledScratchpad.tsx`
+
+---
+
+### Phase 3 — Low Severity (13 Bugs)
+
+### 123. verifyOtpAction Missing Email Format Validation (L1 - Low Validation)
+- **Bug:** In `src/lib/auth/actions.ts`, `verifyOtpAction` only checked `if (!email)` without validating email format. All other auth actions used Zod schemas for validation.
+- **Root Cause:** Inconsistent validation pattern across auth actions.
+- **Solution:** Added `forgotPasswordSchema.shape.email.safeParse(email)` validation before the OTP verification call.
+- **Files Changed:** `src/lib/auth/actions.ts`
+
+### 124. Case-Sensitive Email Comparison in check_email_exists SQL (L2 - Low Database)
+- **Bug:** In `supabase-migration-v10-check-email.sql`, `WHERE email = email_to_check` was case-sensitive. Supabase Auth stores emails in lowercase, but mixed-case input (e.g., `User@Example.com`) returned false.
+- **Root Cause:** Exact string comparison instead of case-insensitive comparison.
+- **Solution:** Changed to `WHERE LOWER(email) = LOWER(email_to_check)`.
+- **Files Changed:** `supabase-migration-v10-check-email.sql`
+
+### 125. Cron Reminder Route Missing maxDuration Export (L3 - Low API)
+- **Bug:** In `src/app/api/cron/reminders/route.ts`, there was no `export const maxDuration`. On Vercel Hobby plan, serverless functions default to 10s timeout, which could cause partial execution with many users.
+- **Root Cause:** Missing Next.js route segment config for extended timeout.
+- **Solution:** Added `export const maxDuration = 60` at the top of the file.
+- **Files Changed:** `src/app/api/cron/reminders/route.ts`
+
+### 126. Duplicate Error Log in generateReminderAction (L4 - Low Logging)
+- **Bug:** In `src/lib/reminders/actions.ts`, after the `increment_reminder_count` RPC fallback, an unconditional `if (updateError)` log fired even when the fallback update succeeded, producing misleading error logs.
+- **Root Cause:** Error variable held the original RPC error even after successful fallback update.
+- **Solution:** Removed the duplicate unconditional error log block.
+- **Files Changed:** `src/lib/reminders/actions.ts`
+
+### 127. Invoice Number Race Condition in Form (L5 - Low UX)
+- **Bug:** In `src/components/invoices/invoice-form.tsx`, async `getNextInvoiceNumberAction()` could overwrite a user's custom invoice number input if they started typing before the async call resolved.
+- **Root Cause:** No guard checking if the field was already populated before overwriting.
+- **Solution:** Added guards to only auto-fill if the field is empty, and re-check when the async call returns.
+- **Files Changed:** `src/components/invoices/invoice-form.tsx`
+
+### 128. Missing Status Labels for promised/paused/partial (L6 - Low Display)
+- **Bug:** In `src/app/(dashboard)/clients/[clientId]/page.tsx`, `STATUS_LABELS` only had entries for draft, sent, due_soon, overdue, paid, archived. Invoices with `promised`, `paused`, or `partial` status displayed raw strings.
+- **Root Cause:** Incomplete status label mapping.
+- **Solution:** Added `promised: 'Promised'`, `paused: 'Paused'`, `partial: 'Partial'` entries.
+- **Files Changed:** `src/app/(dashboard)/clients/[clientId]/page.tsx`
+
+### 129. Invoice Edit Form Shows Only One Client (L7 - Low UX)
+- **Bug:** In `src/app/(dashboard)/invoices/[invoiceId]/invoice-detail-actions.tsx`, the `InvoiceForm` only received the current client. Users could not reassign invoices to different clients.
+- **Root Cause:** Component only received a single `client` prop, not the full client list.
+- **Solution:** Added `allClients` prop, fetched the full client list in the parent page, and passed it through. Falls back to current client or placeholder if unavailable.
+- **Files Changed:** `src/app/(dashboard)/invoices/[invoiceId]/invoice-detail-actions.tsx`, `src/app/(dashboard)/invoices/[invoiceId]/page.tsx`
+
+### 130. Soft Delete Confirmation Text Is Misleading (L8 - Low UX)
+- **Bug:** In both `invoice-detail-actions.tsx` and `client-detail-actions.tsx`, the delete confirmation said "This action cannot be undone" even though both are soft deletes that can be restored from Trash.
+- **Root Cause:** Generic confirmation text not updated after implementing soft-delete.
+- **Solution:** Changed to "You can restore it from the Trash later." in both files.
+- **Files Changed:** `src/app/(dashboard)/invoices/[invoiceId]/invoice-detail-actions.tsx`, `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`
+
+### 131. logout() Not Awaited — No Error Feedback (L9 - Low Error Handling)
+- **Bug:** In `src/components/dashboard/UserNav.tsx`, `logout()` was called without `await`. If it threw, the user saw no feedback and remained on the page thinking they were logged out.
+- **Root Cause:** Fire-and-forget pattern on async server action.
+- **Solution:** Added `await`, wrapped in try/catch with toast error on failure.
+- **Files Changed:** `src/components/dashboard/UserNav.tsx`
+
+### 132. Unused isOpen State in Visual Customizer (L10 - Low Dead Code)
+- **Bug:** In `src/app/(dashboard)/dashboard/visual-customizer.tsx`, `const [isOpen, setIsOpen] = useState(false)` was declared but never read or set.
+- **Root Cause:** Dead code from removed feature.
+- **Solution:** Removed the unused state declaration.
+- **Files Changed:** `src/app/(dashboard)/dashboard/visual-customizer.tsx`
+
+### 133. Unused today Variable in Dashboard Page (L11 - Low Dead Code)
+- **Bug:** In `src/app/(dashboard)/dashboard/page.tsx`, `const today = new Date().toLocaleDateString(...)` was computed on every render but never used.
+- **Root Cause:** Dead code — variable was likely used in a removed greeting component.
+- **Solution:** Removed the unused variable declaration.
+- **Files Changed:** `src/app/(dashboard)/dashboard/page.tsx`
+
+### 134. DashboardData Interface Missing Fields (L12 - Low Type Safety)
+- **Bug:** In `src/app/(dashboard)/dashboard/visual-customizer.tsx`, the `DashboardData` interface was missing `agingReport`, `totalOutstandingFormatted`, `totalOverdueFormatted`, and `totalPaidFormatted` fields. The component used `as any` casts to access them.
+- **Root Cause:** Interface not updated when new fields were added to the server action response.
+- **Solution:** Added `AgingBucket` interface and all missing optional fields to `DashboardData`. Removed all `as any` casts.
+- **Files Changed:** `src/app/(dashboard)/dashboard/visual-customizer.tsx`
+
+### 135. ChaseCard Component Is Dead Code (L13 - Low Dead Code)
+- **Bug:** `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx` exported a `ChaseCard` component that was never imported anywhere in the codebase. The dashboard renders its chase list inline.
+- **Root Code:** Component was likely replaced by inline rendering but never deleted.
+- **Solution:** Deleted the file entirely.
+- **Files Changed:** `src/app/(dashboard)/dashboard/dashboard-chase-card.tsx` (deleted)
