@@ -18,6 +18,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string>('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -149,11 +150,13 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            <div className="flex justify-center py-2">
+            <div className="flex justify-center py-2 min-h-[65px]">
               <Turnstile 
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
                 options={{ theme: 'auto' }}
+                onSuccess={(token) => setTurnstileToken(token)}
               />
+              <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
             </div>
 
             <Button

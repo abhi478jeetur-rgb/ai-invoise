@@ -17,6 +17,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string>('')
   const searchParams = useSearchParams()
 
   // H5: Read OAuth error from URL params
@@ -145,11 +146,13 @@ function SignInForm() {
               </div>
             </div>
 
-            <div className="flex justify-center py-2">
+            <div className="flex justify-center py-2 min-h-[65px]">
               <Turnstile 
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
                 options={{ theme: 'auto' }}
+                onSuccess={(token) => setTurnstileToken(token)}
               />
+              <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
             </div>
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

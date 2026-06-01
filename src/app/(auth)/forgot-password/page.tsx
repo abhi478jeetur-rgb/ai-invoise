@@ -15,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string>('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -89,11 +90,13 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <div className="flex justify-center py-2">
+            <div className="flex justify-center py-2 min-h-[65px]">
               <Turnstile 
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
                 options={{ theme: 'auto' }}
+                onSuccess={(token) => setTurnstileToken(token)}
               />
+              <input type="hidden" name="cf-turnstile-response" value={turnstileToken} />
             </div>
 
             <Button
