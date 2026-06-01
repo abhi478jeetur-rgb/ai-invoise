@@ -207,6 +207,39 @@ export async function verifyOtpAction(formData: FormData) {
   }
 }
 
+export async function resendOtpAction(formData: FormData) {
+  // Rate limit OTP resend attempts
+  try {
+    await enforceRateLimit(null, OTP_RATE_LIMIT, 'otp_resend')
+  } catch (e) {
+    const rateLimitErr = handleRateLimitError(e)
+    if (rateLimitErr) return rateLimitErr
+  }
+
+  const supabase = await createClient()
+  const email = formData.get('email') as string
+  const rawType = formData.get('type') as string
+
+  if (!email) return { error: 'Email is required.' }
+  if (!rawType || !ALLOWED_OTP_TYPES.includes(rawType as AllowedOtpType)) {
+    return { error: 'Invalid verification type.' }
+  }
+  const type = rawType as AllowedOtpType
+
+  if (type === 'recovery') {
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    if (error) return { error: 'Failed to resend recovery code. Please try again.' }
+  } else if (type === 'signup') {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    })
+    if (error) return { error: 'Failed to resend verification code. Please try again.' }
+  }
+
+  return { success: true, message: 'Verification code resent successfully.' }
+}
+
 export async function logout() {
   const supabase = await createClient()
 

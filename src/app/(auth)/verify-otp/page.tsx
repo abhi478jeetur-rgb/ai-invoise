@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { verifyOtpAction } from '@/lib/auth/actions'
+import { verifyOtpAction, resendOtpAction } from '@/lib/auth/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,12 @@ export default function VerifyOtpPage() {
 
   const [email, setEmail] = useState(emailParam)
   const [error, setError] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(60)
+  const [resendCount, setResendCount] = useState(0)
+  const MAX_RESEND = 5
   
   // Custom 6-digit input boxes state
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', ''])
@@ -35,6 +40,13 @@ export default function VerifyOtpPage() {
     // Focus first input initially
     inputRefs[0].current?.focus()
   }, [])
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendCooldown])
 
   const handleOtpChange = (index: number, val: string) => {
     // Allow only numeric digits
@@ -59,11 +71,43 @@ export default function VerifyOtpPage() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
-    const pastedData = e.clipboardData.getData('text').trim()
-    if (/^[0-9]{6}$/.test(pastedData)) {
-      const chars = pastedData.split('')
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '')
+    if (pastedData.length > 0) {
+      const chars = [...otpValues]
+      for (let i = 0; i < Math.min(pastedData.length, 6); i++) {
+        chars[i] = pastedData[i]
+      }
       setOtpValues(chars)
-      inputRefs[5].current?.focus()
+      const nextFocus = Math.min(pastedData.length, 5)
+      inputRefs[nextFocus].current?.focus()
+    }
+  }
+
+  const handleResend = async () => {
+    if (resendCount >= MAX_RESEND || resendCooldown > 0) return
+    
+    setResendLoading(true)
+    setError(null)
+    setSuccessMsg(null)
+    
+    try {
+      const formData = new FormData()
+      formData.set('email', email)
+      formData.set('type', typeParam)
+      
+      const result = await resendOtpAction(formData)
+      
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        setResendCount(prev => prev + 1)
+        setResendCooldown(60)
+        setSuccessMsg(result?.message || 'Verification code resent successfully.')
+      }
+    } catch {
+      setError('An unexpected error occurred while resending.')
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -121,6 +165,12 @@ export default function VerifyOtpPage() {
                 {error}
               </div>
             )}
+            
+            {successMsg && (
+              <div className="p-3 text-xs font-medium bg-green-500/[0.1] border border-green-500/[0.2] text-green-400 rounded-lg text-center backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-200">
+                {successMsg}
+              </div>
+            )}
 
             {!emailParam && (
               <div className="space-y-1.5">
@@ -142,7 +192,7 @@ export default function VerifyOtpPage() {
 
             <div className="space-y-2">
               <Label className="text-muted-foreground text-center block">6-Digit Code</Label>
-              <div className="flex justify-center gap-2" onPaste={handlePaste}>
+              <div className="flex justify-center gap-2">
                 {otpValues.map((val, idx) => (
                   <input
                     key={idx}
@@ -155,6 +205,7 @@ export default function VerifyOtpPage() {
                     value={val}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
+                    onPaste={handlePaste}
                     className="w-11 h-12 text-center text-lg font-semibold border border-border bg-background text-foreground rounded-lg focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring/50"
                   />
                 ))}
@@ -168,6 +219,31 @@ export default function VerifyOtpPage() {
             >
               {loading ? 'Verifying...' : 'Verify Code'}
             </Button>
+            
+            <div className="flex flex-col items-center gap-2 mt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleResend}
+                disabled={resendCooldown > 0 || resendCount >= MAX_RESEND || resendLoading || !email}
+                className="text-xs text-muted-foreground hover:text-foreground h-auto p-2"
+              >
+                {resendLoading ? (
+                  'Resending...'
+                ) : resendCooldown > 0 ? (
+                  `Resend code in ${resendCooldown}s`
+                ) : resendCount >= MAX_RESEND ? (
+                  'Maximum resend attempts reached'
+                ) : (
+                  'Resend Code'
+                )}
+              </Button>
+              {resendCount > 0 && resendCount < MAX_RESEND && (
+                 <span className="text-[10px] text-muted-foreground/70">
+                   {MAX_RESEND - resendCount} attempts remaining
+                 </span>
+              )}
+            </div>
           </form>
 
           {/* Footer Links */}
