@@ -102,7 +102,14 @@ export function UserNav({ initials, name, email }: UserNavProps) {
           onClick={async () => {
             try {
               await logout()
-            } catch {
+            } catch (error) {
+              if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+                throw error
+              }
+              // In Next.js redirect() throws an error with digest 'NEXT_REDIRECT'
+              if (typeof error === 'object' && error !== null && 'digest' in error && (error as any).digest?.startsWith('NEXT_REDIRECT')) {
+                throw error
+              }
               toast.error('Failed to log out. Please try again.')
             }
           }}

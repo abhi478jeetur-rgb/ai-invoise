@@ -42,7 +42,13 @@ function SignInForm() {
         setError(result.error)
         turnstileRef.current?.reset()
       }
-    } catch {
+    } catch (error) {
+      if (
+        (error instanceof Error && error.message === 'NEXT_REDIRECT') ||
+        (typeof error === 'object' && error !== null && 'digest' in error && (error as any).digest?.startsWith('NEXT_REDIRECT'))
+      ) {
+        throw error
+      }
       setError('An unexpected error occurred. Please try again.')
       turnstileRef.current?.reset()
     } finally {
