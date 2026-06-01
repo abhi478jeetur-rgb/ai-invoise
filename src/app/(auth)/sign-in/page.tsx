@@ -50,9 +50,11 @@ function SignInForm() {
     setGoogleLoading(true)
 
     try {
-      const result = await signInWithGoogle()
+      const result = await signInWithGoogle(window.location.origin)
       if (result?.error) {
         setError(result.error)
+      } else if (result?.url) {
+        window.location.href = result.url
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')

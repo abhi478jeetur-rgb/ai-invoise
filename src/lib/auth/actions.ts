@@ -308,7 +308,7 @@ export async function updatePassword(formData: FormData) {
   return { success: true, message: 'Password successfully updated!' }
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(origin?: string) {
   // C4: Rate limit OAuth attempts by IP
   try {
     await enforceRateLimit(null, OAUTH_RATE_LIMIT, 'oauth')
@@ -321,7 +321,7 @@ export async function signInWithGoogle() {
 
   // H14: Use NEXT_PUBLIC_SITE_URL as the trusted base URL.
   // Do NOT trust headers (x-forwarded-proto, host) as they are user-controllable.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const siteUrl = origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -336,6 +336,6 @@ export async function signInWithGoogle() {
   }
 
   if (data?.url) {
-    redirect(data.url)
+    return { url: data.url }
   }
 }
