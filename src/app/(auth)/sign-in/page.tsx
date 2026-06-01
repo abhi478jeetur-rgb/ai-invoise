@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect, Suspense, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 
 function SignInForm() {
   const [error, setError] = useState<string | null>(null)
@@ -18,6 +18,7 @@ function SignInForm() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string>('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
   const searchParams = useSearchParams()
 
   // H5: Read OAuth error from URL params
@@ -39,7 +40,11 @@ function SignInForm() {
 
       if (result?.error) {
         setError(result.error)
+        turnstileRef.current?.reset()
       }
+    } catch {
+      setError('An unexpected error occurred. Please try again.')
+      turnstileRef.current?.reset()
     } finally {
       setLoading(false)
     }
@@ -150,6 +155,7 @@ function SignInForm() {
 
             <div className="flex justify-center py-2 min-h-[65px]">
               <Turnstile 
+                ref={turnstileRef}
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
                 options={{ theme: 'auto' }}
                 onSuccess={(token) => setTurnstileToken(token)}

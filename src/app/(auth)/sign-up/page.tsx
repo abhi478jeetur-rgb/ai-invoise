@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signup, signInWithGoogle } from '@/lib/auth/actions'
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -19,6 +19,7 @@ export default function SignUpPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string>('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -32,6 +33,7 @@ export default function SignUpPage() {
 
       if (result && 'error' in result) {
         setError(result.error)
+        turnstileRef.current?.reset()
       } else if (result && 'success' in result) {
         setSuccess(result.message || 'Verification link sent!')
         // Redirect to OTP verification screen
@@ -41,6 +43,7 @@ export default function SignUpPage() {
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
+      turnstileRef.current?.reset()
     } finally {
       setLoading(false)
     }
@@ -154,6 +157,7 @@ export default function SignUpPage() {
 
             <div className="flex justify-center py-2 min-h-[65px]">
               <Turnstile 
+                ref={turnstileRef}
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
                 options={{ theme: 'auto' }}
                 onSuccess={(token) => setTurnstileToken(token)}
