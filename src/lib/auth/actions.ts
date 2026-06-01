@@ -129,7 +129,7 @@ export async function signup(formData: FormData) {
     // Proceed with signup — Supabase will handle duplicate email on insert
   }
   if (emailExists) {
-    return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
+    return { success: true, email, message: 'An 8-digit verification code has been sent to your email.' }
   }
 
   // Supabase sign up sends OTP automatically if configured in templates
@@ -148,7 +148,7 @@ export async function signup(formData: FormData) {
     return { error: 'Unable to create account. Please try again.' }
   }
 
-  return { success: true, email, message: 'A 6-digit verification code has been sent to your email.' }
+  return { success: true, email, message: 'An 8-digit verification code has been sent to your email.' }
 }
 
 /** C6: Allowed OTP types for this application. Reject any other value. */
@@ -283,10 +283,10 @@ export async function sendPasswordReset(formData: FormData) {
   if (error) {
     console.error('[PASSWORD RESET ERROR]', error)
     // Always return success to prevent email enumeration
-    return { success: true, email, message: 'A 6-digit recovery code has been sent to your email.' }
+    return { success: true, email, message: 'An 8-digit recovery code has been sent to your email.' }
   }
 
-  return { success: true, email, message: 'A 6-digit recovery code has been sent to your email.' }
+  return { success: true, email, message: 'An 8-digit recovery code has been sent to your email.' }
 }
 
 export async function updatePassword(formData: FormData) {

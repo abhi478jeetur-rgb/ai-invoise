@@ -25,9 +25,11 @@ export default function VerifyOtpPage() {
   const [resendCount, setResendCount] = useState(0)
   const MAX_RESEND = 5
   
-  // Custom 6-digit input boxes state
-  const [otpValues, setOtpValues] = useState(['', '', '', '', '', ''])
+  // Custom 8-digit input boxes state
+  const [otpValues, setOtpValues] = useState(['', '', '', '', '', '', '', ''])
   const inputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
@@ -57,7 +59,7 @@ export default function VerifyOtpPage() {
     setOtpValues(newValues)
 
     // Focus next input box
-    if (val && index < 5) {
+    if (val && index < 7) {
       inputRefs[index + 1].current?.focus()
     }
   }
@@ -74,11 +76,11 @@ export default function VerifyOtpPage() {
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '')
     if (pastedData.length > 0) {
       const chars = [...otpValues]
-      for (let i = 0; i < Math.min(pastedData.length, 6); i++) {
+      for (let i = 0; i < Math.min(pastedData.length, 8); i++) {
         chars[i] = pastedData[i]
       }
       setOtpValues(chars)
-      const nextFocus = Math.min(pastedData.length, 5)
+      const nextFocus = Math.min(pastedData.length, 7)
       inputRefs[nextFocus].current?.focus()
     }
   }
@@ -118,8 +120,8 @@ export default function VerifyOtpPage() {
 
     try {
       const finalOtp = otpValues.join('')
-      if (finalOtp.length !== 6) {
-        setError('Please enter a valid 6-digit code.')
+      if (finalOtp.length !== 8) {
+        setError('Please enter a valid 8-digit code.')
         return
       }
 
@@ -153,7 +155,7 @@ export default function VerifyOtpPage() {
           </div>
           <CardTitle className="text-2xl font-semibold text-foreground tracking-tight">Enter Verification Code</CardTitle>
           <CardDescription className="text-sm text-muted-foreground mt-1">
-            We sent a 6-digit code to {email || 'your email'}
+            We sent an 8-digit code to {email || 'your email'}
           </CardDescription>
         </CardHeader>
 
@@ -191,7 +193,7 @@ export default function VerifyOtpPage() {
             )}
 
             <div className="space-y-2">
-              <Label className="text-muted-foreground text-center block">6-Digit Code</Label>
+              <Label className="text-muted-foreground text-center block">8-Digit Code</Label>
               <div className="flex justify-center gap-2">
                 {otpValues.map((val, idx) => (
                   <input
