@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-06-01
+
+### Added
+- **OTP Verification Enhancements:** Added a "Resend Code" feature with a 60-second cooldown timer and a limit of 5 maximum attempts.
+- **Improved OTP UI:** Upgraded the OTP input component to support robust cross-platform copy-pasting that automatically cleans non-numeric characters and populates the fields correctly.
+
+### Changed
+- **OTP Length Support:** Upgraded the verification system to accept 8-digit OTP codes directly from Supabase, preventing verification mismatches.
+
+### Fixed
+- **Turnstile State Reset:** Ensured the Turnstile widget automatically resets upon auth form validation errors, preventing "Security check failed" loops.
+- **Google OAuth Localhost Redirect:** Fixed a bug causing Google OAuth to incorrectly redirect to localhost in production environments.
+- **CSP Headers:** Updated Content Security Policy (CSP) to correctly allow Cloudflare Turnstile scripts and iframes.
+- **Turnstile Form Injection:** Fixed a token injection bug in authentication forms for seamless sign-ups.
+
 ## [2.1.0] - 2026-06-01
 
 ### Added
