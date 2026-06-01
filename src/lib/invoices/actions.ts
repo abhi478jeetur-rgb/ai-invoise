@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 
 // M18: UUID validation helper
@@ -195,7 +196,11 @@ export async function getNextInvoiceNumberAction() {
   }
 }
 
-export async function getInvoicesAction(filters?: { status?: string; clientId?: string }) {
+export async function getInvoicesAction(
+  filters?: { status?: string; clientId?: string },
+  page: number = 1,
+  limit: number = 15
+) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -214,13 +219,18 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
       query = query.eq('client_id', filters.clientId)
     }
 
-    query = query.order('due_date', { ascending: true })
+    const start = (page - 1) * limit
+    const end = start + limit - 1
+
+    query = query.order('due_date', { ascending: true }).range(start, end)
 
     const { data, error } = await query
 
     if (error) return { error: sanitizeDatabaseError(error) }
 
-    return { success: true, data }
+    const hasMore = data ? data.length === limit : false
+
+    return { success: true, data, hasMore }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
@@ -236,7 +246,7 @@ export async function getInvoiceDetailAction(invoiceId: string) {
 
     const { data, error } = await supabase
       .from('invoices')
-      .select('*, clients (*)')
+      .select('*, clients (id, client_name, email, company_name, address, phone)')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
       .is('deleted_at', null)
@@ -394,6 +404,7 @@ export async function getDeletedInvoicesAction() {
       .eq('user_id', user.id)
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false })
+      .limit(50)
 
     if (error) return { error: sanitizeDatabaseError(error) }
 
@@ -506,20 +517,21 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
 
     if (updateError) return { error: sanitizeDatabaseError(updateError) }
 
-    // Log status change event
-    const { error: eventError } = await supabase
-      .from('reminder_events')
-      .insert({
-        user_id: user.id,
-        invoice_id: invoiceId,
-        event_type: 'status_changed',
-        description: 'Invoice marked as paid',
-      })
+    // Log status change event in background
+    after(async () => {
+      const { error: eventError } = await supabase
+        .from('reminder_events')
+        .insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          event_type: 'status_changed',
+          description: 'Invoice marked as paid',
+        })
 
-    if (eventError) {
-      // Non-fatal: invoice was already updated, just log the event failure
-      console.error('Failed to log status_changed event:', eventError.message)
-    }
+      if (eventError) {
+        console.error('Failed to log status_changed event:', eventError.message)
+      }
+    })
 
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)
@@ -627,20 +639,21 @@ export async function updateInvoiceStatusAction(invoiceId: string, status: strin
 
     if (updateError) return { error: sanitizeDatabaseError(updateError) }
 
-    // Log status change event
-    const { error: eventError } = await supabase
-      .from('reminder_events')
-      .insert({
-        user_id: user.id,
-        invoice_id: invoiceId,
-        event_type: 'status_changed',
-        description: `Invoice status changed to ${status}`,
-      })
+    // Log status change event in background
+    after(async () => {
+      const { error: eventError } = await supabase
+        .from('reminder_events')
+        .insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          event_type: 'status_changed',
+          description: `Invoice status changed to ${status}`,
+        })
 
-    if (eventError) {
-      // Non-fatal: invoice was already updated, just log the event failure
-      console.error('Failed to log status_changed event:', eventError.message)
-    }
+      if (eventError) {
+        console.error('Failed to log status_changed event:', eventError.message)
+      }
+    })
 
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)

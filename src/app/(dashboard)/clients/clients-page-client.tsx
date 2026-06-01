@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ClientForm } from '@/components/clients/client-form'
-import { deleteClientAction } from '@/lib/clients/actions'
+import { deleteClientAction, getClientsAction } from '@/lib/clients/actions'
 
 interface Client {
   id: string
@@ -37,16 +37,62 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
 
+  const [displayedClients, setDisplayedClients] = useState<Client[]>(clients)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(clients.length >= 15)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const observerTarget = React.useRef<HTMLDivElement>(null)
+
+  const loadMore = React.useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const result = await getClientsAction(nextPage, 15)
+      if (result.success && result.data) {
+        setDisplayedClients(prev => {
+          const newItems = (result.data as unknown as Client[]).filter(d => !prev.some(p => p.id === d.id))
+          return [...prev, ...newItems]
+        })
+        setPage(nextPage)
+        setHasMore(result.hasMore ?? false)
+      } else {
+        setHasMore(false)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [page, hasMore, isLoadingMore])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current)
+    }
+
+    return () => observer.disconnect()
+  }, [loadMore])
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return clients
+    if (!search.trim()) return displayedClients
     const q = search.toLowerCase()
-    return clients.filter(
+    return displayedClients.filter(
       (c) =>
         c.client_name.toLowerCase().includes(q) ||
         (c.company_name?.toLowerCase().includes(q) ?? false) ||
         (c.email?.toLowerCase().includes(q) ?? false)
     )
-  }, [clients, search])
+  }, [displayedClients, search])
 
   function handleEdit(client: Client) {
     setEditingClient(client)
@@ -210,6 +256,25 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
               </CardContent>
             </Card>
           ))}
+          
+          {/* Loading Trigger for Infinite Scroll */}
+          {hasMore && (
+            <div ref={observerTarget} className="py-4 flex justify-center">
+              {isLoadingMore ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  Loading more...
+                </div>
+              ) : (
+                <div className="h-4"></div> /* Invisible target to trigger observer */
+              )}
+            </div>
+          )}
+          {!hasMore && displayedClients.length >= 15 && (
+            <div className="py-6 text-center text-xs text-muted-foreground">
+              You've reached the end of the directory.
+            </div>
+          )}
         </div>
       )}
 

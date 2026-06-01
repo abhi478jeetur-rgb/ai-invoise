@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -78,6 +79,41 @@ const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
     description: 'Direct final warning before further action.',
   },
 ]
+
+const LOADING_TEXTS = [
+  "Analyzing Invoice History...",
+  "Drafting Perfect Reminder...",
+  "Polishing Tone & Language...",
+  "Almost Ready..."
+]
+
+function GeneratingText() {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % LOADING_TEXTS.length)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="relative overflow-hidden h-5 w-[190px] text-left inline-flex items-center">
+      <AnimatePresence mode="popLayout">
+        <motion.span
+          key={index}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="absolute whitespace-nowrap text-sm text-primary-foreground font-medium"
+        >
+          {LOADING_TEXTS[index]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail, amount, currency }: ReminderModalProps) {
   const [tone, setTone] = useState<Tone>('professional')
@@ -234,9 +270,9 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
               className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {generating ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-4 border-2 border-neutral-600 border-t-transparent rounded-full animate-spin" />
-                  AI is crafting your reminder...
+                <span className="flex items-center justify-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin shrink-0" />
+                  <GeneratingText />
                 </span>
               ) : (
                 'Generate Draft'

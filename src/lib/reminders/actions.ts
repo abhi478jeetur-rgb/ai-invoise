@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { decryptKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
@@ -54,7 +55,7 @@ export async function generateReminderAction(
     // Fetch invoice with client
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
-      .select('*, clients (client_name, email, company_name)')
+      .select('id, invoice_number, title, amount, due_date, payment_link, description, reminder_count, currency, clients (client_name, email, company_name)')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
       .single()
@@ -100,7 +101,7 @@ export async function generateReminderAction(
     due.setHours(0, 0, 0, 0)
     const daysOverdue = Math.max(0, Math.round((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)))
 
-    const client = invoice.clients as { client_name: string; email: string | null; company_name: string | null } | null
+    const client = invoice.clients as unknown as { client_name: string; email: string | null; company_name: string | null } | null
     const senderName = profile?.full_name || 'the service provider'
     const senderCompany = profile?.company_name || ''
     const clientName = client?.client_name || 'Client'
@@ -350,7 +351,7 @@ export async function generateMultipleDraftsAction(
     // Fetch invoice with client
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
-      .select('*, clients (client_name, email, company_name)')
+      .select('id, invoice_number, title, amount, due_date, payment_link, description, reminder_count, currency, clients (client_name, email, company_name)')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
       .single()
@@ -363,6 +364,17 @@ export async function generateMultipleDraftsAction(
       .select('full_name, company_name, global_rules')
       .eq('id', user.id)
       .single()
+
+    // Fetch AI Knowledge Base Documents
+    const { data: kbDocs } = await supabase
+      .from('user_knowledge_base')
+      .select('extracted_text')
+      .eq('user_id', user.id)
+
+    const kbText = kbDocs?.map(d => d.extracted_text).join('\n\n---\n\n') || ''
+    const kbSection = kbText 
+      ? `\nUSER KNOWLEDGE BASE (Strictly adhere to these custom guidelines from the user's uploaded documents):\n${kbText}\n`
+      : ''
 
     const baseUrl = process.env.AI_BASE_URL
     const modelName = process.env.AI_MODEL_NAME
@@ -385,7 +397,7 @@ export async function generateMultipleDraftsAction(
     due.setHours(0, 0, 0, 0)
     const daysOverdue = Math.max(0, Math.round((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)))
 
-    const client = invoice.clients as { client_name: string; email: string | null; company_name: string | null } | null
+    const client = invoice.clients as unknown as { client_name: string; email: string | null; company_name: string | null } | null
     const senderName = profile?.full_name || 'the service provider'
     const senderCompany = profile?.company_name || ''
     const clientName = client?.client_name || 'Client'
@@ -442,6 +454,7 @@ Tone Guidelines: ${toneDescriptions[tone]}
 ${invoice.reminder_count > 0 ? `This is reminder #${invoice.reminder_count + 1}. Previous reminders have already been sent.` : 'This is the first reminder for this invoice.'}
 
 STYLE: ${styleInstruction}
+${kbSection}
 
 IMPORTANT RULES:
 - Write as if you are ${senderName} sending to ${clientName}.
@@ -667,17 +680,38 @@ export async function logReminderEventAction(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const { error } = await supabase
-      .from('reminder_events')
-      .insert({
-        user_id: user.id,
-        invoice_id: invoiceId,
-        draft_id: draftId || null,
-        event_type: eventType,
-        description: description || (eventType === 'draft_copied' ? 'Copied draft to clipboard' : 'Reminder marked as sent'),
-      })
+    // Prevent multiple 'draft_copied' events for the same draft to avoid spamming the history
+    if (eventType === 'draft_copied' && draftId) {
+      const { data: existingEvent } = await supabase
+        .from('reminder_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('invoice_id', invoiceId)
+        .eq('draft_id', draftId)
+        .eq('event_type', 'draft_copied')
+        .maybeSingle()
 
-    if (error) return { error: sanitizeDatabaseError(error) }
+      if (existingEvent) {
+        // Already logged, return success without inserting duplicates
+        return { success: true }
+      }
+    }
+
+    after(async () => {
+      const { error } = await supabase
+        .from('reminder_events')
+        .insert({
+          user_id: user.id,
+          invoice_id: invoiceId,
+          draft_id: draftId || null,
+          event_type: eventType,
+          description: description || (eventType === 'draft_copied' ? 'Copied draft to clipboard' : 'Reminder marked as sent'),
+        })
+
+      if (error) {
+        console.error('Failed to log reminder event:', error.message)
+      }
+    })
 
     revalidatePath(`/invoices/${invoiceId}`)
     return { success: true }

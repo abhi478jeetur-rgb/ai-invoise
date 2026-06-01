@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InvoiceForm } from '@/components/invoices/invoice-form'
-import { deleteInvoiceAction } from '@/lib/invoices/actions'
+import { deleteInvoiceAction, getInvoicesAction } from '@/lib/invoices/actions'
 import { toast } from 'sonner'
 
 interface Client {
@@ -151,6 +151,12 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
   const [formOpen, setFormOpen] = useState(false)
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
 
+  const [displayedInvoices, setDisplayedInvoices] = useState<Invoice[]>(invoices)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(invoices.length >= 15)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const observerTarget = React.useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (autoNew) {
       setEditingInvoice(null)
@@ -158,8 +164,48 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     }
   }, [autoNew])
 
+  const loadMore = React.useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const result = await getInvoicesAction(undefined, nextPage, 15)
+      if (result.success && result.data) {
+        setDisplayedInvoices(prev => {
+          const newItems = (result.data as Invoice[]).filter(d => !prev.some(p => p.id === d.id))
+          return [...prev, ...newItems]
+        })
+        setPage(nextPage)
+        setHasMore(result.hasMore ?? false)
+      } else {
+        setHasMore(false)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [page, hasMore, isLoadingMore])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current)
+    }
+
+    return () => observer.disconnect()
+  }, [loadMore])
+
   const filtered = useMemo(() => {
-    let result = invoices
+    let result = displayedInvoices
 
     if (statusFilter !== 'all') {
       result = result.filter((inv) => getInvoiceEffectiveStatus(inv) === statusFilter)
@@ -176,7 +222,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     }
 
     return result
-  }, [invoices, statusFilter, search])
+  }, [displayedInvoices, statusFilter, search])
 
   function handleEdit(invoice: Invoice) {
     setEditingInvoice(invoice)
@@ -427,6 +473,25 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
               </Card>
             )
           })}
+          
+          {/* Loading Trigger for Infinite Scroll */}
+          {hasMore && (
+            <div ref={observerTarget} className="py-4 flex justify-center">
+              {isLoadingMore ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  Loading more...
+                </div>
+              ) : (
+                <div className="h-4"></div> /* Invisible target to trigger observer */
+              )}
+            </div>
+          )}
+          {!hasMore && displayedInvoices.length >= 15 && (
+            <div className="py-6 text-center text-xs text-muted-foreground">
+              You've reached the end of the list.
+            </div>
+          )}
         </div>
       )}
 

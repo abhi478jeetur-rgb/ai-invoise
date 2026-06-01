@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -146,6 +147,13 @@ export default function SignUpPage() {
               <p className="text-[10px] text-muted-foreground leading-normal">
                 Must be at least 8 characters, contain one uppercase letter, one lowercase letter, one number, and one special character.
               </p>
+            </div>
+
+            <div className="flex justify-center py-2">
+              <Turnstile 
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
+                options={{ theme: 'auto' }}
+              />
             </div>
 
             <Button

@@ -75,26 +75,30 @@ export async function createClientAction(formData: FormData) {
   }
 }
 
-export async function getClientsAction() {
+export async function getClientsAction(page: number = 1, limit: number = 15) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return { error: 'You must be authenticated.' }
-    }
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const start = (page - 1) * limit
+    const end = start + limit - 1
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, client_name, email, phone, company_name, created_at, updated_at, deleted_at')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .order('client_name', { ascending: true })
+      .range(start, end)
 
     if (error) {
       return { error: sanitizeDatabaseError(error) }
     }
 
-    return { success: true, data }
+    const hasMore = data ? data.length === limit : false
+
+    return { success: true, data, hasMore }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
@@ -242,10 +246,11 @@ export async function getDeletedClientsAction() {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, client_name, email, phone, company_name, deleted_at')
       .eq('user_id', user.id)
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false })
+      .limit(50)
 
     if (error) {
       return { error: sanitizeDatabaseError(error) }

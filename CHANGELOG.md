@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-06-01
+
+### Added
+- **Cloudflare Turnstile:** Integrated Cloudflare Turnstile bot protection into authentication pages (Sign In, Sign Up, Forgot Password) to securely prevent bot and brute-force attacks without interrupting the user experience.
+- **Premium Landing Page Redesign:** Overhauled the main landing page adopting a premium SaaS aesthetic. Replaced testimonials with an asymmetrical Bento Grid for features, added a video demo placeholder with glassmorphism effects, implemented a 'Powered by' trust banner, and added 3D hover micro-interactions.
+
+### Changed
+- **Server Action Security:** Hardened server actions (`login`, `signup`, `sendPasswordReset`) with strict backend verification of the Turnstile security tokens.
+
 ## [2.0.4] - 2026-05-30
 
 ### Fixed

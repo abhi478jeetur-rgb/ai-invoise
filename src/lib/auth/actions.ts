@@ -22,6 +22,38 @@ function handleRateLimitError(e: unknown): { error: string } | null {
   return null
 }
 
+/** Verifies the Cloudflare Turnstile token */
+async function verifyTurnstileToken(token: string | null): Promise<{ success: boolean; error?: string }> {
+  if (!token) {
+    return { success: false, error: 'Please complete the security check.' }
+  }
+
+  const secret = process.env.TURNSTILE_SECRET_KEY
+  if (!secret) {
+    console.warn('TURNSTILE_SECRET_KEY is not set. Skipping verification for development.')
+    return { success: true }
+  }
+
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+    const data = await res.json()
+    if (!data.success) {
+      console.error('Turnstile verification failed:', data)
+      return { success: false, error: 'Security check failed. Please try again.' }
+    }
+    return { success: true }
+  } catch (err) {
+    console.error('Turnstile request error:', err)
+    return { success: false, error: 'Failed to verify security check.' }
+  }
+}
+
 export async function login(formData: FormData) {
   // C4: Rate limit login attempts by IP
   try {
@@ -35,6 +67,13 @@ export async function login(formData: FormData) {
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const turnstileToken = formData.get('cf-turnstile-response') as string | null
+
+  const turnstileCheck = await verifyTurnstileToken(turnstileToken)
+  if (!turnstileCheck.success) {
+    return { error: turnstileCheck.error }
+  }
+
 
   // Validate using Zod
   const validation = loginSchema.safeParse({ email, password })
@@ -70,6 +109,12 @@ export async function signup(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('fullName') as string
+  const turnstileToken = formData.get('cf-turnstile-response') as string | null
+
+  const turnstileCheck = await verifyTurnstileToken(turnstileToken)
+  if (!turnstileCheck.success) {
+    return { error: turnstileCheck.error }
+  }
 
   // Validate using Zod
   const validation = signUpSchema.safeParse({ email, password, fullName })
@@ -187,6 +232,12 @@ export async function sendPasswordReset(formData: FormData) {
 
   const supabase = await createClient()
   const email = formData.get('email') as string
+  const turnstileToken = formData.get('cf-turnstile-response') as string | null
+
+  const turnstileCheck = await verifyTurnstileToken(turnstileToken)
+  if (!turnstileCheck.success) {
+    return { error: turnstileCheck.error }
+  }
 
   const validation = forgotPasswordSchema.safeParse({ email })
   if (!validation.success) {

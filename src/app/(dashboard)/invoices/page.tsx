@@ -1,8 +1,8 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/db/server'
 import { redirect } from 'next/navigation'
-import { getInvoicesAction } from '@/lib/invoices/actions'
-import { getClientsAction } from '@/lib/clients/actions'
-import { InvoicesPageClient } from './invoices-page-client'
+import { InvoicesFetcher } from './invoices-fetcher'
+import { InvoicesSkeleton } from '@/components/skeletons/invoices-skeleton'
 
 export default async function InvoicesPage() {
   const supabase = await createClient()
@@ -12,20 +12,12 @@ export default async function InvoicesPage() {
     redirect('/sign-in')
   }
 
-  const [invoicesResult, clientsResult, profileResult] = await Promise.all([
-    getInvoicesAction(),
-    getClientsAction(),
-    supabase
-      .from('profiles')
-      .select('default_currency, payment_link_default, default_payment_terms')
-      .eq('id', user.id)
-      .single(),
-  ])
-
-  const invoices = invoicesResult.success ? invoicesResult.data : []
-  const clients = clientsResult.success ? clientsResult.data : []
-  const defaultProfile = profileResult.data ?? {}
-
-  return <InvoicesPageClient invoices={invoices ?? []} clients={clients ?? []} defaultProfile={defaultProfile} />
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <Suspense fallback={<InvoicesSkeleton />}>
+        <InvoicesFetcher />
+      </Suspense>
+    </div>
+  )
 }
 

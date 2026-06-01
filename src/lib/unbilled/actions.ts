@@ -17,7 +17,7 @@ export async function getUnbilledTasksAction() {
 
     const { data, error } = await supabase
       .from('unbilled_tasks')
-      .select('*')
+      .select('id, description, status, created_at')
       .eq('user_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })

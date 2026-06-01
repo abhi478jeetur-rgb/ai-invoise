@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
 import { Search, AlertCircle, Check, Clock, ArrowRight, Copy, Send, Sparkles, Loader2, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 import { getReminderHistoryAction, generateMultipleDraftsAction, logReminderEventAction } from '@/lib/reminders/actions'
 import { toast } from 'sonner'
@@ -165,6 +167,41 @@ function buildEmailUrl(
     case 'default':
       return `mailto:${encTo}?subject=${encSubject}&body=${encBody}`
   }
+}
+
+const LOADING_TEXTS = [
+  "Analyzing context...",
+  "Crafting 3 unique variants...",
+  "Polishing tone...",
+  "Almost ready..."
+]
+
+function GeneratingText() {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % LOADING_TEXTS.length)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="relative overflow-hidden h-5 w-[190px] text-left inline-flex items-center">
+      <AnimatePresence mode="popLayout">
+        <motion.span
+          key={index}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="absolute whitespace-nowrap text-sm font-medium"
+        >
+          {LOADING_TEXTS[index]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export function RemindersPageClient({ initialInvoices, initialSettings }: RemindersPageClientProps) {
@@ -638,24 +675,24 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
               </div>
 
               {/* Generate Button */}
-              <button
+              <Button
                 type="button"
                 onClick={handleGenerate}
                 disabled={generating || needsSetup}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full h-11 text-sm font-medium"
               >
                 {generating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating 3 variants...
-                  </>
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                    <GeneratingText />
+                  </span>
                 ) : (
-                  <>
+                  <span className="flex items-center justify-center gap-2">
                     <Sparkles className="h-4 w-4" />
                     Generate Reminders
-                  </>
+                  </span>
                 )}
-              </button>
+              </Button>
 
               {/* Generate Error */}
               {generateError && (
@@ -771,14 +808,15 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                   {/* Action Buttons & Feedback */}
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={handleCopy}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-accent px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                        className="flex-1 h-10 gap-2"
                       >
                         {copied ? (
                           <>
-                            <Check className="h-4 w-4 text-emerald-400" />
+                            <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
                             Copied!
                           </>
                         ) : (
@@ -787,15 +825,16 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                             Copy Draft
                           </>
                         )}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={handleMarkSent}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-accent px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                        className="flex-1 h-10 gap-2"
                       >
                         <Send className="h-4 w-4" />
                         Mark as Sent
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Success Feedback Banners */}
