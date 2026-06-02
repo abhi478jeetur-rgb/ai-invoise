@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -31,6 +32,7 @@ interface ClientFormProps {
 }
 
 export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormProps) {
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [formKey, setFormKey] = useState(0)
@@ -63,6 +65,7 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
     } else {
       onOpenChange(false)
       onSaved?.(result.data)
+      router.refresh()
     }
   }
 

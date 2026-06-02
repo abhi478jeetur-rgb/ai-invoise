@@ -44,7 +44,7 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
       aria-expanded={expanded}
-      className={`h-screen sticky top-0 z-40 border-r border-border bg-background flex flex-col items-start py-4 justify-between shrink-0 overflow-hidden transition-all duration-200 ease-in-out ${
+      className={`hidden md:flex h-screen sticky top-0 z-40 border-r border-border bg-background flex-col items-start py-4 justify-between shrink-0 overflow-hidden transition-all duration-200 ease-in-out ${
         expanded ? 'w-56' : 'w-14'
       }`}
     >

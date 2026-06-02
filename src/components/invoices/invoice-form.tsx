@@ -161,6 +161,7 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
       toast.success(isEditing ? 'Invoice saved successfully!' : 'Invoice created successfully!')
       onOpenChange(false)
       onSaved?.()
+      router.refresh()
     }
   }
 
