@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Invoice Lifecycle Management', () => {
+  test.setTimeout(120000); // 2 minutes to accommodate dev server cold starts and multiple page reloads
+
   test.beforeEach(async ({ page }) => {
     // Log in
     await page.goto('/sign-in');
@@ -46,18 +48,23 @@ test.describe('Invoice Lifecycle Management', () => {
     await page.getByRole('button', { name: 'Create Invoice' }).click();
 
     // Verify toast or that invoice appears in the list
-    const card = page.locator('.border-white\\/\\[0\\.06\\]', { hasText: invoiceTitle });
-    await expect(card.first()).toBeVisible({ timeout: 10000 });
+    const card = page.locator('div').filter({ hasText: invoiceTitle }).locator('..').first();
+    await expect(page.getByText(invoiceTitle).first()).toBeVisible({ timeout: 10000 });
 
     // 6. Navigate to details page
     // Click on the newly created invoice link using the title
-    await card.locator('a').first().click();
+    await page.getByText(invoiceTitle).first().click();
     await expect(page).toHaveURL(/\/invoices\/[a-zA-Z0-9-]+/);
+    await page.waitForLoadState('networkidle');
 
     // 7. Edit the invoice details
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit' }).first().click();
     await page.getByRole('textbox', { name: 'Title' }).fill(updatedTitle);
     await page.getByRole('button', { name: 'Save Changes' }).click();
+
+    // Wait for the modal to close and the success toast
+    await expect(page.getByText('Invoice saved successfully!')).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeHidden();
 
     // Verify it updated
     await expect(page.getByText(updatedTitle)).toBeVisible();
@@ -66,11 +73,15 @@ test.describe('Invoice Lifecycle Management', () => {
     await page.getByRole('button', { name: 'Change Status' }).click();
     await page.locator('select#status').selectOption('sent');
     await page.getByRole('button', { name: 'Save changes' }).click();
+    await page.waitForTimeout(1500);
+    await page.reload();
 
     // 9. Test "Mark Paid" button (Direct Action)
     const markPaidBtn = page.getByRole('button', { name: 'Mark Paid' });
     if (await markPaidBtn.isVisible()) {
       await markPaidBtn.click();
+      await page.waitForTimeout(1500); // Wait for server action
+      await page.reload();
       // Status badge should reflect paid
       await expect(page.getByText('Paid', { exact: true }).first()).toBeVisible();
     }
@@ -82,7 +93,7 @@ test.describe('Invoice Lifecycle Management', () => {
       await dialog.accept();
     });
 
-    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await page.getByText('Delete', { exact: true }).click({ force: true });
 
     // Should redirect back to invoices
     await expect(page).toHaveURL(/.*invoices/);

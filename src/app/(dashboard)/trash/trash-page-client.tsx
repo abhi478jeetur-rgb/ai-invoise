@@ -19,8 +19,9 @@ export function TrashPageClient({
   clients: any[]
 }) {
   const router = useRouter()
-  const [invoices, setInvoices] = useState<any[]>(initialInvoices)
-  const [clients, setClients] = useState<any[]>(initialClients)
+  // Use props directly so router.refresh() correctly updates the UI
+  const invoices = initialInvoices
+  const clients = initialClients
   const [isRestoring, setIsRestoring] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
 

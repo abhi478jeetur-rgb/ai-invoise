@@ -29,7 +29,7 @@ const SUPABASE_ANON_KEY =
 
 // Two separate user contexts for cross-tenant testing
 const USER_A = { email: 'testabhi1@clockivo.com', password: '***REMOVED***' };
-const USER_B = { email: 'testabhi1@clockivo.com', password: '***REMOVED***' };
+const USER_B = { email: 'testabhi5@clockivo.com', password: '***REMOVED***' };
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -694,7 +694,9 @@ test.describe('VECTOR 3 — Authentication Bypass', () => {
     request,
   }) => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
-    const res = await request.get(`${BASE_URL}/api/invoices/${fakeId}/pdf`);
+    const res = await request.get(`${BASE_URL}/api/invoices/${fakeId}/pdf`, {
+      maxRedirects: 0
+    });
     expect(
       [401, 404, 302, 307].includes(res.status()),
       `PDF endpoint returned unexpected status ${res.status()} for unauthenticated request`
@@ -713,6 +715,7 @@ test.describe('VECTOR 3 — Authentication Bypass', () => {
         Cookie:
           'sb-hfwuvramwfwmyplynqyr-auth-token=forged-invalid-token-value',
       },
+      maxRedirects: 0
     });
     expect(
       [401, 404, 302, 307].includes(res.status()),
