@@ -115,7 +115,10 @@ function GeneratingText() {
   )
 }
 
+import { useRouter } from 'next/navigation'
+
 export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail, amount, currency }: ReminderModalProps) {
+  const router = useRouter()
   const [tone, setTone] = useState<Tone>('professional')
   const [customInstructions, setCustomInstructions] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -174,6 +177,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     // Log copy event silently
     if (draft) {
       await logReminderEventAction(invoiceId, 'draft_copied', draft.id, `Copied ${field} to clipboard`)
+      router.refresh()
     }
   }
 
@@ -198,6 +202,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     }
 
     handleClose(false)
+    router.refresh()
   }
 
   return (

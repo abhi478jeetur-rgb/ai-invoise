@@ -119,6 +119,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   const result = await getInvoiceDetailAction(invoiceId)
 
   if (!result.success || !result.data) {
+    console.error('Invoice Not Found Debug:', { invoiceId, result })
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <div className="bg-background/40 backdrop-blur-md border border-white/[0.05] rounded-2xl p-8 max-w-md w-full shadow-2xl flex flex-col items-center space-y-6">
@@ -130,7 +131,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-foreground tracking-tight">Invoice Not Found</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              The invoice you are trying to access does not exist, has been deleted, or you do not have permission to view it.
+              {result.error ? `Error: ${result.error}` : 'The invoice you are trying to access does not exist, has been deleted, or you do not have permission to view it.'}
             </p>
           </div>
           <Link href="/invoices" className="w-full">

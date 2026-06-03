@@ -252,10 +252,14 @@ export async function getInvoiceDetailAction(invoiceId: string) {
       .is('deleted_at', null)
       .single()
 
-    if (error) return { error: sanitizeDatabaseError(error) }
+    if (error) {
+      console.error('[getInvoiceDetailAction] Supabase error:', error, { invoiceId, userId: user.id })
+      return { error: sanitizeDatabaseError(error) }
+    }
 
     return { success: true, data }
   } catch (e) {
+    console.error('[getInvoiceDetailAction] Unexpected error:', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
