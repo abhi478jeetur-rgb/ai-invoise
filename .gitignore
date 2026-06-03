@@ -70,3 +70,14 @@ pnpm-debug.log*
 
 # Dev Tools Isolation (Agentation, Understand-Anything)
 .understand-anything/
+
+# Keys and Secrets
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+secrets.json
+service-account.json
+supabase/functions/.env
+

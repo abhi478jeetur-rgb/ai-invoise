@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running all tests (Unit & Playwright E2E) before push..."
+npm run test:all
