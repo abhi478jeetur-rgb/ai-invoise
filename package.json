@@ -16,6 +16,7 @@
     "@base-ui/react": "^1.4.1",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
+    "@marsidev/react-turnstile": "^1.5.2",
     "@react-pdf/renderer": "^4.5.1",
     "@sentry/nextjs": "^10.53.1",
     "@supabase/ssr": "^0.10.3",

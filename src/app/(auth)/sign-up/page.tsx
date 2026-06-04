@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import { useRef } from 'react'
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -17,6 +19,8 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string>('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -30,6 +34,7 @@ export default function SignUpPage() {
     if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
+      turnstileRef.current?.reset()
     } else if (result && 'success' in result) {
       setSuccess(result.message || 'Verification link sent!')
       setLoading(false)
@@ -136,6 +141,17 @@ export default function SignUpPage() {
               <p className="text-[10px] text-muted-foreground leading-normal">
                 Must be at least 8 characters, contain one uppercase letter, one lowercase letter, one number, and one special character.
               </p>
+            </div>
+
+            <div className="flex justify-center py-2 min-h-[65px]">
+              <Turnstile 
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
+                options={{ theme: 'auto' }}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onExpire={() => setTurnstileToken('')}
+                onError={() => setTurnstileToken('')}
+              />
             </div>
 
             <Button
