@@ -20,6 +20,15 @@ export const metadata: Metadata = {
   description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
 };
 
+import { Viewport } from 'next';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 import { Toaster } from "@/components/ui/sonner"
 import ConnectivityMonitor from "@/components/shared/ConnectivityMonitor"
 import dynamic from 'next/dynamic'

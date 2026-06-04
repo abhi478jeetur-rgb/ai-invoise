@@ -276,7 +276,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           {/* Unpaid */}
           <div
-            className="border p-5 transition-all"
+            className="border p-4 sm:p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
@@ -290,7 +290,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           {/* Overdue */}
           <div
-            className="border p-5 transition-all"
+            className="border p-4 sm:p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
@@ -304,7 +304,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           {/* Due This Week */}
           <div
-            className="border p-5 transition-all"
+            className="border p-4 sm:p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due This Week</p>
@@ -318,7 +318,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           {/* Clients to Chase */}
           <div
-            className="border p-5 transition-all"
+            className="border p-4 sm:p-5 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Clients to Chase</p>
@@ -336,7 +336,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                 
                 {/* 3. Who to Chase Today */}
                 <div
-                  className="border p-6"
+                  className="border p-4 sm:p-6"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
@@ -368,7 +368,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                   return (
                     <div
                       key={invoice.id}
-                      className="flex items-center justify-between p-4 rounded-lg border transition-colors hover:opacity-90"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border transition-colors hover:opacity-90 gap-4"
                       style={{ borderColor: 'var(--user-border)', backgroundColor: 'var(--user-bg)' }}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -404,7 +404,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0 ml-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 sm:ml-4">
                         <p className="text-base font-bold font-mono" style={{ color: 'var(--user-title)' }}>
                           {formatCurrencyWithCode(invoice.amount, invoice.currency)}
                         </p>
@@ -435,7 +435,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
         {/* 4. Recent Invoices Table */}
         <div
-          className="border p-6"
+          className="border p-4 sm:p-6"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
@@ -487,7 +487,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
         {/* 5. Recent Reminder Activity */}
         <div
-          className="border p-6 mt-8"
+          className="border p-4 sm:p-6 mt-8"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
@@ -560,7 +560,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       {/* Aging Report / Right Column Widget (Phase 3) */}
       <div className="lg:col-span-1 space-y-8">
         <div
-          className="border p-6"
+          className="border p-4 sm:p-6"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
         >
           <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
