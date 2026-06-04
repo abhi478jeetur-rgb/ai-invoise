@@ -169,3 +169,10 @@ Page structure verification confirms all auth pages render correctly after bug f
 - Local 
 pm run dev retained existing .env.local with secret, so local test naturally failed as it should when a user doesn't click.
 - The logic dictates that in CI where the secret is omitted, Turnstile is bypassed successfully before the token is checked. This guarantees 100% deterministic test behavior in CI environments, solving the flaky test issue.
+## Date: 2026-06-04
+**Test Context**: CSP Fix for Turnstile Bot Protection
+**Changes Evaluated**:
+- Updated 
+ext.config.ts CSP header
+**Results**:
+- The browser console no longer flags challenges.cloudflare.com as a CSP violation. The Turnstile script can now load successfully and render the widget as requested.

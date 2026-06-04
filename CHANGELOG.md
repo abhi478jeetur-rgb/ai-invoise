@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2026-06-04
+
+### Fixed
+- **Bot Protection Visibility:** Fixed an issue where the Cloudflare Turnstile widget was completely hidden due to Content Security Policy (CSP) blocking the script. Allowed `challenges.cloudflare.com` in `script-src` and `frame-src`.
+
 ## [2.0.6] - 2026-06-04
 
 ### Fixed

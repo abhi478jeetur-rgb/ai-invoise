@@ -861,3 +861,9 @@ Multiple E2E tests were failing across Chromium, Firefox, and WebKit:
 **Bug 2**: Cloudflare Turnstile widget was completely invisible during standard email/password login despite the user wanting it to be explicitly visible as a manual check.
 **Root Cause 2**: Turnstile uses ppearance: 'always' by default, but the explicit 	heme: 'auto' options map might have overridden or conflicted with the layout, or Cloudflare was hiding it because the Managed key automatically verified the session silently.
 **Solution 2**: Added ppearance: 'always' explicitly to the <Turnstile> options props on /sign-in, /sign-up, and /forgot-password to force the widget UI to render.
+## Turnstile CSP Block
+**Bug**: The Turnstile widget was completely invisible on the screen during standard email/password login despite configuring it with ppearance: 'always'.
+**Root Cause**: The application's Content Security Policy (CSP) defined in 
+ext.config.ts was strictly blocking Cloudflare's scripts from executing.
+**Solution**: Added https://challenges.cloudflare.com to script-src and rame-src in 
+ext.config.ts to allow Turnstile's iframe and scripts to load.

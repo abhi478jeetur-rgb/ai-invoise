@@ -3,12 +3,12 @@ import type { NextConfig } from "next";
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.posthog.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.posthog.com https://challenges.cloudflare.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.supabase.co;
   font-src 'self' data: https://fonts.gstatic.com;
   object-src 'self' blob: data:;
-  frame-src 'self' blob: data:;
+  frame-src 'self' blob: data: https://challenges.cloudflare.com;
   worker-src 'self' blob:;
   base-uri 'self';
   form-action 'self';
