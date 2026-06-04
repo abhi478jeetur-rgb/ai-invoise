@@ -853,3 +853,11 @@ Multiple E2E tests were failing across Chromium, Firefox, and WebKit:
 **Bug**: E2E tests (like clients.spec.ts) intermittently failed with "Please complete the security check" in GitHub Actions.
 **Root Cause**: Playwright does not interact with the Turnstile widget. Turnstile's non-interactive challenge sometimes auto-verifies quickly (providing a token), and sometimes challenges the bot (leaving token empty). The backend code checked if (!token) return error before checking if (!TURNSTILE_SECRET_KEY) bypass.
 **Solution**: Reordered the server-side checks in erifyTurnstileToken so !secret is checked before !token. This guarantees Turnstile is bypassed deterministically in CI environments where the secret key is omitted, regardless of frontend widget behavior. Also explicitly passed NEXT_PUBLIC_IS_E2E to the Playwright webServer config.
+## Google OAuth Redirect to Localhost & Turnstile Visibility
+**Bug 1**: Google OAuth redirected users to http://localhost:3000 in production environments.
+**Root Cause 1**: The signInWithOAuth function in src/lib/auth/actions.ts explicitly hardcoded http://localhost:3000 as a fallback when NEXT_PUBLIC_SITE_URL wasn't manually set, completely ignoring Vercel's dynamic preview URLs.
+**Solution 1**: Updated siteUrl resolution to check NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL and NEXT_PUBLIC_VERCEL_URL before falling back to localhost.
+
+**Bug 2**: Cloudflare Turnstile widget was completely invisible during standard email/password login despite the user wanting it to be explicitly visible as a manual check.
+**Root Cause 2**: Turnstile uses ppearance: 'always' by default, but the explicit 	heme: 'auto' options map might have overridden or conflicted with the layout, or Cloudflare was hiding it because the Managed key automatically verified the session silently.
+**Solution 2**: Added ppearance: 'always' explicitly to the <Turnstile> options props on /sign-in, /sign-up, and /forgot-password to force the widget UI to render.

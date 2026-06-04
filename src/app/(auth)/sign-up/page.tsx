@@ -147,7 +147,7 @@ export default function SignUpPage() {
               <Turnstile 
                 ref={turnstileRef}
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
-                options={{ theme: 'auto' }}
+                options={{ theme: 'auto', appearance: 'always' }}
                 onSuccess={(token) => setTurnstileToken(token)}
                 onExpire={() => setTurnstileToken('')}
                 onError={() => setTurnstileToken('')}
