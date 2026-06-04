@@ -849,3 +849,7 @@ Multiple E2E tests were failing across Chromium, Firefox, and WebKit:
   3. Replaced brittle .toBeHidden() checks with page.waitForTimeout and page.reload() to properly wait for server actions to reflect in the DB.
 - **Files Changed:** 	ests\e2e\invoices_lifecycle.spec.ts, 	ests\e2e\trash_recovery.spec.ts
 - **Verified:** All 144 tests now pass perfectly on Chromium, WebKit, and Firefox.
+## Turnstile E2E Race Condition
+**Bug**: E2E tests (like clients.spec.ts) intermittently failed with "Please complete the security check" in GitHub Actions.
+**Root Cause**: Playwright does not interact with the Turnstile widget. Turnstile's non-interactive challenge sometimes auto-verifies quickly (providing a token), and sometimes challenges the bot (leaving token empty). The backend code checked if (!token) return error before checking if (!TURNSTILE_SECRET_KEY) bypass.
+**Solution**: Reordered the server-side checks in erifyTurnstileToken so !secret is checked before !token. This guarantees Turnstile is bypassed deterministically in CI environments where the secret key is omitted, regardless of frontend widget behavior. Also explicitly passed NEXT_PUBLIC_IS_E2E to the Playwright webServer config.
