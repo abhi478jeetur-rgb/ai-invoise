@@ -8,12 +8,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import { useRef } from 'react'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string>('')
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -27,6 +31,7 @@ export default function ForgotPasswordPage() {
     if (result && 'error' in result) {
       setError(result.error)
       setLoading(false)
+      turnstileRef.current?.reset()
     } else if (result && 'success' in result) {
       setSuccess(result.message || 'Password reset email sent!')
       setLoading(false)
@@ -81,6 +86,17 @@ export default function ForgotPasswordPage() {
                 required
                 placeholder="name@company.com"
                 className="h-10 px-3.5 border-border bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50"
+              />
+            </div>
+
+            <div className="flex justify-center py-2 min-h-[65px]">
+              <Turnstile 
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
+                options={{ theme: 'auto' }}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onExpire={() => setTurnstileToken('')}
+                onError={() => setTurnstileToken('')}
               />
             </div>
 
