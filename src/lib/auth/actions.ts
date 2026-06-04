@@ -316,9 +316,13 @@ export async function signInWithGoogle() {
 
   const supabase = await createClient()
 
-  // H14: Use NEXT_PUBLIC_SITE_URL as the trusted base URL.
-  // Do NOT trust headers (x-forwarded-proto, host) as they are user-controllable.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  // Determine the site URL for OAuth redirect
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 
+                process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ?? 
+                process.env.NEXT_PUBLIC_VERCEL_URL ?? 
+                'http://localhost:3000'
+  siteUrl = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`
+  siteUrl = siteUrl.replace(/\/+$/, '')
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

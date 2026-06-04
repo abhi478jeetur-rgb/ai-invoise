@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.6] - 2026-06-04
+
+### Fixed
+- **Google OAuth Redirect:** Fixed an issue where logging in with Google in a Vercel preview/production environment incorrectly redirected users back to `http://localhost:3000`. The system now correctly extracts Vercel's dynamic deployment URLs for the OAuth callback.
+- **Turnstile Visibility:** Forced the Cloudflare Turnstile bot protection widget to always be visually rendered (`appearance: 'always'`) on all authentication forms, as per design requirements.
+
 ## [2.0.5] - 2026-06-04
 
 ### Fixed
