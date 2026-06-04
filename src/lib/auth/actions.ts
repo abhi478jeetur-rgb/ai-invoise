@@ -24,19 +24,19 @@ function handleRateLimitError(e: unknown): { error: string } | null {
 
 /** Verifies the Cloudflare Turnstile token */
 export async function verifyTurnstileToken(token: string | null) {
-  // Bypass Turnstile for automated E2E tests in CI
-  if (process.env.CI === 'true') {
+  // Bypass Turnstile for automated E2E tests in CI or local Playwright tests
+  if (process.env.CI === 'true' || process.env.NEXT_PUBLIC_IS_E2E === 'true') {
     return { success: true }
-  }
-
-  if (!token) {
-    return { success: false, error: 'Please complete the security check.' }
   }
 
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret) {
     console.warn('TURNSTILE_SECRET_KEY is not set. Skipping verification for development.')
     return { success: true }
+  }
+
+  if (!token) {
+    return { success: false, error: 'Please complete the security check.' }
   }
 
   try {

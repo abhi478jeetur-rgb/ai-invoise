@@ -37,6 +37,7 @@ export default defineConfig({
       AI_API_KEY: '***REMOVED***',
       AI_BASE_URL: 'https://integrate.api.nvidia.com/v1',
       AI_MODEL_NAME: 'meta/llama-3.1-8b-instruct',
+      NEXT_PUBLIC_IS_E2E: 'true',
     }
   },
 });
