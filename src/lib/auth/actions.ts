@@ -23,7 +23,12 @@ function handleRateLimitError(e: unknown): { error: string } | null {
 }
 
 /** Verifies the Cloudflare Turnstile token */
-async function verifyTurnstileToken(token: string | null): Promise<{ success: boolean; error?: string }> {
+export async function verifyTurnstileToken(token: string | null) {
+  // Bypass Turnstile for automated E2E tests in CI
+  if (process.env.CI === 'true') {
+    return { success: true }
+  }
+
   if (!token) {
     return { success: false, error: 'Please complete the security check.' }
   }
