@@ -7,6 +7,7 @@ test.describe('Client Management', () => {
     await page.goto('/sign-in');
     await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
+    await page.waitForTimeout(1500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     
     // Wait for dashboard to load
