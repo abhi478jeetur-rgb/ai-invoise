@@ -72,8 +72,8 @@ export function GlobalSearch() {
   }
 
   return (
-    <CommandPrimitive ref={wrapperRef} className="relative w-full min-w-[200px] sm:min-w-[300px] max-w-md bg-transparent border-none overflow-visible" shouldFilter={false}>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 focus-within:bg-secondary border border-border rounded-lg px-3 py-1.5 transition-colors">
+    <CommandPrimitive ref={wrapperRef} className="relative w-full min-w-[130px] sm:min-w-[300px] max-w-md bg-transparent border-none overflow-visible" shouldFilter={false}>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 focus-within:bg-secondary border border-border rounded-lg px-2 sm:px-3 py-1.5 transition-colors">
         <Search className="w-4 h-4 shrink-0" />
         <CommandPrimitive.Input
           ref={inputRef}

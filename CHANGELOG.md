@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.8] - 2026-06-04
+
+### Added
+- **Mobile Navigation:** Added a sleek, slide-out hamburger menu for mobile users on both the landing page and dashboard.
+
+### Fixed
+- **Mobile Zooming:** Added `maximum-scale=1` and `user-scalable=0` metadata to prevent annoying zoom-in on inputs in mobile Safari/Chrome.
+- **Hydration Errors:** Fixed console hydration errors caused by nested `<button>` elements inside `<SheetTrigger>` by adopting Base UI's `render` prop pattern.
+- **Lint Warnings:** Cleaned up several ESLint accessibility warnings and fixed a missing `alt` prop on an Image inside the PDF generation logic.
+- **Responsive Stacking:** Prevented data cards and recent invoice tables from overflowing horizontally on small screens.
+
 ## [2.0.7] - 2026-06-04
 
 ### Fixed

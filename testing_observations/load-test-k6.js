@@ -57,9 +57,12 @@ export function setup() {
 
 // ==========================================
 // VIRTUAL USER BEHAVIOR (Runs repeatedly for all 10,000 users)
-// ==========================================
-export default function (data) {
+// ==========================================// Main K6 function
+export default function loadTest(data) {
   const token = data.accessToken;
+  
+  // Test landing page
+  const res = http.get(TARGET_URL);
 
   // 1. STRESS TEST VERCEL (Frontend rendering)
   const vercelRes = http.get(`${TARGET_URL}/`);

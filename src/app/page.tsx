@@ -15,6 +15,7 @@ import {
   ArrowRight,
   CheckCircle2,
 } from 'lucide-react'
+import { MobileLandingNav } from '@/components/shared/MobileLandingNav'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -43,7 +44,7 @@ export default async function LandingPage() {
               </a>
             </nav>
 
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <Link href="/dashboard">
                   <Button size="sm" className="bg-white text-black hover:bg-neutral-200 text-xs font-medium cursor-pointer h-8">
@@ -65,6 +66,9 @@ export default async function LandingPage() {
                 </>
               )}
             </div>
+            
+            {/* Mobile Nav */}
+            <MobileLandingNav user={user} />
           </div>
         </div>
       </header>
@@ -96,15 +100,15 @@ export default async function LandingPage() {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex items-center justify-center gap-3 mt-8">
-              <Link href={ctaHref}>
-                <Button className="h-10 px-6 bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer shadow-lg shadow-white/5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-8 px-4 sm:px-0">
+              <Link href={ctaHref} className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto h-10 px-6 bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer shadow-lg shadow-white/5">
                   {ctaLabel}
                   <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
               </Link>
-              <a href="#features">
-                <Button variant="ghost" className="h-10 px-6 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 font-medium text-sm cursor-pointer">
+              <a href="#features" className="w-full sm:w-auto">
+                <Button variant="ghost" className="w-full sm:w-auto h-10 px-6 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900 font-medium text-sm cursor-pointer">
                   See Features
                 </Button>
               </a>
