@@ -6,9 +6,9 @@ test.describe('Invoice Lifecycle Management', () => {
   test.beforeEach(async ({ page }) => {
     // Log in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
-    await page.waitForTimeout(1500); // Wait for Turnstile
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     
     // Wait for dashboard to load
@@ -74,14 +74,14 @@ test.describe('Invoice Lifecycle Management', () => {
     await page.getByRole('button', { name: 'Change Status' }).click();
     await page.locator('select#status').selectOption('sent');
     await page.getByRole('button', { name: 'Save changes' }).click();
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
     await page.reload();
 
     // 9. Test "Mark Paid" button (Direct Action)
     const markPaidBtn = page.getByRole('button', { name: 'Mark Paid' });
     if (await markPaidBtn.isVisible()) {
       await markPaidBtn.click();
-      await page.waitForTimeout(1500); // Wait for server action
+      await page.waitForTimeout(3500); // Wait for server action
       await page.reload();
       // Status badge should reflect paid
       await expect(page.getByText('Paid', { exact: true }).first()).toBeVisible();

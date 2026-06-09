@@ -126,21 +126,12 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   }, [taxableAmount, taxVal])
 
   const uniqueClients = useMemo(() => {
-    const seen = new Set();
-    return allClients.filter((c: any) => {
-      const label = c.company_name ? `${c.company_name} (${c.client_name})` : c.client_name;
-      if (seen.has(label)) {
-        return false;
-      }
-      seen.add(label);
-      return true;
-    });
+    // Just use allClients, do not deduplicate by name as it breaks UUID matching
+    return allClients;
   }, [allClients]);
 
   const handleSave = async (statusOverride?: 'draft' | 'sent') => {
     setIsSaving(true)
-    
-    const statusToSave = statusOverride || invoice.status || 'sent'
     
     const savePromise = new Promise(async (resolve, reject) => {
       try {
@@ -160,7 +151,11 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
         form.append('taxLabel', formData.taxLabel)
         form.append('discountAmount', formData.discountAmount.toString())
         form.append('discountType', formData.discountType)
-        form.append('status', statusToSave)
+        
+        const statusToSave = statusOverride || invoice.status
+        if (statusToSave === 'draft' || statusToSave === 'sent') {
+          form.append('status', statusToSave)
+        }
 
         const result = await updateInvoiceAction(invoice.id, form)
         
@@ -205,13 +200,13 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-full min-h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row items-start gap-8 pb-12">
       
       {/* Left Pane - Form Builder */}
-      <div className="w-full lg:w-1/2 flex flex-col gap-6 overflow-y-auto pb-20 scrollbar-hide scroll-smooth">
+      <div className="w-full lg:w-1/2 flex flex-col gap-6 pt-2 px-1">
         
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2 w-full">
-          <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}`)}>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4 w-full bg-card/30 p-3 rounded-xl border border-white/[0.05]">
+          <Button variant="ghost" size="sm" onClick={() => router.push(`/invoices/${invoice.id}`)} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Details
           </Button>
           <div className="flex items-center gap-2">
@@ -237,7 +232,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               </>
             ) : (
               <Button 
-                onClick={() => handleSave(invoice.status)} 
+                onClick={() => handleSave()} 
                 disabled={isSaving} 
                 className="bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer h-9 px-3 text-xs"
               >
@@ -279,10 +274,12 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
           </div>
           <div className="space-y-4">
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Select Client</Label>
+              <Label className="text-[13px] font-medium text-muted-foreground/80 mb-1.5 block">Select Client</Label>
               <Select value={formData.clientId} onValueChange={handleClientChange}>
                 <SelectTrigger className={inputStyles}>
-                  <SelectValue placeholder="Select a client" />
+                  <SelectValue placeholder="Select a client">
+                    {localClient ? (localClient.company_name ? `${localClient.company_name} (${localClient.client_name})` : localClient.client_name) : "Select a client"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg shadow-xl">
                   {uniqueClients.map((c: any) => (
@@ -552,7 +549,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
       </div>
 
       {/* Right Pane - Live Preview */}
-      <div className="w-full lg:w-1/2 lg:sticky lg:top-4 h-[600px] lg:h-[calc(100vh-8rem)]">
+      <div className="w-full lg:w-1/2 lg:sticky lg:top-4 h-[600px] lg:h-[calc(100vh-2rem)]">
         <div className="bg-background/40 backdrop-blur-md rounded-xl border border-white/[0.05] overflow-hidden h-full flex flex-col shadow-2xl">
           <div className="px-5 py-4 bg-card/50 border-b border-white/[0.05] flex items-center justify-between">
             <h3 className="text-sm font-medium tracking-wide text-foreground">Live PDF Preview</h3>

@@ -1,15 +1,30 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { PDFViewer } from '@react-pdf/renderer'
+import { usePDF } from '@react-pdf/renderer'
 import { InvoicePdfDocument, InvoicePdfProps } from './invoice-pdf-document'
+
+// Simple debounce hook to prevent excessive PDF re-renders while typing
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+    return () => clearTimeout(handler)
+  }, [value, delay])
+  return debouncedValue
+}
 
 export function LivePdfPreview(props: InvoicePdfProps) {
   const [mounted, setMounted] = useState(false)
+  const debouncedProps = useDebounce(props, 600) // 600ms delay
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const [instance] = usePDF({ document: mounted ? <InvoicePdfDocument {...debouncedProps} /> : <InvoicePdfDocument {...props} /> })
 
   if (!mounted) {
     return (
@@ -23,10 +38,21 @@ export function LivePdfPreview(props: InvoicePdfProps) {
   }
 
   return (
-    <div className="w-full h-[700px] bg-white rounded-xl overflow-hidden shadow-sm border border-border">
-      <PDFViewer style={{ width: '100%', height: '100%', border: 'none' }} className="w-full h-full">
-        <InvoicePdfDocument {...props} />
-      </PDFViewer>
+    <div className="w-full h-[700px] bg-white rounded-xl overflow-hidden shadow-sm border border-border relative">
+      {instance.loading && (
+        <div className="absolute top-4 right-4 z-10 flex items-center justify-center bg-black/60 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
+           <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+           <span className="text-xs font-medium">Updating...</span>
+        </div>
+      )}
+      {instance.url ? (
+        <iframe src={`${instance.url}#toolbar=0&navpanes=0`} className="w-full h-full border-none bg-zinc-100" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-zinc-100">
+          <p className="text-sm text-muted-foreground">Preparing preview...</p>
+        </div>
+      )}
     </div>
   )
 }
+

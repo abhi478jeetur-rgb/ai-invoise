@@ -40,14 +40,15 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
   const pathname = usePathname()
 
   return (
-    <aside
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      data-expanded={expanded}
-      className={`hidden md:flex h-screen sticky top-0 z-40 border-r border-border bg-background flex-col items-start py-4 justify-between shrink-0 overflow-hidden transition-all duration-200 ease-in-out ${
-        expanded ? 'w-56' : 'w-14'
-      }`}
-    >
+    <div className="hidden md:block w-14 shrink-0 h-screen sticky top-0 z-50">
+      <aside
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        data-expanded={expanded}
+        className={`absolute top-0 left-0 h-screen border-r border-border bg-background flex flex-col items-start py-4 justify-between overflow-hidden transition-[width,box-shadow] duration-200 ease-in-out ${
+          expanded ? 'w-56 shadow-2xl' : 'w-14'
+        }`}
+      >
       {/* Top Logo */}
       <div className={`flex items-center ${expanded ? 'w-full px-3' : 'w-14 justify-center'} shrink-0`}>
         <div className="flex items-center gap-3">
@@ -58,7 +59,7 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
             aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
             className="w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-accent cursor-pointer transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain" />
+            <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain dark:invert-0 invert" />
           </button>
           <span className={`font-sans font-bold text-lg tracking-tight text-foreground whitespace-nowrap transition-all duration-150 ${
             expanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1 pointer-events-none w-0'
@@ -117,6 +118,7 @@ export default function Sidebar({ initials, email, name, companyName = 'My Works
           </div>
         </Link>
       </div>
-    </aside>
+      </aside>
+    </div>
   )
 }

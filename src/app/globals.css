@@ -151,6 +151,7 @@ next-devtools-portal,
     }
   html {
     @apply font-sans;
+    overflow-y: scroll;
     }
 }
 

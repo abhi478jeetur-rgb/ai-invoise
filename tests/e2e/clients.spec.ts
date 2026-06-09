@@ -5,9 +5,9 @@ test.describe('Client Management', () => {
   test.beforeEach(async ({ page }) => {
     // Log in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
-    await page.waitForTimeout(1500); // Wait for Turnstile
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     
     // Wait for dashboard to load

@@ -237,18 +237,10 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       `}</style>
 
       {/* Main Dashboard layout */}
-      <div className="space-y-10 max-w-6xl mx-auto pb-20">
+      <div className="space-y-6 max-w-6xl mx-auto pb-10">
 
-        {/* 1. Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--user-title)', fontSize: 'calc(1.5rem * var(--user-font-scale))' }}>
-              Dashboard
-            </h1>
-            <p className="text-xs mt-1" style={{ color: 'var(--user-text)', opacity: 0.7 }}>
-              Track unpaid invoices and know who to follow up with today.
-            </p>
-          </div>
+        {/* 1. Header Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-end gap-4">
           <div className="flex items-center gap-2">
             <Link
               href="/invoices"
@@ -276,63 +268,63 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           {/* Unpaid */}
           <div
-            className="border p-4 sm:p-5 transition-all"
+            className="border py-2 px-3 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
-            <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
+            <p className="text-xl font-semibold tracking-tight mt-0.5 font-mono" style={{ color: 'var(--user-title)' }}>
               {(stats as any).totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
             </p>
-            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.activeInvoicesCount} unpaid invoices
             </p>
           </div>
 
           {/* Overdue */}
           <div
-            className="border p-4 sm:p-5 transition-all"
+            className="border py-2 px-3 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
-            <p className="text-xl font-semibold tracking-tight mt-2 text-rose-500 font-mono">
+            <p className="text-xl font-semibold tracking-tight mt-0.5 text-rose-500 font-mono">
               {(stats as any).totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
             </p>
-            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.overdueCount} overdue invoices
             </p>
           </div>
 
           {/* Due This Week */}
           <div
-            className="border p-4 sm:p-5 transition-all"
+            className="border py-2 px-3 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Due This Week</p>
-            <p className="text-xl font-semibold tracking-tight mt-2 font-mono" style={{ color: 'var(--user-title)' }}>
+            <p className="text-xl font-semibold tracking-tight mt-0.5 font-mono" style={{ color: 'var(--user-title)' }}>
               {formatDueThisWeekAmount()}
             </p>
-            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {dueThisWeekInvoices.length} due in 7 days
             </p>
           </div>
 
           {/* Clients to Chase */}
           <div
-            className="border p-4 sm:p-5 transition-all"
+            className="border py-2 px-3 transition-all"
             style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Clients to Chase</p>
-            <p className="text-2xl font-semibold tracking-tight mt-2" style={{ color: 'var(--user-title)' }}>
+            <p className="text-xl font-semibold tracking-tight mt-0.5" style={{ color: 'var(--user-title)' }}>
               {stats.clientsToChaseCount}
             </p>
-            <p className="text-sm mt-1" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.clientsToChaseCount} follow-ups recommended
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2 space-y-5">
                 
                 {/* 3. Who to Chase Today */}
                 <div
@@ -558,7 +550,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       </div>
 
       {/* Aging Report / Right Column Widget (Phase 3) */}
-      <div className="lg:col-span-1 space-y-8">
+      <div className="lg:col-span-1 space-y-5">
         <div
           className="border p-4 sm:p-6"
           style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}

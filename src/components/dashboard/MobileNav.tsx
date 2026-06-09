@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, LayoutGrid, FileText, Mail, BookOpen, Settings } from 'lucide-react'
+import { Menu, LayoutGrid, FileText, Mail, BookOpen, Settings, ChevronRight } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
@@ -34,10 +34,10 @@ export function MobileNav({ companyName }: MobileNavProps) {
         <Menu className="h-5 w-5" />
         <span className="sr-only">Toggle navigation menu</span>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0 flex flex-col bg-background border-r border-border">
+      <SheetContent side="left" className="w-[240px] sm:w-64 p-0 flex flex-col bg-background border-r border-border">
         <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
         <div className="flex items-center gap-3 p-6 border-b border-border">
-          <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain" />
+          <Image src="/logo.svg" alt="ChaseFree AI Logo" width={24} height={24} className="w-6 h-6 object-contain dark:invert-0 invert" />
           <span className="font-sans font-bold text-lg tracking-tight text-foreground">
             ChaseFree AI
           </span>
@@ -49,14 +49,17 @@ export function MobileNav({ companyName }: MobileNavProps) {
             return (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
                 <div
-                  className={`flex items-center gap-3 h-10 rounded-lg px-3 transition-all cursor-pointer border ${
+                  className={`flex items-center justify-between h-11 rounded-xl px-3 transition-all cursor-pointer border ${
                     isActive
                       ? 'text-foreground bg-accent border-border shadow-sm'
                       : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent'
                   }`}
                 >
-                  <item.icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <item.icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </div>
+                  <ChevronRight size={16} className={`shrink-0 transition-transform ${isActive ? 'text-foreground' : 'text-muted-foreground/50'} opacity-70`} />
                 </div>
               </Link>
             )

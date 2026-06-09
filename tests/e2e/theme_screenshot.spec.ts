@@ -8,9 +8,9 @@ test.describe('Theme Visual Screenshot Verification', () => {
   test('capture theme screenshots', async ({ page }) => {
     // 1. Log in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('U+o6;;EH');
-    await page.waitForTimeout(1500); // Wait for Turnstile
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     await expect(page).toHaveURL(/.*dashboard|invoices/);
 
@@ -39,7 +39,7 @@ test.describe('Theme Visual Screenshot Verification', () => {
       });
       // Navigate again to force full hydration with the new theme
       await page.goto(p.url);
-      await page.waitForTimeout(1500); // Let layout settle
+      await page.waitForTimeout(3500); // Let layout settle
 
       const lightPath = path.join(screenshotDir, `${p.name}-light.png`);
       await page.screenshot({ path: lightPath, fullPage: true });
@@ -52,7 +52,7 @@ test.describe('Theme Visual Screenshot Verification', () => {
       });
       // Navigate again to force full hydration with the new theme
       await page.goto(p.url);
-      await page.waitForTimeout(1500); // Let layout settle
+      await page.waitForTimeout(3500); // Let layout settle
 
       const darkPath = path.join(screenshotDir, `${p.name}-dark.png`);
       await page.screenshot({ path: darkPath, fullPage: true });

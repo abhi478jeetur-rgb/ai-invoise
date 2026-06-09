@@ -48,7 +48,8 @@ export function InvoiceReminderSection({
   if (variant === 'cta') {
     return (
       <>
-        <Card className="border-border bg-gradient-to-br from-neutral-900/80 to-neutral-900/40 backdrop-blur-xl">
+        <Card className="border-border bg-card shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
           <CardContent className="py-5 text-center">
             <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-accent/80 border border-border mb-3">
               <span className="text-sm text-muted-foreground">AI</span>

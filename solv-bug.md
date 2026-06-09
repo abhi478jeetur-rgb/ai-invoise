@@ -867,3 +867,12 @@ Multiple E2E tests were failing across Chromium, Firefox, and WebKit:
 ext.config.ts was strictly blocking Cloudflare's scripts from executing.
 **Solution**: Added https://challenges.cloudflare.com to script-src and rame-src in 
 ext.config.ts to allow Turnstile's iframe and scripts to load.
+
+### Bug: AI Generation Fails with 'Unexpected end of JSON input'
+**Root Cause:** The Xiaomi Mimo API is a reasoning model (mimo-v2.5-pro). It outputs a <think>...</think> block before the JSON response, and generates lots of tokens. The previous code had a low max_tokens (1000) which cut off the JSON, and a 30s timeout which aborted the generation. Additionally, the JSON parser didn't strip the <think> block, causing invalid JSON extraction.
+**Solution:** Increased max_tokens to 8000, increased AbortSignal.timeout to 60000ms, and added regex eplace(/<think>[\s\S]*?<\/think>/gi, '') to explicitly strip the thinking process before JSON parsing.
+
+### Playwright E2E Tests Failing on Sign-In
+- **Bug**: Tests were timing out or failing at the sign-in step, receiving a string 'http://localhost:3000/sign-in' instead of redirecting to /dashboard.
+- **Root Cause**: Playwright was attempting to submit the authentication form before the Cloudflare Turnstile CAPTCHA widget could finish verifying the browser. Because the test environment often overlapped with the user's active dev server (bypassing the NEXT_PUBLIC_IS_E2E=true override), the headless browser was challenged and blocked.
+- **Solution**: Replaced deprecated 	estabhi1 accounts with the verified 	estabhi5 account. Increased waitForTimeout from 1500ms to 3500ms across all 	est.beforeEach hooks to guarantee Turnstile challenge resolution before form submission. Injected test Turnstile keys in the local environment during testing.

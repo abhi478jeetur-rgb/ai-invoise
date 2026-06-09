@@ -200,9 +200,9 @@ CRITICAL INSTRUCTIONS:
             { role: 'user', content: prompt },
           ],
           temperature: 0.4,
-          max_tokens: 1000,
+          max_tokens: 8000,
         }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(60000),
     })
 
     if (!response.ok) {
@@ -213,13 +213,13 @@ CRITICAL INSTRUCTIONS:
     const data = await response.json()
     const rawContent = data.choices?.[0]?.message?.content?.trim() ?? ''
 
-    // Parse the response
     let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
     let body: string = ''
 
     try {
-      let jsonStr = rawContent
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
+      let cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+      let jsonStr = cleanContent
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         jsonStr = jsonMatch[0]
       }
@@ -490,9 +490,9 @@ CRITICAL INSTRUCTIONS:
             { role: 'user', content: buildPrompt(styleInstruction) },
           ],
           temperature: 0.4,
-          max_tokens: 1000,
+          max_tokens: 8000,
         }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(60000),
       })
 
       if (!response.ok) {
@@ -506,8 +506,9 @@ CRITICAL INSTRUCTIONS:
       let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
       let body: string = ''
       try {
-        let jsonStr = rawContent
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
+        let cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+        let jsonStr = cleanContent
+        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
           jsonStr = jsonMatch[0]
         }
@@ -518,6 +519,8 @@ CRITICAL INSTRUCTIONS:
         else throw new Error('JSON parsed but missing body')
       } catch (e) {
         console.error('Failed to parse AI response as JSON:', e)
+        console.error('Raw content was:', rawContent)
+        console.error('Full AI response data:', JSON.stringify(data).slice(0, 500))
         if (rawContent.includes('{') || rawContent.includes('}')) {
           body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
         } else {

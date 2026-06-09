@@ -70,15 +70,9 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Your client directory for invoice tracking and follow-ups.
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
         <Button
           id="tour-add-client"
           onClick={() => {
@@ -135,15 +129,16 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
           {filtered.map((client) => (
             <Card
               key={client.id}
-              className="border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors"
+              className="relative border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors shadow-none overflow-hidden py-0"
             >
-              <CardContent className="py-2.5 px-4">
+              <CardContent className="py-2 px-3">
                 <div className="flex items-center justify-between">
                   <Link
                     href={`/clients/${client.id}`}
                     className="flex-1 min-w-0 group"
                   >
-                    <div className="flex items-center gap-3">
+                    <span className="absolute inset-0 z-0" aria-hidden="true" />
+                    <div className="flex items-center gap-3 relative z-10">
                       <div className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-secondary border border-border shrink-0">
                         <span className="text-xs font-medium text-muted-foreground">
                           {client.client_name[0]?.toUpperCase() ?? '?'}
@@ -171,7 +166,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
                     </div>
                   </Link>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 relative z-10">
                     {client.phone && (
                       <span className="text-xs text-muted-foreground/60 hidden lg:inline">{client.phone}</span>
                     )}

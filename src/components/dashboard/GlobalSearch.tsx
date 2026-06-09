@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { Command as CommandPrimitive } from 'cmdk'
 import {
+  CommandDialog,
+  CommandInput,
   CommandEmpty,
   CommandGroup,
   CommandItem,
@@ -12,6 +14,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { searchAllData } from '@/lib/search/actions'
+import { Button } from '@/components/ui/button'
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -36,8 +39,7 @@ export function GlobalSearch() {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        inputRef.current?.focus()
-        setOpen(true)
+        setOpen((open) => !open)
       }
     }
     document.addEventListener('keydown', down)
@@ -72,39 +74,54 @@ export function GlobalSearch() {
   }
 
   return (
-    <CommandPrimitive ref={wrapperRef} className="relative w-full min-w-[130px] sm:min-w-[300px] max-w-md bg-transparent border-none overflow-visible" shouldFilter={false}>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 focus-within:bg-secondary border border-border rounded-lg px-2 sm:px-3 py-1.5 transition-colors">
-        <Search className="w-4 h-4 shrink-0" />
-        <CommandPrimitive.Input
-          ref={inputRef}
-          value={query}
-          onValueChange={setQuery}
-          onFocus={() => setOpen(true)}
-          placeholder="Search anything..."
-          className="flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground min-w-0"
-        />
-        <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+    <>
+      {/* Desktop Trigger */}
+      <Button
+        variant="outline"
+        className="hidden sm:flex relative h-9 w-full justify-start rounded-[0.5rem] bg-secondary/50 hover:bg-secondary text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-40 lg:w-64 border-border"
+        onClick={() => setOpen(true)}
+      >
+        <span className="hidden lg:inline-flex">Search anything...</span>
+        <span className="inline-flex lg:hidden">Search...</span>
+        <kbd className="pointer-events-none absolute right-[0.3rem] top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex text-muted-foreground">
           <span className="text-xs">⌘</span>K
         </kbd>
-      </div>
+      </Button>
 
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#000000] border border-zinc-800 rounded-xl shadow-xl overflow-hidden">
-          <CommandList className="bg-[#000000] text-white max-h-[350px] overflow-y-auto p-1">
-            <CommandEmpty className="text-zinc-400 py-6 text-center text-sm">{loading ? 'Searching...' : 'No results found.'}</CommandEmpty>
+      {/* Mobile Trigger */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden text-muted-foreground hover:text-foreground shrink-0"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="w-5 h-5" />
+        <span className="sr-only">Search</span>
+      </Button>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          value={query}
+          onValueChange={setQuery}
+          placeholder="Search clients, invoices..." 
+        />
+        <CommandList className="max-h-[350px] overflow-y-auto p-1">
+          <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+            {loading ? 'Searching...' : 'No results found.'}
+          </CommandEmpty>
           
           {results.clients.length > 0 && (
-            <CommandGroup heading="Clients" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
+            <CommandGroup heading="Clients">
               {results.clients.map((client) => (
                 <CommandItem
                   key={client.id}
                   value={client.id}
                   onSelect={() => runCommand(() => router.push(`/clients/${client.id}`))}
-                  className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white"
+                  className="cursor-pointer"
                 >
                   <div className="flex flex-col">
-                    <span className="text-white">{client.client_name}</span>
-                    <span className="text-xs text-zinc-400">{client.email}</span>
+                    <span className="text-foreground">{client.client_name}</span>
+                    <span className="text-xs text-muted-foreground">{client.email}</span>
                   </div>
                 </CommandItem>
               ))}
@@ -113,18 +130,18 @@ export function GlobalSearch() {
 
           {results.invoices.length > 0 && (
             <>
-              {results.clients.length > 0 && <CommandSeparator className="bg-zinc-800" />}
-              <CommandGroup heading="Invoices" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
+              {results.clients.length > 0 && <CommandSeparator />}
+              <CommandGroup heading="Invoices">
                 {results.invoices.map((invoice) => (
                   <CommandItem
                     key={invoice.id}
                     value={invoice.id}
                     onSelect={() => runCommand(() => router.push(`/invoices/${invoice.id}`))}
-                    className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white"
+                    className="cursor-pointer"
                   >
                     <div className="flex flex-col">
-                      <span className="text-white">#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
-                      <span className="text-xs text-zinc-400 capitalize">{invoice.status}</span>
+                      <span className="text-foreground">#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{invoice.status}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -133,24 +150,23 @@ export function GlobalSearch() {
           )}
 
           {!query && (
-            <CommandGroup heading="Quick Links" className="text-white [&_[cmdk-group-heading]]:text-zinc-400">
-              <CommandItem value="dashboard" onSelect={() => runCommand(() => router.push('/dashboard'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
+            <CommandGroup heading="Quick Links">
+              <CommandItem value="dashboard" onSelect={() => runCommand(() => router.push('/dashboard'))} className="cursor-pointer">
                 Dashboard
               </CommandItem>
-              <CommandItem value="clients" onSelect={() => runCommand(() => router.push('/clients'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
+              <CommandItem value="clients" onSelect={() => runCommand(() => router.push('/clients'))} className="cursor-pointer">
                 Clients
               </CommandItem>
-              <CommandItem value="invoices" onSelect={() => runCommand(() => router.push('/invoices'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
+              <CommandItem value="invoices" onSelect={() => runCommand(() => router.push('/invoices'))} className="cursor-pointer">
                 Invoices
               </CommandItem>
-              <CommandItem value="settings" onSelect={() => runCommand(() => router.push('/settings'))} className="cursor-pointer text-zinc-300 data-[selected=true]:bg-zinc-900 data-[selected=true]:text-white aria-selected:bg-zinc-900 aria-selected:text-white">
+              <CommandItem value="settings" onSelect={() => runCommand(() => router.push('/settings'))} className="cursor-pointer">
                 Settings
               </CommandItem>
             </CommandGroup>
           )}
-          </CommandList>
-        </div>
-      )}
-    </CommandPrimitive>
+        </CommandList>
+      </CommandDialog>
+    </>
   )
 }
