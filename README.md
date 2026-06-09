@@ -19,7 +19,7 @@
 ## 📸 Screenshots & Demo
 
 ### Dashboard
-![Dashboard Screenshot](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFree_ai_github_hero_image_.png?updatedAt=1781013112995)
+![Dashboard Screenshot](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFREE_ai_dassboard_image.jpeg?updatedAt=1781013175851)
 
 ### Client & Invoice Creation
 ![Add Client & Invoice Creation](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFREE_ai_invoice_page_image.png)
