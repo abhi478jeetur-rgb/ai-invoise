@@ -4,7 +4,7 @@
 
 **Your AI-Powered Invoicing Assistant for Stress-Free Payment Tracking**
 
-[Hero Image / Demo GIF - Placeholder]
+![ChaseFree AI Dashboard](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFree_ai_github_hero_image_.png?updatedAt=1781013112995)
 
 </div>
 
@@ -18,10 +18,14 @@
 
 ## 📸 Screenshots & Demo
 
-- **Dashboard** → [Screenshot Placeholder]
-- **Client & Invoice Creation** → [Screenshot Placeholder]
-- **AI Reminder Generation** → [Screenshot Placeholder]
-- **Gmail Integration Flow** → [GIF Placeholder]
+### Dashboard
+![Dashboard Screenshot](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFree_ai_github_hero_image_.png?updatedAt=1781013112995)
+
+### Client & Invoice Creation
+![Add Client & Invoice Creation](https://ik.imagekit.io/a57jpcchpv/chasefree/ChaseFREE_ai_invoice_page_image.png)
+
+### AI Reminder Generation
+![Generate AI Reminder](https://ik.imagekit.io/a57jpcchpv/chasefree/Chasefree-ai-ai_reminders-page-image.png)
 
 **Live Demo:** [Link Placeholder]
 
