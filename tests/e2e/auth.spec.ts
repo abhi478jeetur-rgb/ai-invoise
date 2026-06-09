@@ -67,20 +67,23 @@ test.describe('Authentication Flows', () => {
     await expect(page).toHaveURL(/.*sign-in/);
   });
 
-  // Test Sign In (skipped — requires live credentials)
-  test.skip('existing user can sign in and log out', async ({ page }) => {
+  // Test Sign In (requires live credentials)
+  test('existing user can sign in and log out', async ({ page }) => {
     await page.goto('/sign-in');
     
     // Using the known test user
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // Should reach dashboard
     await expect(page).toHaveURL(/.*dashboard|invoices/);
     
-    // Now Log out (use dispatchEvent to avoid Next.js dev overlay interception)
-    await page.getByRole('button', { name: 'Log out' }).dispatchEvent('click');
+    // Open user menu
+    await page.locator('button[aria-haspopup="menu"]').first().click();
+    // Now Log out
+    await page.getByRole('menuitem', { name: 'Log out' }).click();
 
     // Should be back at sign-in
     await expect(page).toHaveURL(/.*sign-in/);

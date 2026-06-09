@@ -96,6 +96,36 @@ const EVENT_ICONS: Record<string, typeof Check> = {
   marked_sent: Check,
 }
 
+const GENERATING_TEXTS = [
+  "Analyzing invoice details...",
+  "Drafting perfect follow-up...",
+  "Calibrating tone...",
+  "Polishing the message...",
+  "Finalizing variants..."
+]
+
+function AnimatedGeneratingText() {
+  const [textIndex, setTextIndex] = useState(0)
+  const [fade, setFade] = useState(true)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false)
+      setTimeout(() => {
+        setTextIndex((prev) => (prev + 1) % GENERATING_TEXTS.length)
+        setFade(true)
+      }, 300)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <span className={`transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>
+      {GENERATING_TEXTS[textIndex]}
+    </span>
+  )
+}
+
 function getDueInfo(invoice: Invoice) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -178,7 +208,6 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   // Tone & generation state
   const [selectedTone, setSelectedTone] = useState<ToneKey>('professional')
   const [generating, setGenerating] = useState(false)
-  const [generateError, setGenerateError] = useState<string | null>(null)
 
   // Drafts state
   const [drafts, setDrafts] = useState<DraftVariant[]>([])
@@ -194,7 +223,6 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   const [sentFeedback, setSentFeedback] = useState(false)
 
   const selectedInvoice = initialInvoices.find((inv) => inv.id === selectedInvoiceId) ?? null
-  const needsSetup = !initialSettings?.base_url || !initialSettings?.model_name
 
   // Auto-set recommended tone when invoice changes
   useEffect(() => {
@@ -211,7 +239,6 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
     setEditSubject('')
     setEditBody('')
     setEditSms('')
-    setGenerateError(null)
   }, [selectedInvoiceId])
 
   // Filter invoices
@@ -277,10 +304,9 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
 
   // Generate drafts
   async function handleGenerate() {
-    if (!selectedInvoiceId || needsSetup) return
+    if (!selectedInvoiceId) return
 
     setGenerating(true)
-    setGenerateError(null)
     setDrafts([])
     setSelectedVariantIndex(null)
 
@@ -296,7 +322,9 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
       }
       fetchHistory()
     } else {
-      setGenerateError(result.error ?? 'Generation failed.')
+      toast.error('AI Generation Failed', {
+        description: result.error ?? 'Something went wrong while generating the reminders. Please check your AI API credentials or try again later.'
+      })
     }
   }
 
@@ -340,24 +368,7 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
   const selectedDraft = drafts.find((d) => d.variantIndex === selectedVariantIndex) ?? null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">AI Reminders</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Select an invoice to generate AI-powered follow-up emails.
-        </p>
-      </div>
-
-      {needsSetup && (
-        <div className="rounded-lg border border-amber-500/[0.2] bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-400 backdrop-blur-md">
-          AI settings not configured.{' '}
-          <a href="/settings" className="underline hover:text-amber-200">
-            Set up your API key in Settings
-          </a>{' '}
-          before generating reminders.
-        </div>
-      )}
-
+    <div className="space-y-4">
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* Left Column */}
         <div className="flex flex-col gap-4">
@@ -625,13 +636,13 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={generating || needsSetup}
+                disabled={generating}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {generating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating 3 variants...
+                    <AnimatedGeneratingText />
                   </>
                 ) : (
                   <>
@@ -640,13 +651,6 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
                   </>
                 )}
               </button>
-
-              {/* Generate Error */}
-              {generateError && (
-                <div className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                  {generateError}
-                </div>
-              )}
 
               {/* Generating Skeleton */}
               {generating && (

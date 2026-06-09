@@ -6,9 +6,9 @@ test.describe('Trash & Recovery Management', () => {
   test.beforeEach(async ({ page }) => {
     // Log in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(1500); // Wait for Turnstile
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
     
     // Wait for dashboard to load
@@ -61,7 +61,7 @@ test.describe('Trash & Recovery Management', () => {
     await page.getByRole('menuitem', { name: 'Move to Trash' }).click();
     
     // Wait for the server action to complete
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
 
     // Reload page to ensure UI is fresh
     await page.reload();
@@ -81,7 +81,7 @@ test.describe('Trash & Recovery Management', () => {
     await row.getByRole('button', { name: 'Restore' }).click({ force: true });
 
     // Wait for the server action to complete
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
 
     // Reload page to ensure UI is completely fresh
     await page.reload();
@@ -96,7 +96,7 @@ test.describe('Trash & Recovery Management', () => {
     // 7. Delete it again to test permanent deletion
     await card.getByRole('button', { name: '...' }).click({ force: true });
     await page.getByRole('menuitem', { name: 'Move to Trash' }).click({ force: true });
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
     await page.reload();
     await expect(page.getByText(invoiceTitle)).toBeHidden({ timeout: 15000 });
 
@@ -112,7 +112,7 @@ test.describe('Trash & Recovery Management', () => {
     await page.locator('button[data-button]', { hasText: 'Delete Forever' }).click();
 
     // Wait for server action to complete
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3500);
     await page.reload();
 
     // Verify it is permanently gone from Recycle Bin

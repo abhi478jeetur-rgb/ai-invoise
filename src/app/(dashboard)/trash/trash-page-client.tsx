@@ -102,12 +102,7 @@ export function TrashPageClient({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Recycle Bin</h1>
-        <p className="text-muted-foreground">Restore deleted items or permanently remove them.</p>
-      </div>
-
+    <div className="space-y-4">
       <Tabs defaultValue="invoices" className="w-full">
         <TabsList className="bg-secondary/50 border border-border mb-6">
           <TabsTrigger value="invoices" className="text-muted-foreground data-[state=active]:bg-brand-500 data-[state=active]:text-white hover:bg-accent hover:text-foreground transition-colors cursor-pointer">

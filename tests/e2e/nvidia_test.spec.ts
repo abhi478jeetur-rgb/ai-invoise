@@ -9,9 +9,9 @@ test.describe('NVIDIA API and PDF Generation Test', () => {
   test('should configure NVIDIA AI, generate reminder, and download PDF', async ({ page, context }) => {
     // 1. Sign in
     await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi1@clockivo.com');
+    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(1500); // Wait for Turnstile
+    await page.waitForTimeout(3500); // Wait for Turnstile
     await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // Wait for dashboard to load

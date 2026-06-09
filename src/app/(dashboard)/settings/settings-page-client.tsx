@@ -316,14 +316,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your profile, business presence, and AI provider configuration.
-        </p>
-      </div>
-
+    <div className="space-y-4">
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="bg-secondary/60 border border-border p-1 flex-wrap h-auto gap-1">
           <TabsTrigger value="profile" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground hover:bg-accent/50 hover:text-foreground/80 text-xs cursor-pointer transition-colors">
@@ -426,28 +419,28 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                     className="h-4 w-4 rounded border-border bg-background text-foreground focus:ring-ring/50" />
                 </div>
 
-                {reminderEnabled && (
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-muted-foreground" htmlFor="reminderDay">Day of Week</Label>
-                      <select id="reminderDay" name="reminder_day" defaultValue={p.reminder_day || 'Monday'}
-                        className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
-                        {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-muted-foreground" htmlFor="reminderTime">Time of Day</Label>
-                      <select id="reminderTime" name="reminder_time" defaultValue={p.reminder_time || 'Morning'}
-                        className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border">
-                        <option value="Morning">Morning (9 AM - 12 PM)</option>
-                        <option value="Afternoon">Afternoon (12 PM - 5 PM)</option>
-                        <option value="Evening">Evening (5 PM - 9 PM)</option>
-                      </select>
-                    </div>
+                <div className={`grid grid-cols-2 gap-4 mt-4 transition-opacity duration-200 ${reminderEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground" htmlFor="reminderDay">Day of Week</Label>
+                    <select id="reminderDay" name="reminder_day" defaultValue={p.reminder_day || 'Monday'}
+                      disabled={!reminderEnabled}
+                      className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border disabled:cursor-not-allowed">
+                      {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground" htmlFor="reminderTime">Time of Day</Label>
+                    <select id="reminderTime" name="reminder_time" defaultValue={p.reminder_time || 'Morning'}
+                      disabled={!reminderEnabled}
+                      className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 focus:border-border disabled:cursor-not-allowed">
+                      <option value="Morning">Morning (9 AM - 12 PM)</option>
+                      <option value="Afternoon">Afternoon (12 PM - 5 PM)</option>
+                      <option value="Evening">Evening (5 PM - 9 PM)</option>
+                    </select>
+                  </div>
+                </div>
 
                 <Button type="submit" disabled={reminderSaving}
                   className="bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-sm cursor-pointer disabled:opacity-50 mt-2">
@@ -476,7 +469,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
 
         {/* ─── Tab 2: Business & Invoicing ─── */}
         <TabsContent value="business" className="mt-4 space-y-6">
-          <div className="p-3 text-xs bg-blue-950/30 border border-blue-900/40 text-blue-300 rounded-lg max-w-2xl">
+          <div className="p-3 text-xs bg-primary/10 border border-primary/20 text-primary rounded-lg max-w-2xl">
             💡 <strong>Tip:</strong> Fill in your business details once here and they will auto-fill every new invoice you create — saving you time every time.
           </div>
 

@@ -54,15 +54,14 @@ export default async function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Top Minimalist Header */}
-        <header className="h-14 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 shrink-0">
-
-          <div className="flex items-center gap-2 sm:gap-4">
+        <header className="h-14 border-b border-border bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 shrink-0 gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <MobileNav companyName={companyName} />
             <PageTitle />
           </div>
 
           {/* User section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <GlobalSearch />
             <NotificationBell />
             
@@ -73,8 +72,10 @@ export default async function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 overflow-x-hidden">
-          {children}
+        <main className="flex-1 p-4 sm:p-6 lg:px-6 lg:py-4 overflow-x-clip">
+          <div className="max-w-6xl mx-auto w-full">
+            {children}
+          </div>
         </main>
       </div>
 

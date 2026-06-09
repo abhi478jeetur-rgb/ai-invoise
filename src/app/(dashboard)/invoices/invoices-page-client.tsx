@@ -205,15 +205,9 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Invoices</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track payments and follow up on outstanding invoices.
-          </p>
-        </div>
+    <div className="space-y-4">
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
         <Button
           onClick={() => {
             setEditingInvoice(null)
@@ -298,21 +292,22 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
             return (
               <Card
                 key={invoice.id}
-                className="border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors"
+                className="relative border-border bg-card/40 backdrop-blur-xl hover:bg-accent/50 transition-colors shadow-none overflow-hidden py-0"
               >
-                <CardContent className="py-2.5 px-4">
-                  <div className="flex items-center justify-between gap-4">
+                <CardContent className="py-2 px-3">
+                  <div className="flex items-center justify-between gap-3">
                     <Link
                       href={`/invoices/${invoice.id}`}
                       className="flex-1 min-w-0 group"
                     >
-                      <div className="flex items-center gap-4">
+                      <span className="absolute inset-0 z-0" aria-hidden="true" />
+                      <div className="flex items-center gap-4 relative z-10">
                         {/* Status bar */}
                         {(() => {
                           const effectiveStatus = getInvoiceEffectiveStatus(invoice)
                           return (
                             <>
-                              <div className={`w-1 h-8 rounded-full shrink-0 ${
+                              <div className={`w-1 h-6 rounded-full shrink-0 ${
                                 effectiveStatus === 'overdue' ? 'bg-red-500' :
                                 effectiveStatus === 'due_soon' ? 'bg-yellow-500' :
                                 effectiveStatus === 'paid' ? 'bg-green-500' :
@@ -359,7 +354,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
                     </Link>
 
                     {/* Actions */}
-                    <div className="shrink-0">
+                    <div className="shrink-0 relative z-10">
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           render={
