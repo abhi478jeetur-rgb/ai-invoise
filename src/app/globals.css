@@ -1,0 +1,253 @@
+@import "tailwindcss";
+
+/* Safely hide framework-injected dev overlays in all viewports */
+next-route-announcer,
+[class*="next-devtools"],
+[id*="next-devtools"],
+next-devtools-portal,
+#__next-devtools__ {
+  display: none !important;
+}
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+    --font-mono: var(--font-mono);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* ── Visual Customizer Defaults (Light) ── */
+    --user-bg: #ffffff;
+    --user-card: #ffffff;
+    --user-border: #e4e4e7;
+    --user-text: #71717a;
+    --user-title: #09090b;
+
+    /* ── Light Mode: Pure White ── */
+    --background: #ffffff;
+    --foreground: #09090b;
+    --card: #ffffff;
+    --card-foreground: #09090b;
+    --popover: #ffffff;
+    --popover-foreground: #09090b;
+    --primary: #18181b;
+    --primary-foreground: #fafafa;
+    --secondary: #f4f4f5;
+    --secondary-foreground: #18181b;
+    --muted: #f4f4f5;
+    --muted-foreground: #71717a;
+    --accent: #f4f4f5;
+    --accent-foreground: #18181b;
+    --destructive: #ef4444;
+    --border: #e4e4e7;
+    --input: #e4e4e7;
+    --ring: #a1a1aa;
+    --chart-1: #e4e4e7;
+    --chart-2: #a1a1aa;
+    --chart-3: #71717a;
+    --chart-4: #52525b;
+    --chart-5: #3f3f46;
+    --radius: 0.625rem;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #09090b;
+    --sidebar-primary: #18181b;
+    --sidebar-primary-foreground: #fafafa;
+    --sidebar-accent: #f4f4f5;
+    --sidebar-accent-foreground: #18181b;
+    --sidebar-border: #e4e4e7;
+    --sidebar-ring: #a1a1aa;
+}
+
+.dark {
+    /* ── Visual Customizer Defaults (Dark) ── */
+    --user-bg: #050505;
+    --user-card: #0a0a0a;
+    --user-border: #151515;
+    --user-text: #a3a3a3;
+    --user-title: #f5f5f5;
+
+    /* ── Dark Mode: Midnight ── */
+    --background: #050505;
+    --foreground: #f5f5f5;
+    --card: #0a0a0a;
+    --card-foreground: #f5f5f5;
+    --popover: #0a0a0a;
+    --popover-foreground: #f5f5f5;
+    --primary: #f5f5f5;
+    --primary-foreground: #0a0a0a;
+    --secondary: #171717;
+    --secondary-foreground: #f5f5f5;
+    --muted: #171717;
+    --muted-foreground: #a3a3a3;
+    --accent: #171717;
+    --accent-foreground: #f5f5f5;
+    --destructive: #ef4444;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.1);
+    --ring: #525252;
+    --chart-1: #d4d4d4;
+    --chart-2: #737373;
+    --chart-3: #525252;
+    --chart-4: #404040;
+    --chart-5: #262626;
+    --sidebar: #050505;
+    --sidebar-foreground: #f5f5f5;
+    --sidebar-primary: #f5f5f5;
+    --sidebar-primary-foreground: #0a0a0a;
+    --sidebar-accent: #171717;
+    --sidebar-accent-foreground: #f5f5f5;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: #525252;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    overflow-y: scroll;
+    }
+}
+
+/* Driver.js Custom Glassmorphic Popover */
+.glass-tour-popover {
+  background: rgba(10, 10, 10, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid #262626 !important;
+  color: #e5e5e5 !important;
+  border-radius: 12px !important;
+  font-family: var(--font-sans) !important;
+  padding: 16px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.glass-tour-popover .driver-popover-title {
+  color: #f5f5f5 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+
+.glass-tour-popover .driver-popover-description {
+  color: #a3a3a3 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.glass-tour-popover .driver-popover-footer {
+  margin-top: 16px !important;
+}
+
+.glass-tour-popover .driver-popover-progress-text {
+  color: #737373 !important;
+  font-size: 12px !important;
+}
+
+.glass-tour-popover button.driver-popover-btn {
+  background: #171717 !important;
+  border: 1px solid #262626 !important;
+  color: #d4d4d4 !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.glass-tour-popover button.driver-popover-btn:hover {
+  background: #262626 !important;
+  color: #fff !important;
+}
+
+.glass-tour-popover .driver-popover-arrow {
+  border-color: #262626 !important;
+}
+
+/* Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Sonner Toast Progress Bar */
+.cn-toast::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--foreground);
+  animation: toast-progress 4s linear forwards;
+  opacity: 0.3;
+}
+
+.cn-toast:hover::after {
+  animation-play-state: paused;
+}
+
+@keyframes toast-progress {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}

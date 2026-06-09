@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: chasefree-ai-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the current directory to /app in the container
+      - ./:/app
+      # Anonymous volume for node_modules to prevent local host modules from overriding container modules
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@wickedevolutions/mcp-obsidian"
+      ],
+      "env": {
+        "OBSIDIAN_API_KEY": "0e1d2fd9ab7d80873fedd79ce2949b916ccfe8cb0bafe0272a2497101f2621c0",
+        "OBSIDIAN_PORT": "27124",
+        "OBSIDIAN_SECURE": "false"
+      }
+    }
+  }
+}

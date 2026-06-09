@@ -1,0 +1,172 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search } from 'lucide-react'
+import { Command as CommandPrimitive } from 'cmdk'
+import {
+  CommandDialog,
+  CommandInput,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
+import { searchAllData } from '@/lib/search/actions'
+import { Button } from '@/components/ui/button'
+
+export function GlobalSearch() {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<{ clients: any[], invoices: any[] }>({ clients: [], invoices: [] })
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen((open) => !open)
+      }
+    }
+    document.addEventListener('keydown', down)
+    return () => document.removeEventListener('keydown', down)
+  }, [])
+
+  useEffect(() => {
+    if (!query) {
+      setResults({ clients: [], invoices: [] })
+      return
+    }
+
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      setLoading(true)
+      const res = await searchAllData(query)
+      if (!cancelled && res.success && res.data) {
+        setResults(res.data)
+      }
+      if (!cancelled) setLoading(false)
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query])
+
+  const runCommand = (command: () => void) => {
+    setOpen(false)
+    command()
+  }
+
+  return (
+    <>
+      {/* Desktop Trigger */}
+      <Button
+        variant="outline"
+        className="hidden sm:flex relative h-9 w-full justify-start rounded-[0.5rem] bg-secondary/50 hover:bg-secondary text-sm font-normal text-muted-foreground shadow-none sm:pr-12 md:w-40 lg:w-64 border-border"
+        onClick={() => setOpen(true)}
+      >
+        <span className="hidden lg:inline-flex">Search anything...</span>
+        <span className="inline-flex lg:hidden">Search...</span>
+        <kbd className="pointer-events-none absolute right-[0.3rem] top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex text-muted-foreground">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </Button>
+
+      {/* Mobile Trigger */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden text-muted-foreground hover:text-foreground shrink-0"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="w-5 h-5" />
+        <span className="sr-only">Search</span>
+      </Button>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          value={query}
+          onValueChange={setQuery}
+          placeholder="Search clients, invoices..." 
+        />
+        <CommandList className="max-h-[350px] overflow-y-auto p-1">
+          <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+            {loading ? 'Searching...' : 'No results found.'}
+          </CommandEmpty>
+          
+          {results.clients.length > 0 && (
+            <CommandGroup heading="Clients">
+              {results.clients.map((client) => (
+                <CommandItem
+                  key={client.id}
+                  value={client.id}
+                  onSelect={() => runCommand(() => router.push(`/clients/${client.id}`))}
+                  className="cursor-pointer"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-foreground">{client.client_name}</span>
+                    <span className="text-xs text-muted-foreground">{client.email}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          {results.invoices.length > 0 && (
+            <>
+              {results.clients.length > 0 && <CommandSeparator />}
+              <CommandGroup heading="Invoices">
+                {results.invoices.map((invoice) => (
+                  <CommandItem
+                    key={invoice.id}
+                    value={invoice.id}
+                    onSelect={() => runCommand(() => router.push(`/invoices/${invoice.id}`))}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-foreground">#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{invoice.status}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {!query && (
+            <CommandGroup heading="Quick Links">
+              <CommandItem value="dashboard" onSelect={() => runCommand(() => router.push('/dashboard'))} className="cursor-pointer">
+                Dashboard
+              </CommandItem>
+              <CommandItem value="clients" onSelect={() => runCommand(() => router.push('/clients'))} className="cursor-pointer">
+                Clients
+              </CommandItem>
+              <CommandItem value="invoices" onSelect={() => runCommand(() => router.push('/invoices'))} className="cursor-pointer">
+                Invoices
+              </CommandItem>
+              <CommandItem value="settings" onSelect={() => runCommand(() => router.push('/settings'))} className="cursor-pointer">
+                Settings
+              </CommandItem>
+            </CommandGroup>
+          )}
+        </CommandList>
+      </CommandDialog>
+    </>
+  )
+}
