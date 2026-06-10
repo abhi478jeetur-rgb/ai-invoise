@@ -6,21 +6,7 @@ import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
 import { useTheme } from 'next-themes'
 
 
-interface DashboardData {
-  stats: {
-    totalOutstanding: number
-    totalOverdue: number
-    totalPaid: number
-    activeInvoicesCount: number
-    overdueCount: number
-    paidCount: number
-    clientsToChaseCount: number
-    totalInvoiceCount: number
-  }
-  chaseList: any[]
-  recentActivities: any[]
-  recentInvoices: any[]
-}
+import { DashboardData, RecentActivity, ChaseItem, RecentInvoice } from '@/types/dashboard'
 
 interface CustomizerProps {
   initialData: DashboardData
@@ -53,8 +39,8 @@ const THEME_PRESETS = [
 ]
 
 export default function DashboardVisualCustomizer({ initialData, setupPreference }: CustomizerProps) {
-  const { stats, chaseList, recentActivities, recentInvoices, agingReport = {} } = initialData as any
-  const [selectedActivity, setSelectedActivity] = useState<any>(null)
+  const { stats, chaseList, recentActivities, recentInvoices, agingReport = {} } = initialData
+  const [selectedActivity, setSelectedActivity] = useState<RecentActivity | null>(null)
 
   const { resolvedTheme } = useTheme()
   const isLight = resolvedTheme === 'light'
@@ -161,7 +147,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  const dueThisWeekInvoices = chaseList.filter((inv: any) => {
+  const dueThisWeekInvoices = chaseList.filter((inv: ChaseItem) => {
     if (!inv.due_date) return false
     const parseStr = (inv.due_date.includes('T') || inv.due_date.includes(' ')) ? inv.due_date : inv.due_date + 'T00:00:00'
     const due = new Date(parseStr)
@@ -170,7 +156,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
   const formatDueThisWeekAmount = () => {
     const map: Record<string, number> = {}
-    dueThisWeekInvoices.forEach((inv: any) => {
+    dueThisWeekInvoices.forEach((inv: ChaseItem) => {
       const cur = inv.currency || 'USD'
       map[cur] = (map[cur] || 0) + Number(inv.amount)
     })
@@ -178,7 +164,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
     if (currencies.length === 0) return '$0'
     return currencies.map(cur => formatCurrencyWithCode(map[cur], cur)).join(' + ')
   }
-  const dueThisWeekAmount = dueThisWeekInvoices.reduce((sum: number, inv: any) => sum + Number(inv.amount), 0)
+  const dueThisWeekAmount = dueThisWeekInvoices.reduce((sum: number, inv: ChaseItem) => sum + Number(inv.amount), 0)
 
   // chaseList is already pre-filtered and sorted by the server action
   // (only overdue or due within 3 days, excluding paid/archived)
@@ -273,7 +259,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Unpaid</p>
             <p className="text-xl font-semibold tracking-tight mt-0.5 font-mono" style={{ color: 'var(--user-title)' }}>
-              {(stats as any).totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
+              {stats.totalOutstandingFormatted || formatCurrency(stats.totalOutstanding)}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.activeInvoicesCount} unpaid invoices
@@ -287,7 +273,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           >
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--user-text)', opacity: 0.6 }}>Overdue</p>
             <p className="text-xl font-semibold tracking-tight mt-0.5 text-rose-500 font-mono">
-              {(stats as any).totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
+              {stats.totalOverdueFormatted || formatCurrency(stats.totalOverdue)}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
               {stats.overdueCount} overdue invoices
@@ -355,7 +341,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
               </div>
             ) : (
               <div className="space-y-2.5">
-                {displayChaseList.map((invoice: any) => {
+                {displayChaseList.map((invoice: ChaseItem) => {
                   const urgency = getUrgencyInfo(invoice.due_date, invoice.status)
                   return (
                     <div
@@ -457,7 +443,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: 'var(--user-border)', opacity: 0.8 }}>
-                  {recentInvoices.map((inv: any) => (
+                  {recentInvoices.map((inv: RecentInvoice) => (
                     <tr key={inv.id} className="transition-colors hover:opacity-80">
                       <td className="py-2.5 pr-4 text-sm" style={{ color: 'var(--user-text)' }}>{inv.client_name}</td>
                       <td className="py-2.5 pr-4 text-sm font-medium font-mono text-right" style={{ color: 'var(--user-title)' }}>{formatCurrencyWithCode(inv.amount, inv.currency)}</td>
@@ -498,7 +484,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
               </div>
             ) : (
               <div className="space-y-0">
-                {recentActivities.map((activity: any, idx: number) => (
+                {recentActivities.map((activity: RecentActivity, idx: number) => (
                   <div 
                     key={activity.id} 
                     className="flex gap-3 cursor-pointer hover:bg-white/[0.01] p-1.5 rounded-lg transition-all"
@@ -567,7 +553,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
                 No outstanding aging balances.
               </div>
             ) : (
-              Object.entries(agingReport).map(([cur, buckets]: any) => {
+              Object.entries(agingReport).map(([cur, buckets]) => {
                 const total = buckets.current + buckets.bucket30 + buckets.bucket60 + buckets.bucket90 + buckets.bucket90Plus
                 if (total === 0) return null
 

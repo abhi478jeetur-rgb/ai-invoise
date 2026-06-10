@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
+import { InvoiceStatus } from '@/lib/constants/invoice-status'
+import { logError } from '@/lib/utils/error-handler'
 
 // M18: UUID validation helper
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -85,8 +87,8 @@ export async function createInvoiceAction(formData: FormData) {
 
     // H6: Retry mechanism for unique constraint violation on invoice_number
     const MAX_RETRIES = 3
-    let data: any = null
-    let error: any = null
+    let data: Record<string, unknown> | null = null
+    let error: { message: string; code?: string } | null = null
     let currentInvoiceNumber = finalInvoiceNumber.trim()
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -100,7 +102,7 @@ export async function createInvoiceAction(formData: FormData) {
           description: description?.trim() || null,
           amount,
           currency,
-          status: status as any,
+          status: status as InvoiceStatus,
           due_date: dueDate,
           notes: notes?.trim() || null,
           payment_link: paymentLink?.trim() || null,
@@ -138,6 +140,7 @@ export async function createInvoiceAction(formData: FormData) {
     revalidatePath('/dashboard')
     return { success: true, data }
   } catch (e) {
+    logError('invoices/createInvoice', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -191,6 +194,7 @@ export async function getNextInvoiceNumberAction() {
 
     return { success: true, data: nextNumber }
   } catch (e) {
+    logError('invoices/getNextInvoiceNumber', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -222,6 +226,7 @@ export async function getInvoicesAction(filters?: { status?: string; clientId?: 
 
     return { success: true, data }
   } catch (e) {
+    logError('invoices/getInvoices', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -246,6 +251,7 @@ export async function getInvoiceDetailAction(invoiceId: string) {
 
     return { success: true, data }
   } catch (e) {
+    logError('invoices/getInvoiceDetail', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -338,7 +344,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
         tax_label: taxLabel.trim() || 'Tax',
         discount_amount: discountAmount,
         discount_type: discountType,
-        ...(status ? { status: status as any } : {}),
+        ...(status ? { status: status as InvoiceStatus } : {}),
       })
       .eq('id', invoiceId)
       .eq('user_id', user.id)
@@ -352,6 +358,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     revalidatePath('/dashboard')
     return { success: true, data }
   } catch (e) {
+    logError('invoices/updateInvoice', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -516,7 +523,7 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
 
     if (eventError) {
       // Non-fatal: invoice was already updated, just log the event failure
-      console.error('Failed to log status_changed event:', eventError.message)
+      logError('invoices/markPaidEvent', eventError, 'Failed to log status_changed event')
     }
 
     revalidatePath('/invoices')
@@ -524,6 +531,7 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
     revalidatePath('/dashboard')
     return { success: true, data: invoice }
   } catch (e) {
+    logError('invoices/markPaid', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -637,7 +645,7 @@ export async function updateInvoiceStatusAction(invoiceId: string, status: strin
 
     if (eventError) {
       // Non-fatal: invoice was already updated, just log the event failure
-      console.error('Failed to log status_changed event:', eventError.message)
+      logError('invoices/updateStatusEvent', eventError, 'Failed to log status_changed event')
     }
 
     revalidatePath('/invoices')
@@ -645,6 +653,7 @@ export async function updateInvoiceStatusAction(invoiceId: string, status: strin
     revalidatePath('/dashboard')
     return { success: true, data: invoice }
   } catch (e) {
+    logError('invoices/updateStatus', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }

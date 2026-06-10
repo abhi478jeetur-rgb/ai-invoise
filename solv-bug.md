@@ -875,4 +875,32 @@ ext.config.ts to allow Turnstile's iframe and scripts to load.
 ### Playwright E2E Tests Failing on Sign-In
 - **Bug**: Tests were timing out or failing at the sign-in step, receiving a string 'http://localhost:3000/sign-in' instead of redirecting to /dashboard.
 - **Root Cause**: Playwright was attempting to submit the authentication form before the Cloudflare Turnstile CAPTCHA widget could finish verifying the browser. Because the test environment often overlapped with the user's active dev server (bypassing the NEXT_PUBLIC_IS_E2E=true override), the headless browser was challenged and blocked.
-- **Solution**: Replaced deprecated 	estabhi1 accounts with the verified 	estabhi5 account. Increased waitForTimeout from 1500ms to 3500ms across all 	est.beforeEach hooks to guarantee Turnstile challenge resolution before form submission. Injected test Turnstile keys in the local environment during testing.
+- **Solution**: Replaced deprecated testabhi1 accounts with the verified testabhi5 account. Increased waitForTimeout from 1500ms to 3500ms across all test.beforeEach hooks to guarantee Turnstile challenge resolution before form submission. Injected test Turnstile keys in the local environment during testing.
+
+### TypeScript Compiler Errors & Type Safety (Humanization Refactoring)
+- **Bug**: The codebase failed to compile (`npx tsc --noEmit` failed with exit code 1) due to several TypeScript type mismatches, missing properties, duplicate declarations, and ES module import incompatibilities.
+- **Root Cause**: 
+  1. The client detail actions and clients page components used duplicate local custom shapes for client objects that did not match the main database `Client` model (missing `user_id` and `deleted_at`).
+  2. The invoice builder page did partial SELECT queries from Supabase, causing type errors when passing them down as complete `UserProfile` or `Client` objects.
+  3. The PDF document generator component called `parseFloat` on `item.total` (which was already typed as a number) and passed an unsupported `alt` prop to the react-pdf `<Image>` component.
+  4. The reminders actions file had a local duplicate declaration of `ReminderHistoryEvent` that conflicted with the import from `@/types/reminder`.
+  5. The settings actions file used a dynamic import for `pdf-parse` which does not match strict ES module exports, causing compiler failures.
+  6. The dropdown-menu trigger and menu item components passed generic React nodes directly to the Base-UI `render` prop, which requires a single React element.
+- **Solution**:
+  1. Imported and used the standard `Client` interface in `clients-page-client.tsx` and `client-detail-actions.tsx`.
+  2. Changed partial SELECT queries to `select('*')` in `src/app/(dashboard)/invoices/[invoiceId]/builder/page.tsx`.
+  3. Changed `parseFloat(item.total)` to `Number(item.total)` and deleted `alt` attribute from the react-pdf `<Image>` component in `invoice-pdf-document.tsx`.
+  4. Deleted the duplicate local declaration of `ReminderHistoryEvent` in `src/lib/reminders/actions.ts`.
+  5. Cast the dynamic import of `pdf-parse` to `unknown` first, then to the expected function signature, in `src/lib/settings/actions.ts`.
+  6. Cast children components to `React.ReactElement` in the `render` prop of the dropdown menu triggers and items.
+  7. Corrected the relative import path in `scripts/debug/test-search.ts`.
+- **Files Changed**:
+  - `scripts/debug/test-search.ts`
+  - `src/app/(dashboard)/clients/[clientId]/client-detail-actions.tsx`
+  - `src/app/(dashboard)/clients/clients-page-client.tsx`
+  - `src/app/(dashboard)/invoices/[invoiceId]/builder/page.tsx`
+  - `src/app/(dashboard)/invoices/[invoiceId]/builder/smart-builder-client.tsx`
+  - `src/components/invoices/invoice-pdf-document.tsx`
+  - `src/components/ui/dropdown-menu.tsx`
+  - `src/lib/reminders/actions.ts`
+  - `src/lib/settings/actions.ts`

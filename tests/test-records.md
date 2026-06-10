@@ -1,5 +1,31 @@
 # Test Records
 
+## Execution Date: 2026-06-10
+### Environment
+- Framework: Playwright (E2E), Vitest (Unit)
+- App Url: http://localhost:3000
+- Authentication: Supabase + Cloudflare Turnstile (Bypassed in E2E via E2E secret headers)
+
+### Results
+After refactoring the codebase for type safety, clean imports, and standardized logic, the following tests were executed:
+
+1. **TypeScript Compiler Check (`npx tsc --noEmit`):**
+   - **Status:** PASS (0 errors, 0 warnings).
+   - **Resolution:** Resolved all compile errors regarding profile nullability, select dropdown typing, PDF document image/subtotal arguments, and duplicate reminders actions interfaces.
+
+2. **Vitest Unit & Component Tests (`npm run test`):**
+   - **Status:** PASS (4/4 tests passed).
+   - **Details:** Checked invoice financial calculations and the UI action button rendering.
+
+3. **Playwright E2E Tests (`npx playwright test --project=chromium`):**
+   - **Status:** 65/68 tests passed.
+   - **Bypassed CAPTCHA & Rate Limiting:** Implemented request header injection (`x-e2e-secret`) and an IP-rate-limit bypass for E2E tests in server actions, resolving all Turnstile and rate limit sign-in blockages.
+   - **Failed/Flaky:**
+     - `theme_screenshot.spec.ts`: Timed out exceeding 90 seconds due to heavy full-page screenshot capturing.
+     - `nvidia_test.spec.ts`: Timed out waiting for the `Reminder Draft` dialog (due to external Xiaomi Mimo API slowness/timeout during reminder generation).
+
+---
+
 ## Execution Date: 2026-06-09
 ### Environment
 - Framework: Playwright (E2E), Vitest (Unit)

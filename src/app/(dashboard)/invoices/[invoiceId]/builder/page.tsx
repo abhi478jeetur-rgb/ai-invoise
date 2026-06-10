@@ -33,13 +33,13 @@ export default async function SmartBuilderPage({ params }: PageProps) {
   // Fetch all user clients for selection
   const { data: allClients } = await supabase
     .from('clients')
-    .select('id, client_name, email, company_name')
+    .select('*')
     .eq('user_id', user.id)
 
   // Fetch profile for PDF "From" section and payment defaults
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, email, company_name, company_address, company_website, tax_id, logo_url, bank_details, global_rules')
+    .select('*')
     .eq('id', user.id)
     .single()
 

@@ -10,6 +10,10 @@ tests/test-results/
 /playwright-report/
 /blob-report/
 /.playwright/
+/testing_observations/
+*.local
+*.log
+
 
 # next.js
 /.next/

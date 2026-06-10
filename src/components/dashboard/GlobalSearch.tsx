@@ -15,11 +15,12 @@ import {
 } from '@/components/ui/command'
 import { searchAllData } from '@/lib/search/actions'
 import { Button } from '@/components/ui/button'
+import type { SearchResults } from '@/types/search'
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<{ clients: any[], invoices: any[] }>({ clients: [], invoices: [] })
+  const [results, setResults] = useState<SearchResults>({ clients: [], invoices: [] })
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const wrapperRef = React.useRef<HTMLDivElement>(null)
@@ -140,7 +141,7 @@ export function GlobalSearch() {
                     className="cursor-pointer"
                   >
                     <div className="flex flex-col">
-                      <span className="text-foreground">#{invoice.invoice_number} - {invoice.clients?.client_name}</span>
+                      <span className="text-foreground">#{invoice.invoice_number} - {Array.isArray(invoice.clients) ? invoice.clients[0]?.client_name : invoice.clients?.client_name}</span>
                       <span className="text-xs text-muted-foreground capitalize">{invoice.status}</span>
                     </div>
                   </CommandItem>

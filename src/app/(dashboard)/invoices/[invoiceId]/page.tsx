@@ -164,7 +164,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
     .order('created_at', { ascending: false })
 
   const activities = (events ?? []).map((ev) => {
-    const invoicesData = ev.invoices as any
+    const invoicesData = ev.invoices as unknown as { invoice_number: string; title: string | null } | null
     const inv = Array.isArray(invoicesData) ? invoicesData[0] : invoicesData
     return {
       id: ev.id,

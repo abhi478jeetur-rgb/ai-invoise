@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-06-10
+
+### Changed
+- **Codebase Humanization:** Conducted a comprehensive review and refactoring of the codebase to transform machine-generated styling and patterns into professional, clean, senior-engineer-grade code.
+- **Type Safety Hardening:** Eliminated all occurrences of `any` across the codebase, substituting them with strict TypeScript interfaces, generic types, or safe narrowing via `unknown` type guards.
+- **Centralized Error Handling:** Integrated `logError` and standard UI toast warnings to handle system failures uniformly, propagating detailed logs server-side and displaying generic, friendly actions to client users.
+- **Directory Layout Cleanup:** Co-located test specifications, moved loose utility scripts from the repository root to `scripts/debug/`, and deleted outdated, empty type placeholder files.
+
+### Fixed
+- **Invoice Builder Compilation:** Resolved multiple typescript errors in `smart-builder-client.tsx` and `page.tsx` involving null-safety for user profiles, select value compatibility, and PDF preview interface mapping.
+- **Client Detail Action Props:** Standardized the `Client` data model parameters to eliminate key mismatch warnings inside clients list and client detail sections.
+- **PDF Image Element Property:** Fixed react-pdf validation by removing the unsupported `alt` prop from `<Image>` elements.
+- **Duplicate Reminders Interface:** Resolved type conflicts caused by local redeclarations of `ReminderHistoryEvent` inside the reminders action layer.
+- **Dynamic ES Module Dynamic Import:** Corrected type-level dynamic resolutions for CommonJS-based dependencies (`pdf-parse`) under ESM declarations.
+- **Base-UI Trigger Children Types:** Configured child-casting constraints to conform with Base-UI's strict `asChild` element trigger render specifications.
+
 ## [2.0.9] - 2026-06-05
 
 ### Added

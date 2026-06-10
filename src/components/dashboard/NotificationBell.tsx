@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import type { AppNotification } from '@/types/notification'
 import { Bell, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
@@ -12,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { getNotifications, markAsRead, clearAllNotifications } from '@/lib/notifications/actions'
 
 export function NotificationBell() {
-  const [notifications, setNotifications] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
@@ -32,7 +33,7 @@ export function NotificationBell() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
-  const handleNotificationClick = async (notif: any) => {
+  const handleNotificationClick = async (notif: AppNotification) => {
     if (!notif.is_read) {
       await markAsRead(notif.id)
       setNotifications(notifications.map(n => n.id === notif.id ? { ...n, is_read: true } : n))

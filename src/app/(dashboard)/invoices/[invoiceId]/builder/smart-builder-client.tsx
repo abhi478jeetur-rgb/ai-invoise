@@ -15,7 +15,27 @@ import { toast } from 'sonner'
 const inputStyles = "bg-card/50 border border-white/[0.08] rounded-lg px-4 py-2.5 text-foreground placeholder-zinc-500 transition-all focus-visible:ring-1 focus-visible:ring-white/[0.15] focus-visible:border-white/[0.1]"
 const cardStyles = "bg-background/40 backdrop-blur-md border border-white/[0.05] rounded-xl p-6 mb-6 shadow-2xl"
 
-export default function SmartBuilderClient({ invoice, client, profile, allClients }: any) {
+import { Invoice, LineItem } from '@/types/invoice'
+import { Client } from '@/types/client'
+import { UserProfile } from '@/types/settings'
+
+interface BuilderLineItem {
+  id: string
+  name: string
+  description?: string
+  quantity: number
+  rate: number
+  total: number
+}
+
+interface SmartBuilderProps {
+  invoice: Invoice
+  client: Client | null
+  profile: UserProfile | null
+  allClients: Client[]
+}
+
+export default function SmartBuilderClient({ invoice, client, profile, allClients }: SmartBuilderProps) {
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
   
@@ -35,8 +55,8 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
     discountAmount: invoice.discount_amount || 0,
     discountType: invoice.discount_type || 'flat',
     lineItems: invoice.line_items && invoice.line_items.length > 0
-      ? invoice.line_items.map((item: any) => ({ ...item, id: item.id || crypto.randomUUID() }))
-      : [{ id: crypto.randomUUID(), name: invoice.title || '', description: invoice.description || '', quantity: 1, rate: invoice.amount || 0, total: invoice.amount || 0 }]
+      ? (invoice.line_items as unknown as BuilderLineItem[]).map((item) => ({ ...item, id: item.id || crypto.randomUUID() }))
+      : [{ id: crypto.randomUUID(), name: invoice.title || '', description: invoice.description || '', quantity: 1, rate: invoice.amount || 0, total: invoice.amount || 0 }] as BuilderLineItem[]
   })
 
   // We still need to pass client and profile data to the PDF.
@@ -66,21 +86,22 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
     }))
   }
 
-  const handleClientChange = (clientId: string) => {
-    const selected = allClients.find((c: any) => c.id === clientId)
+  const handleClientChange = (clientId: string | null) => {
+    if (!clientId) return
+    const selected = allClients.find((c) => c.id === clientId)
     if (selected) {
       setLocalClient(selected)
       setFormData(prev => ({ ...prev, clientId }))
     }
   }
 
-  const updateLineItem = (index: number, field: string, value: any) => {
+  const updateLineItem = (index: number, field: keyof BuilderLineItem, value: string | number) => {
     const newItems = [...formData.lineItems]
     newItems[index] = { ...newItems[index], [field]: value }
     // Recalculate total if quantity or rate changes
     if (field === 'quantity' || field === 'rate') {
-      const qty = parseFloat(newItems[index].quantity) || 0
-      const rate = parseFloat(newItems[index].rate) || 0
+      const qty = parseFloat(newItems[index].quantity as unknown as string) || 0
+      const rate = parseFloat(newItems[index].rate as unknown as string) || 0
       newItems[index].total = qty * rate
     }
     setFormData({ ...formData, lineItems: newItems })
@@ -95,17 +116,17 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   }
 
   const removeLineItem = (index: number) => {
-    const newItems = formData.lineItems.filter((_: any, i: number) => i !== index)
+    const newItems = formData.lineItems.filter((_, i: number) => i !== index)
     setFormData({ ...formData, lineItems: newItems })
     toast.warning("Line item removed", { duration: 1500 })
   }
 
   const subtotal = useMemo(() => {
-    return formData.lineItems.reduce((sum: number, item: any) => sum + (parseFloat(item.total) || 0), 0)
+    return formData.lineItems.reduce((sum: number, item) => sum + (item.total || 0), 0)
   }, [formData.lineItems])
 
   const discountVal = useMemo(() => {
-    const rate = parseFloat(formData.discountAmount as any) || 0
+    const rate = Number(formData.discountAmount) || 0
     if (formData.discountType === 'percentage') {
       return (subtotal * rate) / 100
     }
@@ -117,7 +138,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   }, [subtotal, discountVal])
 
   const taxVal = useMemo(() => {
-    const rate = parseFloat(formData.taxRate as any) || 0
+    const rate = Number(formData.taxRate) || 0
     return (taxableAmount * rate) / 100
   }, [taxableAmount, formData.taxRate])
 
@@ -188,15 +209,28 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
   }
 
   const previewInvoice = {
-    ...invoice,
-    ...formData,
+    invoice_number: formData.invoiceNumber || invoice.invoice_number,
+    title: formData.title || invoice.title || '',
+    description: formData.description || invoice.description || '',
     amount: grandTotal,
-    subtotal: subtotal,
-    discount_amount: parseFloat(formData.discountAmount as any) || 0,
-    discount_type: formData.discountType,
-    tax_rate: parseFloat(formData.taxRate as any) || 0,
+    currency: formData.currency,
+    due_date: formData.dueDate || invoice.due_date || new Date().toISOString(),
+    notes: formData.notes || invoice.notes || '',
+    payment_link: formData.paymentLink || invoice.payment_link || '',
+    created_at: invoice.created_at || new Date().toISOString(),
+    po_number: formData.poNumber || invoice.po_number || '',
+    tax_rate: Number(formData.taxRate) || 0,
     tax_label: formData.taxLabel || 'Tax',
-    line_items: formData.lineItems
+    discount_amount: Number(formData.discountAmount) || 0,
+    discount_type: formData.discountType,
+    line_items: formData.lineItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      quantity: Number(item.quantity) || 0,
+      rate: Number(item.rate) || 0,
+      total: Number(item.total) || 0
+    }))
   }
 
   return (
@@ -253,15 +287,15 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Company Name</Label>
-                <Input value={localProfile.company_name || localProfile.full_name || ''} disabled className={inputStyles} />
+                <Input value={localProfile?.company_name || localProfile?.full_name || ''} disabled className={inputStyles} />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Email</Label>
-                <Input value={localProfile.email || ''} disabled className={inputStyles} />
+                <Input value={localProfile?.email || ''} disabled className={inputStyles} />
               </div>
               <div className="col-span-2">
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Address</Label>
-                <Input value={localProfile.company_address || ''} disabled className={inputStyles} />
+                <Input value={localProfile?.company_address || ''} disabled className={inputStyles} />
               </div>
             </div>
           </div>
@@ -282,7 +316,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-secondary border border-white/[0.08] rounded-lg shadow-xl">
-                  {uniqueClients.map((c: any) => (
+                  {uniqueClients.map((c) => (
                     <SelectItem key={c.id} value={c.id} className="text-foreground focus:bg-accent focus:text-white">
                       {c.company_name ? `${c.company_name} (${c.client_name})` : c.client_name}
                     </SelectItem>
@@ -325,7 +359,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Payment Terms</Label>
-                <Select value={paymentTerm} onValueChange={handleTermChange}>
+                <Select value={paymentTerm} onValueChange={(val) => { if (val) handleTermChange(val) }}>
                   <SelectTrigger className={inputStyles}>
                     <SelectValue />
                   </SelectTrigger>
@@ -353,8 +387,8 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
               <div className="sm:col-span-2">
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Currency</Label>
                 <Select 
-                  value={formData.currency} 
-                  onValueChange={(val) => setFormData({...formData, currency: val})}
+                  value={formData.currency || 'USD'} 
+                  onValueChange={(val) => setFormData({...formData, currency: val || 'USD'})}
                 >
                   <SelectTrigger className={inputStyles}>
                     <SelectValue />
@@ -387,7 +421,7 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
             <h3 className="text-sm text-muted-foreground font-medium tracking-wide uppercase">Line Items</h3>
           </div>
           <div className="space-y-4">
-            {formData.lineItems.map((item: any, idx: number) => (
+            {formData.lineItems.map((item, idx: number) => (
               <div key={item.id} className="p-4 bg-secondary/30 rounded-xl border border-white/[0.05] relative group">
                 <Button 
                   variant="ghost" 
@@ -449,8 +483,8 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
                     className={`${inputStyles} flex-1`}
                   />
                   <Select 
-                    value={formData.discountType} 
-                    onValueChange={(val) => setFormData({...formData, discountType: val})}
+                    value={formData.discountType || 'flat'} 
+                    onValueChange={(val) => setFormData({...formData, discountType: val as 'flat' | 'percentage'})}
                   >
                     <SelectTrigger className="w-[100px] bg-secondary border border-white/[0.08] text-foreground rounded-lg">
                       <SelectValue />
@@ -557,9 +591,23 @@ export default function SmartBuilderClient({ invoice, client, profile, allClient
           </div>
           <div className="flex-1 overflow-y-auto scroll-smooth bg-secondary/20">
             <LivePdfPreview 
-              invoice={previewInvoice as any}
-              client={localClient}
-              profile={localProfile}
+              invoice={previewInvoice}
+              client={{
+                client_name: localClient?.client_name || 'Unnamed Client',
+                email: localClient?.email || null,
+                company_name: localClient?.company_name || null
+              }}
+              profile={{
+                full_name: localProfile?.full_name || null,
+                email: localProfile?.email || null,
+                company_name: localProfile?.company_name || null,
+                company_address: localProfile?.company_address || null,
+                company_website: localProfile?.company_website || null,
+                tax_id: localProfile?.tax_id || null,
+                logo_url: localProfile?.logo_url || null,
+                bank_details: localProfile?.bank_details || null,
+                global_rules: localProfile?.global_rules ? (localProfile.global_rules as Record<string, string>) : null
+              }}
             />
           </div>
         </div>

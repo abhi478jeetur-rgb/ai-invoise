@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
+import { logError } from '@/lib/utils/error-handler'
 
 export async function getNotifications() {
   try {
@@ -21,8 +22,8 @@ export async function getNotifications() {
     if (error) return { success: false, error: sanitizeDatabaseError(error) }
 
     return { success: true, data }
-  } catch (error: any) {
-    console.error('Error fetching notifications:', error)
+  } catch (error: unknown) {
+    logError('notifications/getNotifications', error)
     return { success: false, error: sanitizeDatabaseError(error) }
   }
 }
@@ -42,7 +43,8 @@ export async function markAsRead(id: string) {
     if (error) return { success: false, error: sanitizeDatabaseError(error) }
     revalidatePath('/', 'layout')
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    logError('notifications/markAsRead', error)
     return { success: false, error: sanitizeDatabaseError(error) }
   }
 }
@@ -62,7 +64,8 @@ export async function clearAllNotifications() {
     if (error) return { success: false, error: sanitizeDatabaseError(error) }
     revalidatePath('/', 'layout')
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    logError('notifications/clearAllNotifications', error)
     return { success: false, error: sanitizeDatabaseError(error) }
   }
 }

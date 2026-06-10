@@ -16,16 +16,7 @@ import {
 import { ClientForm } from '@/components/clients/client-form'
 import { deleteClientAction } from '@/lib/clients/actions'
 
-interface Client {
-  id: string
-  client_name: string
-  contact_name: string | null
-  email: string | null
-  phone: string | null
-  company_name: string | null
-  notes: string | null
-  created_at: string
-}
+import { Client } from '@/types/client'
 
 interface ClientsPageClientProps {
   clients: Client[]

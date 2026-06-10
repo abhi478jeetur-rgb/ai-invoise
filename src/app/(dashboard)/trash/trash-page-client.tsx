@@ -10,13 +10,15 @@ import { RefreshCcw, Trash2, AlertCircle } from 'lucide-react'
 import { restoreInvoiceAction, hardDeleteInvoiceAction } from '@/lib/invoices/actions'
 import { restoreClientAction, hardDeleteClientAction } from '@/lib/clients/actions'
 import { toast } from 'sonner'
+import { SoftDeletedInvoice } from '@/types/invoice'
+import { SoftDeletedClient } from '@/types/client'
 
 export function TrashPageClient({
   invoices: initialInvoices,
   clients: initialClients
 }: {
-  invoices: any[]
-  clients: any[]
+  invoices: SoftDeletedInvoice[]
+  clients: SoftDeletedClient[]
 }) {
   const router = useRouter()
   // Use props directly so router.refresh() correctly updates the UI
@@ -139,7 +141,7 @@ export function TrashPageClient({
                     {invoices.map((invoice) => (
                       <div key={invoice.id} className="grid grid-cols-12 p-4 text-sm text-foreground/80 items-center hover:bg-accent/50 transition-colors">
                         <div className="col-span-3 font-medium">{invoice.invoice_number}</div>
-                        <div className="col-span-3">{(invoice.clients as any)?.client_name || 'Unknown Client'}</div>
+                        <div className="col-span-3">{invoice.clients?.client_name || 'Unknown Client'}</div>
                         <div className="col-span-2">{formatCurrency(invoice.amount, invoice.currency)}</div>
                         <div className="col-span-4 flex justify-end gap-2">
                           <Button 

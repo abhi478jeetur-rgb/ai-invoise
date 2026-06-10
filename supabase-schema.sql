@@ -1,20 +1,18 @@
 -- ============================================================
--- ChaseFree AI V1 - Supabase Database Schema
+-- ChaseFree AI - Unified Database Schema & Migrations
 -- ============================================================
 -- Run this script in the Supabase SQL Editor to set up the
--- complete database schema for ChaseFree AI V1.
+-- complete database schema, tables, policies, and RPCs.
 -- ============================================================
 
 -- ============================================================
 -- 1. EXTENSIONS
 -- ============================================================
-
 create extension if not exists "pgcrypto";
 
 -- ============================================================
 -- 2. CUSTOM ENUM TYPES
 -- ============================================================
-
 create type public.invoice_status as enum (
   'draft',
   'sent',
@@ -44,13 +42,12 @@ create type public.reminder_event_type as enum (
 );
 
 -- ============================================================
--- 3. TABLES
+-- 3. TABLES & COLUMNS
 -- ============================================================
 
 -- ------------------------------------------------------------
 -- profiles
 -- ------------------------------------------------------------
-
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
@@ -71,14 +68,33 @@ create table public.profiles (
   logo_url text,
   theme_preference text not null default 'system',
   stripe_customer_id text,
+  company_website text,
+  bank_details text,
+  payment_link_default text,
+  global_rules jsonb not null default '{}'::jsonb,
+  default_tax_label text,
+  default_tax_rate numeric(5,2),
+  default_payment_terms text not null default 'net_30',
+  reminder_enabled boolean not null default false,
+  reminder_day text not null default 'Friday',
+  reminder_time text not null default 'Afternoon',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+alter table public.profiles
+  add constraint profiles_bank_details_length
+    check (bank_details is null or char_length(bank_details) <= 2000),
+  add constraint profiles_global_rules_is_object
+    check (jsonb_typeof(global_rules) = 'object'),
+  add constraint profiles_tax_rate_range
+    check (default_tax_rate is null or (default_tax_rate >= 0 and default_tax_rate <= 100)),
+  add constraint profiles_website_format
+    check (company_website is null or company_website ~ '^https?://');
+
 -- ------------------------------------------------------------
 -- clients
 -- ------------------------------------------------------------
-
 create table public.clients (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -88,6 +104,7 @@ create table public.clients (
   phone text,
   company_name text,
   notes text,
+  deleted_at timestamptz default null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -99,7 +116,6 @@ check (char_length(trim(client_name)) > 0);
 -- ------------------------------------------------------------
 -- invoices
 -- ------------------------------------------------------------
-
 create table public.invoices (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -117,6 +133,14 @@ create table public.invoices (
   last_reminder_at timestamptz,
   notes text,
   payment_link text,
+  po_number text,
+  applied_rules jsonb not null default '[]'::jsonb,
+  line_items jsonb not null default '[]'::jsonb,
+  tax_rate numeric(5,2) default 0.00,
+  tax_label text default 'Tax',
+  discount_amount numeric(12,2) default 0.00,
+  discount_type text default 'flat',
+  deleted_at timestamptz default null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -133,6 +157,20 @@ alter table public.invoices
 add constraint invoices_reminder_count_non_negative
 check (reminder_count >= 0);
 
+alter table public.invoices
+  add constraint invoices_po_number_length
+    check (po_number is null or char_length(trim(po_number)) <= 100),
+  add constraint invoices_applied_rules_is_array
+    check (jsonb_typeof(applied_rules) = 'array'),
+  add constraint invoices_tax_rate_range
+    check (tax_rate >= 0 and tax_rate <= 100),
+  add constraint invoices_discount_amount_non_negative
+    check (discount_amount >= 0),
+  add constraint invoices_discount_type_value
+    check (discount_type in ('flat', 'percentage')),
+  add constraint valid_currency 
+    check (currency in ('USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY'));
+
 -- unique invoice number per user
 create unique index invoices_user_id_invoice_number_unique
 on public.invoices(user_id, invoice_number);
@@ -140,7 +178,6 @@ on public.invoices(user_id, invoice_number);
 -- ------------------------------------------------------------
 -- reminder_drafts
 -- ------------------------------------------------------------
-
 create table public.reminder_drafts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -156,7 +193,6 @@ create table public.reminder_drafts (
 -- ------------------------------------------------------------
 -- reminder_events
 -- ------------------------------------------------------------
-
 create table public.reminder_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -164,13 +200,17 @@ create table public.reminder_events (
   draft_id uuid references public.reminder_drafts(id) on delete set null,
   event_type public.reminder_event_type not null,
   description text,
+  mail_subject text,
+  mail_body text,
   created_at timestamptz not null default now()
 );
+
+comment on column public.reminder_events.mail_subject is 'Archives the full AI generated subject line at the time of follow-up for audit compliance.';
+comment on column public.reminder_events.mail_body is 'Archives the full AI generated email/message body text at the time of follow-up for audit compliance.';
 
 -- ------------------------------------------------------------
 -- user_ai_settings
 -- ------------------------------------------------------------
-
 create table public.user_ai_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   base_url text not null,
@@ -185,6 +225,48 @@ create table public.user_ai_settings (
 alter table public.user_ai_settings
 add constraint user_ai_settings_temperature_range
 check (temperature >= 0 and temperature <= 2);
+
+-- ------------------------------------------------------------
+-- user_knowledge_base
+-- ------------------------------------------------------------
+create table public.user_knowledge_base (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    file_name text not null,
+    file_size integer not null,
+    file_type text not null,
+    extracted_text text not null,
+    storage_path text not null,
+    created_at timestamptz default now() not null
+);
+
+-- ------------------------------------------------------------
+-- notifications
+-- ------------------------------------------------------------
+create table public.notifications (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references auth.users(id) on delete cascade,
+    title text not null,
+    message text not null,
+    type text not null default 'system',
+    link text,
+    is_read boolean not null default false,
+    created_at timestamptz default now() not null
+);
+
+-- ------------------------------------------------------------
+-- unbilled_tasks
+-- ------------------------------------------------------------
+create table public.unbilled_tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  client_id uuid references public.clients(id) on delete set null,
+  description text not null,
+  amount numeric(12,2),
+  status text not null default 'pending',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
 -- ============================================================
 -- 4. INDEXES
@@ -213,6 +295,14 @@ create index reminder_events_invoice_id_idx on public.reminder_events(invoice_id
 create index reminder_events_event_type_idx on public.reminder_events(event_type);
 create index reminder_events_created_at_idx on public.reminder_events(created_at desc);
 
+-- notifications
+create index idx_notifications_user_id on public.notifications(user_id);
+create index idx_notifications_is_read on public.notifications(is_read);
+
+-- unbilled_tasks
+create index unbilled_tasks_user_id_idx on public.unbilled_tasks(user_id);
+create index unbilled_tasks_status_idx on public.unbilled_tasks(status);
+
 -- ============================================================
 -- 5. FUNCTIONS & TRIGGERS
 -- ============================================================
@@ -228,7 +318,7 @@ begin
 end;
 $$;
 
--- apply updated_at trigger to all tables with updated_at
+-- apply updated_at trigger to tables
 create trigger update_profiles_updated_at
 before update on public.profiles
 for each row execute function public.update_updated_at_column();
@@ -247,6 +337,10 @@ for each row execute function public.update_updated_at_column();
 
 create trigger update_user_ai_settings_updated_at
 before update on public.user_ai_settings
+for each row execute function public.update_updated_at_column();
+
+create trigger update_unbilled_tasks_updated_at
+before update on public.unbilled_tasks
 for each row execute function public.update_updated_at_column();
 
 -- auto-create profile on new auth user signup
@@ -325,7 +419,7 @@ before insert or update on public.reminder_events
 for each row execute function public.validate_reminder_invoice_ownership();
 
 -- ============================================================
--- 6. ROW LEVEL SECURITY
+-- 6. ROW LEVEL SECURITY (RLS) & POLICIES
 -- ============================================================
 
 -- enable RLS on all tables
@@ -335,15 +429,11 @@ alter table public.invoices enable row level security;
 alter table public.reminder_drafts enable row level security;
 alter table public.reminder_events enable row level security;
 alter table public.user_ai_settings enable row level security;
+alter table public.user_knowledge_base enable row level security;
+alter table public.notifications enable row level security;
+alter table public.unbilled_tasks enable row level security;
 
--- ============================================================
--- 7. RLS POLICIES
--- ============================================================
-
--- ------------------------------------------------------------
--- profiles (uses id, not user_id)
--- ------------------------------------------------------------
-
+-- profiles
 create policy "profiles_select_own"
 on public.profiles for select to authenticated
 using ((select auth.uid()) = id);
@@ -357,10 +447,7 @@ on public.profiles for update to authenticated
 using ((select auth.uid()) = id)
 with check ((select auth.uid()) = id);
 
--- ------------------------------------------------------------
 -- clients
--- ------------------------------------------------------------
-
 create policy "clients_select_own"
 on public.clients for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -378,10 +465,7 @@ create policy "clients_delete_own"
 on public.clients for delete to authenticated
 using ((select auth.uid()) = user_id);
 
--- ------------------------------------------------------------
 -- invoices
--- ------------------------------------------------------------
-
 create policy "invoices_select_own"
 on public.invoices for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -399,10 +483,7 @@ create policy "invoices_delete_own"
 on public.invoices for delete to authenticated
 using ((select auth.uid()) = user_id);
 
--- ------------------------------------------------------------
 -- reminder_drafts
--- ------------------------------------------------------------
-
 create policy "reminder_drafts_select_own"
 on public.reminder_drafts for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -420,10 +501,7 @@ create policy "reminder_drafts_delete_own"
 on public.reminder_drafts for delete to authenticated
 using ((select auth.uid()) = user_id);
 
--- ------------------------------------------------------------
 -- reminder_events
--- ------------------------------------------------------------
-
 create policy "reminder_events_select_own"
 on public.reminder_events for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -441,10 +519,7 @@ create policy "reminder_events_delete_own"
 on public.reminder_events for delete to authenticated
 using ((select auth.uid()) = user_id);
 
--- ------------------------------------------------------------
 -- user_ai_settings
--- ------------------------------------------------------------
-
 create policy "user_ai_settings_select_own"
 on public.user_ai_settings for select to authenticated
 using ((select auth.uid()) = user_id);
@@ -462,40 +537,128 @@ create policy "user_ai_settings_delete_own"
 on public.user_ai_settings for delete to authenticated
 using ((select auth.uid()) = user_id);
 
--- ============================================================
--- END OF SCHEMA
--- ============================================================
--- Migration: Create Notifications Table
--- Description: Adds a notifications table for user alerts and system updates
+-- user_knowledge_base
+create policy "Users can view own knowledge base documents" 
+on public.user_knowledge_base for select to authenticated
+using (auth.uid() = user_id);
 
-CREATE TABLE IF NOT EXISTS public.notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    type TEXT NOT NULL DEFAULT 'system',
-    link TEXT,
-    is_read BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+create policy "Users can insert own knowledge base documents" 
+on public.user_knowledge_base for insert to authenticated
+with check (auth.uid() = user_id);
+
+create policy "Users can delete own knowledge base documents" 
+on public.user_knowledge_base for delete to authenticated
+using (auth.uid() = user_id);
+
+-- notifications
+create policy "Users can view their own notifications"
+on public.notifications for select to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can update their own notifications"
+on public.notifications for update to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can delete their own notifications"
+on public.notifications for delete to authenticated
+using (auth.uid() = user_id);
+
+create policy "Users can insert own notifications"
+on public.notifications for insert to authenticated
+with check (auth.uid() = user_id);
+
+-- unbilled_tasks
+create policy "unbilled_tasks_select_own"
+on public.unbilled_tasks for select to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "unbilled_tasks_insert_own"
+on public.unbilled_tasks for insert to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "unbilled_tasks_update_own"
+on public.unbilled_tasks for update to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+create policy "unbilled_tasks_delete_own"
+on public.unbilled_tasks for delete to authenticated
+using ((select auth.uid()) = user_id);
+
+-- ============================================================
+-- 7. SECURE DATABASE RPCS
+-- ============================================================
+
+-- RPC: check_email_exists
+-- Check if an email exists securely (only for authenticated users)
+create or replace function public.check_email_exists(email_to_check text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  user_exists boolean;
+begin
+  select exists (
+    select 1 
+    from auth.users 
+    where email = email_to_check
+  ) into user_exists;
+  
+  return user_exists;
+end;
+$$;
+
+revoke execute on function public.check_email_exists(text) from anon;
+grant execute on function public.check_email_exists(text) to authenticated;
+
+-- RPC: delete_user_account (GDPR Hard Delete)
+-- Deletes the authenticated user from auth.users (cascades to all user tables)
+create or replace function public.delete_user_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+-- ============================================================
+-- 8. STORAGE BUCKET CONFIGURATION & POLICIES
+-- ============================================================
+
+-- Ensure the 'ai-knowledge-base' bucket exists
+insert into storage.buckets (id, name, public)
+values ('ai-knowledge-base', 'ai-knowledge-base', false)
+on conflict (id) do nothing;
+
+create policy "Users can upload knowledge base files"
+on storage.objects for insert to authenticated
+with check (
+    bucket_id = 'ai-knowledge-base' and 
+    auth.uid()::text = (storage.foldername(name))[1]
 );
 
--- Indexes for faster lookups
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
+create policy "Users can view own knowledge base files"
+on storage.objects for select to authenticated
+using (
+    bucket_id = 'ai-knowledge-base' and 
+    auth.uid()::text = (storage.foldername(name))[1]
+);
 
--- Enable RLS
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+create policy "Users can delete own knowledge base files"
+on storage.objects for delete to authenticated
+using (
+    bucket_id = 'ai-knowledge-base' and 
+    auth.uid()::text = (storage.foldername(name))[1]
+);
 
--- Policies
-CREATE POLICY "Users can view their own notifications"
-    ON public.notifications FOR SELECT
-    USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own notifications"
-    ON public.notifications FOR UPDATE
-    USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own notifications"
-    ON public.notifications FOR DELETE
-    USING (auth.uid() = user_id);
-
+-- Note: The 'business-logos' bucket must be created via the dashboard
+-- and configured with the following policies if needed:
+-- CREATE POLICY "Users can upload their own logo" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'business-logos' AND (storage.foldername(name))[1] = auth.uid()::text);
+-- CREATE POLICY "Users can update their own logo" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'business-logos' AND (storage.foldername(name))[1] = auth.uid()::text);
+-- CREATE POLICY "Users can read their own logo" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'business-logos' AND (storage.foldername(name))[1] = auth.uid()::text);
+-- CREATE POLICY "Users can delete their own logo" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'business-logos' AND (storage.foldername(name))[1] = auth.uid()::text);
