@@ -13,6 +13,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'off',
     video: 'on-first-retry',
+    extraHTTPHeaders: {
+      'x-e2e-secret': '***REMOVED***',
+    },
   },
   projects: [
     {

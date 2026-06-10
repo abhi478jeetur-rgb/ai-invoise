@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { driver } from 'driver.js'
+import { driver, type Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { completeTourAction } from '@/lib/profile/actions'
 
@@ -14,7 +14,7 @@ export function TourManager({ isActive }: TourManagerProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const driverRef = useRef<any>(null)
+  const driverRef = useRef<Driver | null>(null)
   
   useEffect(() => {
     setMounted(true)

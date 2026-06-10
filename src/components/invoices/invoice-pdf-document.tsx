@@ -197,6 +197,15 @@ const styles = StyleSheet.create({
   },
 });
 
+export interface PdfLineItem {
+  id?: string;
+  name: string;
+  description?: string | null;
+  quantity: number;
+  rate: number;
+  total: number;
+}
+
 interface InvoiceData {
   invoice_number: string;
   title: string | null;
@@ -208,7 +217,7 @@ interface InvoiceData {
   payment_link: string | null;
   created_at: string;
   po_number?: string | null;
-  line_items?: any[];
+  line_items?: PdfLineItem[];
   tax_rate?: number;
   tax_label?: string | null;
   discount_amount?: number;
@@ -259,10 +268,10 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
   const currencyStr = invoice.currency || 'USD';
   
   const subtotal = invoice.line_items && invoice.line_items.length > 0
-    ? invoice.line_items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0)
+    ? invoice.line_items.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
     : invoice.amount;
 
-  const discountAmount = parseFloat(invoice.discount_amount as any) || 0;
+  const discountAmount = Number(invoice.discount_amount) || 0;
   const discountType = invoice.discount_type || 'flat';
   const discountVal = discountType === 'percentage'
     ? (subtotal * discountAmount) / 100
@@ -270,7 +279,7 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
 
   const taxableAmount = Math.max(0, subtotal - discountVal);
 
-  const taxRate = parseFloat(invoice.tax_rate as any) || 0;
+  const taxRate = Number(invoice.tax_rate) || 0;
   const taxLabel = invoice.tax_label || 'Tax';
   const taxVal = (taxableAmount * taxRate) / 100;
 
@@ -292,7 +301,7 @@ export function InvoicePdfDocument({ invoice, client, profile }: InvoicePdfProps
         {/* Header */}
         <View style={styles.header}>
           <View>
-            {profile.logo_url && <Image src={profile.logo_url} alt="Company Logo" style={styles.logo} />}
+            {profile.logo_url && <Image src={profile.logo_url} style={styles.logo} />}
             <Text style={styles.title}>INVOICE</Text>
             <Text style={styles.invoiceNumber}>#{invoice.invoice_number}</Text>
             {invoice.po_number && (

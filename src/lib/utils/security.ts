@@ -118,10 +118,12 @@ export function sanitizeHref(urlStr: string | null | undefined): string {
 /**
  * Sanitizes database error messages to prevent internal details from leaking to the frontend.
  */
-export function sanitizeDatabaseError(error: any, defaultMessage = 'An unexpected database error occurred.'): string {
+export function sanitizeDatabaseError(error: unknown, defaultMessage = 'An unexpected database error occurred.'): string {
   if (!error) return defaultMessage
   
-  const msg = typeof error === 'string' ? error : (error.message || '')
+  const msg = typeof error === 'string'
+    ? error
+    : (error instanceof Error ? error.message : String((error as Record<string, unknown>).message ?? ''))
   
   // Log the real internal error details safely
   console.error('[DATABASE INTERNAL ERROR]:', error)

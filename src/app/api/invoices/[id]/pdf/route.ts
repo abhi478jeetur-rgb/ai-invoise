@@ -75,9 +75,9 @@ export async function GET(
     );
 
     // Convert Node stream to Buffer to set Content-Length and avoid chunked transfer errors (which trigger "Virus scan failed" in Chrome)
-    const chunks: any[] = [];
+    const chunks: Buffer[] = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(Buffer.from(chunk));
     }
     const pdfBuffer = Buffer.concat(chunks);
 
@@ -91,7 +91,7 @@ export async function GET(
       },
       status: 200,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PDF Generation Error:", error);
     return new NextResponse(
       JSON.stringify({ error: "Failed to generate PDF. Please try again." }),

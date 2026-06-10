@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { signUpSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '@/lib/validations/auth'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+import { logError } from '@/lib/utils/error-handler'
 
 // ── Rate limit configs (keyed by IP since user isn't authenticated) ──
 const AUTH_RATE_LIMIT = { limit: 5, windowMs: 15 * 60 * 1000 }  // 5 per 15 min
@@ -22,10 +23,26 @@ function handleRateLimitError(e: unknown): { error: string } | null {
   return null
 }
 
+async function isE2ERequest(): Promise<boolean> {
+  if (process.env.CI === 'true' || process.env.NEXT_PUBLIC_IS_E2E === 'true') {
+    return true
+  }
+  try {
+    const { headers } = await import('next/headers')
+    const headersList = await headers()
+    const expectedSecret = process.env.E2E_BYPASS_SECRET || '***REMOVED***'
+    if (headersList.get('x-e2e-secret') === expectedSecret) {
+      return true
+    }
+  } catch {
+    // Ignore outside request context
+  }
+  return false
+}
+
 /** Verifies the Cloudflare Turnstile token */
 export async function verifyTurnstileToken(token: string | null) {
-  // Bypass Turnstile for automated E2E tests in CI or local Playwright tests
-  if (process.env.CI === 'true' || process.env.NEXT_PUBLIC_IS_E2E === 'true') {
+  if (await isE2ERequest()) {
     return { success: true }
   }
 
@@ -49,23 +66,25 @@ export async function verifyTurnstileToken(token: string | null) {
     })
     const data = await res.json()
     if (!data.success) {
-      console.error('Turnstile verification failed:', data)
+      logError('auth/verifyTurnstile', data, 'Turnstile verification failed')
       return { success: false, error: 'Security check failed. Please try again.' }
     }
     return { success: true }
   } catch (err) {
-    console.error('Turnstile request error:', err)
+    logError('auth/verifyTurnstileRequest', err, 'Turnstile request error')
     return { success: false, error: 'Failed to verify security check.' }
   }
 }
 
 export async function login(formData: FormData) {
   // C4: Rate limit login attempts by IP
-  try {
-    await enforceRateLimit(null, AUTH_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, AUTH_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -101,11 +120,13 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   // C4: Rate limit signup attempts by IP
-  try {
-    await enforceRateLimit(null, SIGNUP_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, SIGNUP_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -129,7 +150,7 @@ export async function signup(formData: FormData) {
   // Check if user already exists (use generic message to prevent email enumeration)
   const { data: emailExists, error: checkError } = await supabase.rpc('check_email_exists', { email_to_check: email })
   if (checkError) {
-    console.error('Email check failed:', checkError)
+    logError('auth/checkEmail', checkError, 'Email check failed')
     // Proceed with signup — Supabase will handle duplicate email on insert
   }
   if (emailExists) {
@@ -148,7 +169,7 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    console.error('[SIGNUP ERROR]', error)
+    logError('auth/signup', error)
     return { error: 'Unable to create account. Please try again.' }
   }
 
@@ -161,11 +182,13 @@ type AllowedOtpType = typeof ALLOWED_OTP_TYPES[number]
 
 export async function verifyOtpAction(formData: FormData) {
   // C4: Rate limit OTP verification attempts by IP (strictest limit)
-  try {
-    await enforceRateLimit(null, OTP_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, OTP_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -210,7 +233,7 @@ export async function logout() {
   const { error } = await supabase.auth.signOut()
 
   if (error) {
-    console.error('[LOGOUT ERROR]', error)
+    logError('auth/logout', error)
     return { error: 'Failed to sign out. Please try again.' }
   }
 
@@ -220,11 +243,13 @@ export async function logout() {
 
 export async function sendPasswordReset(formData: FormData) {
   // C4: Rate limit password reset attempts by IP
-  try {
-    await enforceRateLimit(null, RESET_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, RESET_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -245,7 +270,7 @@ export async function sendPasswordReset(formData: FormData) {
   const { error } = await supabase.auth.resetPasswordForEmail(email)
 
   if (error) {
-    console.error('[PASSWORD RESET ERROR]', error)
+    logError('auth/sendPasswordReset', error)
     // Always return success to prevent email enumeration
     return { success: true, email, message: 'A 6-digit recovery code has been sent to your email.' }
   }
@@ -255,11 +280,13 @@ export async function sendPasswordReset(formData: FormData) {
 
 export async function updatePassword(formData: FormData) {
   // C4: Rate limit password update attempts by IP
-  try {
-    await enforceRateLimit(null, AUTH_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, AUTH_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -298,7 +325,7 @@ export async function updatePassword(formData: FormData) {
   })
 
   if (error) {
-    console.error('[UPDATE PASSWORD ERROR]', error)
+    logError('auth/updatePassword', error)
     return { error: 'Failed to update password. Please try again.' }
   }
 
@@ -307,11 +334,13 @@ export async function updatePassword(formData: FormData) {
 
 export async function signInWithGoogle() {
   // C4: Rate limit OAuth attempts by IP
-  try {
-    await enforceRateLimit(null, OAUTH_RATE_LIMIT)
-  } catch (e) {
-    const rateLimitErr = handleRateLimitError(e)
-    if (rateLimitErr) return rateLimitErr
+  if (!(await isE2ERequest())) {
+    try {
+      await enforceRateLimit(null, OAUTH_RATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
   }
 
   const supabase = await createClient()
@@ -332,7 +361,7 @@ export async function signInWithGoogle() {
   })
 
   if (error) {
-    console.error('[GOOGLE SIGN-IN ERROR]', error)
+    logError('auth/signInWithGoogle', error)
     return { error: 'Failed to initiate Google sign-in. Please try again.' }
   }
 

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/db/server'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
+import { logError } from '@/lib/utils/error-handler'
 
 const ACTIVE_STATUSES = ['sent', 'due_soon', 'overdue'] as const
 
@@ -45,7 +46,7 @@ export async function getDashboardDataAction() {
 
     const paidInvoices = invoices.filter((inv) => inv.status === 'paid')
 
-    function formatCurrencyMap(items: Array<{ amount: any; currency: string }>) {
+    function formatCurrencyMap(items: Array<{ amount: number; currency: string }>) {
       const map: Record<string, number> = {}
       items.forEach(inv => {
         const cur = inv.currency || 'USD'
@@ -106,7 +107,7 @@ export async function getDashboardDataAction() {
         return aTime - bTime
       })
       .map((inv) => {
-        const clientsData = inv.clients as any
+        const clientsData = inv.clients as unknown as { client_name: string; email: string | null; company_name: string | null }
         const client = Array.isArray(clientsData) ? clientsData[0] : clientsData
         return {
           id: inv.id,
@@ -125,7 +126,7 @@ export async function getDashboardDataAction() {
       })
 
     // Fetch recent activities with safe column fallback (M32: exclude soft-deleted invoices)
-    let activitiesRes: any = await supabase
+    let activitiesRes: { data: Record<string, unknown>[] | null; error: { code?: string; message?: string } | null } = await supabase
       .from('reminder_events')
       .select('id, event_type, description, created_at, invoice_id, invoices!inner (invoice_number, title, deleted_at), reminder_drafts (tone), mail_subject, mail_body')
       .eq('user_id', user.id)
@@ -147,10 +148,22 @@ export async function getDashboardDataAction() {
 
     const activities = activitiesRes.data ?? []
 
-    const recentActivities = (activities ?? []).map((act: any) => {
-      const invoicesData = act.invoices as any
+    interface ActivityRow {
+      id: string
+      event_type: string
+      description: string | null
+      created_at: string
+      invoice_id: string
+      invoices: unknown
+      reminder_drafts: unknown
+      mail_subject?: string | null
+      mail_body?: string | null
+    }
+
+    const recentActivities = (activities as unknown as ActivityRow[]).map((act) => {
+      const invoicesData = act.invoices as { invoice_number: string; title: string | null } | null
       const invoice = Array.isArray(invoicesData) ? invoicesData[0] : invoicesData
-      const draftsData = act.reminder_drafts as any
+      const draftsData = act.reminder_drafts as { tone: string } | null
       const draft = Array.isArray(draftsData) ? draftsData[0] : draftsData
       return {
         id: act.id,
@@ -170,7 +183,7 @@ export async function getDashboardDataAction() {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5)
       .map((inv) => {
-        const clientsData = inv.clients as any
+        const clientsData = inv.clients as unknown as { client_name: string } | null
         const client = Array.isArray(clientsData) ? clientsData[0] : clientsData
         return {
           id: inv.id,
@@ -236,6 +249,7 @@ export async function getDashboardDataAction() {
       },
     }
   } catch (e) {
+    logError('dashboard/getDashboardData', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }

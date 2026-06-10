@@ -14,20 +14,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { createClientAction, updateClientAction } from '@/lib/clients/actions'
+import { Client } from '@/types/client'
 
 interface ClientFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSaved?: (client?: any) => void
-  client?: {
-    id: string
-    client_name: string
-    contact_name: string | null
-    email: string | null
-    phone: string | null
-    company_name: string | null
-    notes: string | null
-  } | null
+  onSaved?: (client?: Client) => void
+  client?: Client | null
 }
 
 export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormProps) {

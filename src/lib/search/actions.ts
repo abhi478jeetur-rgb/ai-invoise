@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/db/server'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { z } from 'zod'
+import { logError } from '@/lib/utils/error-handler'
 
 // Zod schema for validation and basic XSS prevention (stripping HTML tags)
 const SearchSchema = z.object({
@@ -76,8 +77,8 @@ export async function searchAllData(rawQuery: string) {
         invoices: invoices || [] 
       } 
     }
-  } catch (error: any) {
-    console.error('Search error:', error)
+  } catch (error: unknown) {
+    logError('search/searchAllData', error)
     return { success: false, error: sanitizeDatabaseError(error) }
   }
 }

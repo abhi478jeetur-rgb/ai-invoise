@@ -6,7 +6,9 @@ import { Menu } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 
-export function MobileLandingNav({ user }: { user: any }) {
+import { User } from '@supabase/supabase-js'
+
+export function MobileLandingNav({ user }: { user: User | null }) {
   const [open, setOpen] = useState(false)
 
   const handleLinkClick = () => {

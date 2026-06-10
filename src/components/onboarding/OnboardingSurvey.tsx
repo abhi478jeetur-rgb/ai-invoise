@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, Control, FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import {
@@ -233,7 +233,13 @@ export function OnboardingSurvey({ defaultName = '' }: OnboardingSurveyProps) {
 
 // ─── Step Components ──────────────────────────────────────────────────────────
 
-function NameStep({ control, errors }: { control: any; errors: any }) {
+function NameStep({
+  control,
+  errors,
+}: {
+  control: Control<OnboardingFormData>
+  errors: FieldErrors<OnboardingFormData>
+}) {
   return (
     <div className="space-y-3">
       <Label htmlFor="full_name" className="text-muted-foreground">
@@ -267,9 +273,9 @@ function RadioStep({
   showDescription = false,
 }: {
   name: 'use_case' | 'role' | 'primary_problem' | 'setup_preference'
-  control: any
+  control: Control<OnboardingFormData>
   options: readonly { value: string; label: string; description?: string }[]
-  errors: any
+  errors: FieldErrors<OnboardingFormData>
   showDescription?: boolean
 }) {
   return (

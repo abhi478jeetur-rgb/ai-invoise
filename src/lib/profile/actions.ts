@@ -48,13 +48,13 @@ export async function saveOnboardingSurveyAction(data: OnboardingFormData) {
 }
 
 // Legacy action kept for backward compatibility with TourManager
-export async function updateUserOnboardingAction(data: Record<string, any>) {
+export async function updateUserOnboardingAction(data: { full_name?: string }) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
 
-    const updates: Record<string, any> = { onboarding_completed: true }
+    const updates: Record<string, unknown> = { onboarding_completed: true }
     if (data.full_name) updates.full_name = data.full_name.trim()
 
     const { error } = await supabase

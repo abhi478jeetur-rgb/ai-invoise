@@ -19,6 +19,8 @@ import {
 } from '@/lib/settings/actions'
 import { updateReminderSettingsAction } from '@/lib/profile/actions'
 import { updatePassword } from '@/lib/auth/actions'
+import { handleClientError } from '@/lib/utils/error-handler'
+import { KnowledgeBaseDocument } from '@/types/settings'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD - US Dollar' },
@@ -87,7 +89,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const router = useRouter()
 
   // Knowledge Base state
-  const [kbDocs, setKbDocs] = useState<any[]>(initialData.knowledgeBaseDocuments || [])
+  const [kbDocs, setKbDocs] = useState<KnowledgeBaseDocument[]>(initialData.knowledgeBaseDocuments || [])
   const [docUploading, setDocUploading] = useState(false)
   const docInputRef = useRef<HTMLInputElement>(null)
 
@@ -127,11 +129,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Profile settings saved successfully!')
         router.refresh()
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to save profile settings. Please check your internet connection and try again.'
-      })
+    } catch (err) {
+      handleClientError('settings/saveProfile', err, 'Failed to save profile settings. Please check your network.')
     } finally {
       setProfileSaving(false)
     }
@@ -160,11 +159,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Password successfully updated!')
         e.currentTarget.reset()
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to update password. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/updatePassword', err, 'Failed to update password. Please check your network.')
     } finally {
       setSecuritySaving(false)
     }
@@ -185,11 +181,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Document uploaded successfully!')
         router.refresh()
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to upload document. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/uploadDocument', err, 'Failed to upload document. Please check your network.')
     } finally {
       setDocUploading(false)
       if (docInputRef.current) docInputRef.current.value = ''
@@ -206,11 +199,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
       } else {
         toast.error(result.error || 'Failed to delete document')
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to delete document. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/deleteDocument', err, 'Failed to delete document. Please check your network.')
     }
   }
 
@@ -227,11 +217,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Reminder schedule saved successfully!')
         router.refresh()
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to save reminder schedule. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/saveReminder', err, 'Failed to save reminder schedule. Please check your network.')
     } finally {
       setReminderSaving(false)
     }
@@ -249,11 +236,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Business profile saved successfully!')
         router.refresh()
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to save business profile. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/saveBusinessProfile', err, 'Failed to save business profile. Please check your network.')
     } finally {
       setBizSaving(false)
     }
@@ -280,11 +264,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         setLogoUrl(result.url)
         toast.success('Logo uploaded successfully!')
       }
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Network Error', {
-        description: 'Failed to upload logo. Please check your internet connection.'
-      })
+    } catch (err) {
+      handleClientError('settings/uploadLogo', err, 'Failed to upload logo. Please check your network.')
       setLogoPreview(initialData.profile.logo_url || null)
     } finally {
       setLogoUploading(false)
@@ -309,8 +290,8 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
         toast.success('Account deleted successfully.')
         router.push('/sign-in')
       }
-    } catch {
-      toast.error('An unexpected error occurred.')
+    } catch (err) {
+      handleClientError('settings/deleteAccount', err, 'An unexpected error occurred during account deletion.')
       setAccountDeleting(false)
     }
   }
@@ -681,7 +662,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
                 <div className="space-y-1.5">
                   <Label className="text-muted-foreground">Knowledge Base Documents</Label>
                   <div className="space-y-2">
-                    {kbDocs.map((doc: any) => (
+                    {kbDocs.map((doc: KnowledgeBaseDocument) => (
                       <div key={doc.id} className="flex items-center justify-between p-2 rounded border border-border bg-background">
                         <span className="text-sm text-foreground/80 truncate max-w-[200px]">{doc.file_name}</span>
                         <button type="button" onClick={() => handleDeleteDocument(doc.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>

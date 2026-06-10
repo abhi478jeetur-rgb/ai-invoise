@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { encryptKey, decryptKey, maskApiKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+import { logError } from '@/lib/utils/error-handler'
 
 export async function getSettingsAction() {
   try {
@@ -105,6 +106,7 @@ export async function getSettingsAction() {
       },
     }
   } catch (e) {
+    logError('settings/getSettings', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -143,6 +145,7 @@ export async function saveProfileSettingsAction(formData: FormData) {
     revalidatePath('/dashboard')
     return { success: true }
   } catch (e) {
+    logError('settings/saveProfileSettings', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -246,6 +249,7 @@ export async function saveBusinessProfileAction(formData: FormData) {
     revalidatePath('/invoices')
     return { success: true }
   } catch (e) {
+    logError('settings/saveBusinessProfile', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -323,6 +327,7 @@ export async function saveAISettingsAction(formData: FormData) {
     if (e instanceof RateLimitError) {
       return { error: `Too many requests. Please try again in ${Math.ceil(e.retryAfterMs / 1000)} seconds.` }
     }
+    logError('settings/saveAISettings', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -373,15 +378,14 @@ export async function uploadBusinessLogoAction(formData: FormData) {
     revalidatePath('/settings')
     return { success: true, url: publicUrl }
   } catch (e) {
+    logError('settings/uploadBusinessLogo', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
 
 
 
-// ==============================================================================
 // AI Knowledge Base Actions
-// ==============================================================================
 
 export async function getKnowledgeBaseDocumentsAction() {
   try {
@@ -399,6 +403,7 @@ export async function getKnowledgeBaseDocumentsAction() {
 
     return { success: true, data }
   } catch (e) {
+    logError('settings/getKnowledgeBaseDocuments', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -428,9 +433,9 @@ export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
 
     if (file.type === 'application/pdf') {
       try {
-        const pdfParseModule: any = await import('pdf-parse');
-        const pdfParse = pdfParseModule.default || pdfParseModule;
-        const parsed = await (pdfParse as any)(buffer)
+        const pdfParseModule = await import('pdf-parse') as unknown as { default?: unknown } & Record<string, unknown>;
+        const pdfParse = (pdfParseModule.default || pdfParseModule) as (buf: Buffer) => Promise<{ text: string }>;
+        const parsed = await pdfParse(buffer)
         extractedText = parsed.text
       } catch (parseError) {
         return { error: 'Failed to extract text from PDF. The file may be encrypted, scanned without OCR, or corrupted.' }
@@ -478,6 +483,7 @@ export async function uploadKnowledgeBaseDocumentAction(formData: FormData) {
     revalidatePath('/settings')
     return { success: true }
   } catch (e) {
+    logError('settings/uploadKnowledgeBaseDocument', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
@@ -513,6 +519,7 @@ export async function deleteKnowledgeBaseDocumentAction(documentId: string) {
     revalidatePath('/settings')
     return { success: true }
   } catch (e) {
+    logError('settings/deleteKnowledgeBaseDocument', e)
     return { error: sanitizeDatabaseError(e) }
   }
 }
@@ -541,6 +548,7 @@ export async function deleteAccountAction(confirmationText: string) {
 
     return { success: true }
   } catch (e) {
+    logError('settings/deleteAccount', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
