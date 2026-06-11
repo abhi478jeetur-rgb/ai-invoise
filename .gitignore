@@ -85,3 +85,22 @@ secrets.json
 service-account.json
 supabase/functions/.env
 
+# Temporary Test & Debug Files
+sample_invoices.csv
+test-*.mjs
+test-*.js
+test-*.ts
+debug_db.js
+reset_onboarding.js
+screenshot.mjs
+visual-audit.mjs
+tracked_files.txt
+obsidian-mcp-config.json
+obsidian-vault/
+docs/
+My research docs/
+scripts/debug_db.js
+scripts/reset_onboarding.js
+scripts/visual-audit.mjs
+
+

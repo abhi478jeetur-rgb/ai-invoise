@@ -11,6 +11,8 @@ export interface DashboardStats {
   totalInvoiceCount: number
   totalOutstandingFormatted?: string
   totalOverdueFormatted?: string
+  totalPaidFormatted?: string
+  averageDaysToPaid?: number
 }
 
 export interface ChaseItem {
@@ -54,10 +56,17 @@ export interface AgingBucket {
 
 export type AgingReport = Record<string, AgingBucket>
 
+export interface MonthlyTrendPoint {
+  month: string
+  invoiced: number
+  collected: number
+}
+
 export interface DashboardData {
   stats: DashboardStats
   chaseList: ChaseItem[]
   recentActivities: RecentActivity[]
   recentInvoices: RecentInvoice[]
   agingReport?: AgingReport
+  monthlyTrend?: MonthlyTrendPoint[]
 }

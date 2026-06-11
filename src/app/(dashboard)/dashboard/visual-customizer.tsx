@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
 import { useTheme } from 'next-themes'
-
+import { AnalyticsCharts, AgingReceivablesChart } from '@/components/dashboard/analytics-charts'
 
 import { DashboardData, RecentActivity, ChaseItem, RecentInvoice } from '@/types/dashboard'
 
@@ -223,7 +223,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
       `}</style>
 
       {/* Main Dashboard layout */}
-      <div className="space-y-6 max-w-6xl mx-auto pb-10">
+      <div className="space-y-4 max-w-6xl mx-auto pb-6">
 
         {/* 1. Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-end gap-4">
@@ -309,8 +309,15 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 space-y-5">
+        <div className="space-y-4">
+                {/* 2.5 Visual Analytics Section (Above Who to Chase Today) */}
+                {stats.totalInvoiceCount > 0 && (
+                  <AnalyticsCharts 
+                    agingReport={agingReport} 
+                    stats={stats} 
+                    monthlyTrend={initialData.monthlyTrend} 
+                  />
+                )}
                 
                 {/* 3. Who to Chase Today */}
                 <div
@@ -534,80 +541,6 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           </div>
         </div>
       </div>
-
-      {/* Aging Report / Right Column Widget (Phase 3) */}
-      <div className="lg:col-span-1 space-y-5">
-        <div
-          className="border p-4 sm:p-6"
-          style={{ backgroundColor: 'var(--user-card)', borderColor: 'var(--user-border)', borderRadius: 'var(--user-radius)' }}
-        >
-          <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--user-border)' }}>
-            <h3 className="tracking-wider font-semibold text-xs text-muted-foreground uppercase">
-              Outstanding Aging
-            </h3>
-          </div>
-
-          <div className="mt-6 space-y-8">
-            {Object.keys(agingReport).length === 0 ? (
-              <div className="py-8 text-center text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
-                No outstanding aging balances.
-              </div>
-            ) : (
-              Object.entries(agingReport).map(([cur, buckets]) => {
-                const total = buckets.current + buckets.bucket30 + buckets.bucket60 + buckets.bucket90 + buckets.bucket90Plus
-                if (total === 0) return null
-
-                const getPct = (val: number) => (total > 0 ? (val / total) * 105 : 0)
-
-                const list = [
-                  { label: 'Current (Not Overdue)', value: buckets.current, color: 'var(--user-accent)' },
-                  { label: '1 - 30 Days Overdue', value: buckets.bucket30, color: '#eab308' },
-                  { label: '31 - 60 Days Overdue', value: buckets.bucket60, color: '#f97316' },
-                  { label: '61 - 90 Days Overdue', value: buckets.bucket90, color: '#f43f5e' },
-                  { label: '90+ Days Overdue', value: buckets.bucket90Plus, color: '#ef4444' },
-                ]
-
-                return (
-                  <div key={cur} className="space-y-4">
-                    {Object.keys(agingReport).length > 1 && (
-                      <h4 className="text-xs font-bold font-mono text-muted-foreground uppercase tracking-wider">
-                        {cur} Aging Portfolio
-                      </h4>
-                    )}
-
-                    <div className="space-y-4">
-                      {list.map((b) => {
-                        const pct = getPct(b.value)
-                        return (
-                          <div key={b.label} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground font-medium text-xs">{b.label}</span>
-                              <span className="font-mono font-semibold text-xs" style={{ color: 'var(--user-title)' }}>
-                                {formatCurrencyWithCode(b.value, cur)}
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 rounded-full bg-background/80 overflow-hidden border border-white/[0.03]">
-                              <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                  backgroundColor: b.color,
-                                  width: `${Math.max(0, Math.min(100, pct))}%`
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      </div> {/* Closes the main 3-column grid (line 340) */}
 
       {/* 6. Archived Reminder Detail Dialog (Phase 4) */}
       {selectedActivity && (

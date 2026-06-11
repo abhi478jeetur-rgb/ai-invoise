@@ -47,8 +47,8 @@ export async function verifyTurnstileToken(token: string | null) {
   }
 
   const secret = process.env.TURNSTILE_SECRET_KEY
-  if (!secret) {
-    console.warn('TURNSTILE_SECRET_KEY is not set. Skipping verification for development.')
+  if (!secret || secret === '1x000000000000000000000000000000AA') {
+    console.log('TURNSTILE: Bypassing verification for local development/testing keys.')
     return { success: true }
   }
 

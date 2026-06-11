@@ -257,7 +257,7 @@ CRITICAL INSTRUCTIONS:
     let body: string = ''
 
     try {
-      let cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+      const cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
       let jsonStr = cleanContent
       const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
@@ -547,7 +547,7 @@ CRITICAL INSTRUCTIONS:
       let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
       let body: string = ''
       try {
-        let cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+        const cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
         let jsonStr = cleanContent
         const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
         if (jsonMatch) {

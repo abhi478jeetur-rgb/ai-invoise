@@ -258,7 +258,7 @@ export default async function LandingPage() {
                 <h3 className="text-base font-semibold text-neutral-200">Spot Overdue Invoices</h3>
               </div>
               <p className="text-xs text-neutral-500 leading-relaxed font-light">
-                Wake up to a calm morning list. The "Who to Chase Today" panel highlights exactly which clients are overdue, how long they've been late, and the total value pending. No guesswork.
+                Wake up to a calm morning list. The &ldquo;Who to Chase Today&rdquo; panel highlights exactly which clients are overdue, how long they&apos;ve been late, and the total value pending. No guesswork.
               </p>
             </div>
 
@@ -271,7 +271,7 @@ export default async function LandingPage() {
                 <h3 className="text-base font-semibold text-neutral-200">Generate Safe AI Reminders</h3>
               </div>
               <p className="text-xs text-neutral-500 leading-relaxed font-light">
-                Click "Generate Reminder" and choose from Friendly, Professional, Firm, or Final Notice presets. The AI drafts a context-aware email instantly for you to review and copy.
+                Click &ldquo;Generate Reminder&rdquo; and choose from Friendly, Professional, Firm, or Final Notice presets. The AI drafts a context-aware email instantly for you to review and copy.
               </p>
             </div>
           </div>

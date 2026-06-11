@@ -207,7 +207,15 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
   return (
     <div className="space-y-4">
       {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+        <Link href="/invoices/import">
+          <Button
+            variant="outline"
+            className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
+          >
+            Import CSV
+          </Button>
+        </Link>
         <Button
           onClick={() => {
             setEditingInvoice(null)

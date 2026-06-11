@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/db/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { InvoiceStatus } from '@/lib/constants/invoice-status'
 import { logError } from '@/lib/utils/error-handler'
@@ -138,6 +138,7 @@ export async function createInvoiceAction(formData: FormData) {
 
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true, data }
   } catch (e) {
     logError('invoices/createInvoice', e)
@@ -356,6 +357,7 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)
     revalidatePath('/dashboard')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true, data }
   } catch (e) {
     logError('invoices/updateInvoice', e)
@@ -381,6 +383,7 @@ export async function deleteInvoiceAction(invoiceId: string) {
 
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
@@ -427,6 +430,7 @@ export async function restoreInvoiceAction(invoiceId: string) {
     revalidatePath('/invoices')
     revalidatePath('/dashboard')
     revalidatePath('/trash')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
@@ -466,6 +470,7 @@ export async function hardDeleteInvoiceAction(invoiceId: string) {
     if (error) return { error: sanitizeDatabaseError(error) }
 
     revalidatePath('/trash')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
@@ -529,6 +534,7 @@ export async function markInvoicePaidAction(invoiceId: string, paidDate?: string
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)
     revalidatePath('/dashboard')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true, data: invoice }
   } catch (e) {
     logError('invoices/markPaid', e)
@@ -651,6 +657,7 @@ export async function updateInvoiceStatusAction(invoiceId: string, status: strin
     revalidatePath('/invoices')
     revalidatePath(`/invoices/${invoiceId}`)
     revalidatePath('/dashboard')
+    revalidateTag(`dashboard-analytics-${user.id}`, 'max')
     return { success: true, data: invoice }
   } catch (e) {
     logError('invoices/updateStatus', e)
