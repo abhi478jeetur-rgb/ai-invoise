@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { ExternalLink } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { ExternalLink, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,6 +14,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { generateReminderAction, logReminderEventAction } from '@/lib/reminders/actions'
 import { toast } from 'sonner'
+
+function buildWhatsAppUrl(body: string): string {
+  return `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`
+}
 
 type Tone = 'friendly' | 'professional' | 'firm' | 'final_notice'
 
@@ -79,11 +83,32 @@ const TONE_OPTIONS: { value: Tone; label: string; description: string }[] = [
   },
 ]
 
+const GENERATION_STATUSES = [
+  'Analyzing invoice details...',
+  'Calibrating relationship-safe tone...',
+  'Injecting business guidelines...',
+  'Applying custom instructions...',
+  'Drafting professional copy...',
+  'Polishing email formatting...',
+]
+
 export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, clientEmail, amount, currency }: ReminderModalProps) {
   const [tone, setTone] = useState<Tone>('professional')
   const [customInstructions, setCustomInstructions] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [statusIndex, setStatusIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!generating) {
+      setStatusIndex(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setStatusIndex((prev) => (prev + 1) % GENERATION_STATUSES.length)
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [generating])
 
   // Draft state
   const [draft, setDraft] = useState<{ id: string; subject: string; body: string } | null>(null)
@@ -178,7 +203,21 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
           </DialogDescription>
         </DialogHeader>
 
-        {!draft ? (
+        {generating ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 space-y-5">
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full" />
+              <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <div className="absolute inset-2.5 bg-emerald-500/10 rounded-full blur-sm animate-pulse" />
+            </div>
+            <div className="space-y-1.5 text-center">
+              <p className="text-sm font-semibold text-foreground">Generating Reminder</p>
+              <p className="text-xs text-emerald-400 font-light min-h-[16px] animate-pulse transition-all duration-500">
+                {GENERATION_STATUSES[statusIndex]}
+              </p>
+            </div>
+          </div>
+        ) : !draft ? (
           /* Tone Selection & Generate */
           <div className="space-y-5 pt-2">
             {error && (
@@ -341,35 +380,42 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
               </Button>
             </div>
 
-            {/* Send Email via... */}
-            {clientEmail && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Send Email via...</p>
-                <div className="flex gap-2">
-                  {[
-                    { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
-                    { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
-                    { key: 'default' as const, label: 'Mail App', color: 'hover:border-border/40 hover:bg-neutral-500/10' },
-                  ].map((provider) => (
-                    <a
-                      key={provider.key}
-                      href={buildEmailUrl(
-                        provider.key,
-                        clientEmail,
-                        draft.subject,
-                        editMode ? editedBody : draft.body
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-xs font-medium text-foreground/80 transition-colors ${provider.color}`}
-                    >
+            {/* Send Reminder via... */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Send Reminder via...</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'gmail' as const, label: 'Gmail', color: 'hover:border-red-500/40 hover:bg-red-500/10' },
+                  { key: 'whatsapp' as const, label: 'WhatsApp', color: 'hover:border-emerald-500/40 hover:bg-emerald-500/10', isWhatsApp: true },
+                  { key: 'outlook' as const, label: 'Outlook', color: 'hover:border-blue-500/40 hover:bg-blue-500/10' },
+                  { key: 'default' as const, label: 'Mail App', color: 'hover:border-border/40 hover:bg-neutral-500/10' },
+                ].map((provider) => (
+                  <a
+                    key={provider.key}
+                    href={
+                      provider.isWhatsApp
+                        ? buildWhatsAppUrl(editMode ? editedBody : draft.body)
+                        : buildEmailUrl(
+                            provider.key,
+                            clientEmail || '',
+                            draft.subject,
+                            editMode ? editedBody : draft.body
+                          )
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-xs font-medium text-foreground/80 transition-colors ${provider.color}`}
+                  >
+                    {provider.isWhatsApp ? (
+                      <MessageSquare className="h-3.5 w-3.5" />
+                    ) : (
                       <ExternalLink className="h-3.5 w-3.5" />
-                      {provider.label}
-                    </a>
-                  ))}
-                </div>
+                    )}
+                    {provider.label}
+                  </a>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         )}
       </DialogContent>
