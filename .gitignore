@@ -86,7 +86,7 @@ service-account.json
 supabase/functions/.env
 
 # Temporary Test & Debug Files
-sample_invoices.csv
+*.csv
 test-*.mjs
 test-*.js
 test-*.ts
