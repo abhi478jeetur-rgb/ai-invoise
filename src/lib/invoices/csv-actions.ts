@@ -119,7 +119,7 @@ Respond ONLY with a valid JSON object matching this schema (no markdown, no code
         ],
         temperature: 0.1,
       }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(45000),
     })
 
     if (!response.ok) {
