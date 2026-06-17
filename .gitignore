@@ -92,12 +92,14 @@ test-*.js
 test-*.ts
 debug_db.js
 reset_onboarding.js
+debug-console.mjs
+debug-dom.mjs
+network-audit.mjs
 screenshot.mjs
 visual-audit.mjs
 tracked_files.txt
 obsidian-mcp-config.json
 obsidian-vault/
-docs/
 My research docs/
 scripts/debug_db.js
 scripts/reset_onboarding.js

@@ -3,6 +3,12 @@ import { redirect } from 'next/navigation'
 import { getInvoicesAction } from '@/lib/invoices/actions'
 import { getSettingsAction } from '@/lib/settings/actions'
 import { RemindersPageClient } from './reminders-page-client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'AI Reminders - ChaseFree AI',
+  description: 'Draft and review personalized, AI-generated payment follow-ups for late invoices.',
+}
 
 export default async function RemindersPage() {
   const supabase = await createClient()

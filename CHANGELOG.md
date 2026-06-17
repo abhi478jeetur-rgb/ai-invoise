@@ -5,7 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0] - 2026-06-10
+## [2.1.6] - 2026-06-17
+
+### Added
+- **Custom Page SEO Metadata:** Configured custom, descriptive page titles and meta descriptions for all pages across authentication, dashboard, invoices, clients, reminders, settings, and trash sections, improving browser-tab UX and search engine indexing.
+
+## [2.1.5] - 2026-06-17
+
+### Added
+- **Interactive SVG Astronaut:** Replaced Spline 3D animations with a premium, custom-designed SVG Astronaut empty state character.
+- **anime.js Cursor-Following Interactions:** Integrated `anime.js` (modular v4) to power idle floating/blinking animations and smooth, parallax cursor-tracking effects.
+
+### Removed
+- **Spline Library & Configurations:** Uninstalled `@splinetool/react-spline` and reverted the CSP `connect-src` configuration to exclude `https://unpkg.com`.
+
+## [2.1.4] - 2026-06-17
+
+### Added
+- **Interactive SVG Astronaut:** Replaced Spline 3D animations with a premium, custom-designed SVG Astronaut empty state character.
+- **anime.js Cursor-Following Interactions:** Integrated `anime.js` (modular v4) to power idle floating/blinking animations and smooth, parallax cursor-tracking effects.
+
+### Removed
+- **Spline Library & Configurations:** Uninstalled `@splinetool/react-spline` and reverted the CSP `connect-src` configuration to exclude `https://unpkg.com`.
+
+## [2.1.3] - 2026-06-17
+
+### Fixed
+- **Spline WebAssembly CSP Exception:** Added `https://unpkg.com` to the CSP `connect-src` header in `next.config.ts` to allow loading Spline's runtime WebAssembly binaries, resolving dashboard rendering crashes.
+
+### Changed
+- **Code Humanization:** Cleaned up all developer-style explaining comments in `AIHelperCharacter.tsx` to align strictly with `humanize-code` rules.
+
+## [2.1.2] - 2026-06-17
+
+### Added
+- **Glassmorphic Empty State SVGs:** Replaced basic character placeholders with custom, glowing inline SVGs for empty states across the Dashboard (Who to Chase Today, Recent Invoices, Recent Reminder Activity), Invoices page, Clients page, and Activity Timeline.
+
+### Fixed
+- **TypeScript Warning in Reminder Modal:** Added a type-cast to `provider.key` in the `buildEmailUrl` parameter call to resolve a type mismatch warning.
+
+## [2.1.1] - 2026-06-10
 
 ### Changed
 - **Codebase Humanization:** Conducted a comprehensive review and refactoring of the codebase to transform machine-generated styling and patterns into professional, clean, senior-engineer-grade code.

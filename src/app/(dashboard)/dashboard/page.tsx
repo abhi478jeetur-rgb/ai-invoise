@@ -2,6 +2,12 @@ import { createClient } from '@/lib/db/server'
 import { redirect } from 'next/navigation'
 import { getDashboardDataAction } from '@/lib/dashboard/actions'
 import DashboardVisualCustomizer from './visual-customizer'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Dashboard - ChaseFree AI',
+  description: 'View your late payment follow-up analytics, aging receivables, and who to chase today.',
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
