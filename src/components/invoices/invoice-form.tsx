@@ -68,7 +68,7 @@ interface InvoiceFormProps {
 }
 
 const CURRENCIES = [
-  'USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','HKD','MYR'
+  'USD','EUR','GBP','INR','CAD','AUD','JPY','SGD','CHF','AED','BRL','HKD','MYR'
 ]
 
 export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, defaultProfile }: InvoiceFormProps) {

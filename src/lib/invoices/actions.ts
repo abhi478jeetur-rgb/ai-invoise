@@ -6,10 +6,22 @@ import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { InvoiceStatus } from '@/lib/constants/invoice-status'
 import { logError } from '@/lib/utils/error-handler'
 
+import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+
 // M18: UUID validation helper
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id)
+}
+
+const INVOICE_CREATE_LIMIT = { limit: 20, windowMs: 15 * 60 * 1000 } // 20 invoices per 15 minutes
+
+function handleRateLimitError(e: unknown): { error: string } | null {
+  if (e instanceof RateLimitError) {
+    const seconds = Math.ceil(e.retryAfterMs / 1000)
+    return { error: `Too many invoice creation requests. Please try again in ${seconds} seconds.` }
+  }
+  return null
 }
 
 export async function createInvoiceAction(formData: FormData) {
@@ -74,6 +86,13 @@ export async function createInvoiceAction(formData: FormData) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'You must be authenticated.' }
+
+    try {
+      await enforceRateLimit(user.id, INVOICE_CREATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
+    }
 
     // Verify that the client belongs to the authenticated user (IDOR prevention)
     const { data: client, error: clientError } = await supabase
@@ -163,19 +182,20 @@ export async function getNextInvoiceNumberAction() {
     const prefix = profile?.global_rules?.invoice_prefix?.trim() || 'INV-'
     const format = profile?.global_rules?.invoice_format || 'PREFIX-[SEQUENCE]'
 
-    // H6: Fetch highest invoice number by parsing all invoice numbers
-    // This is more robust than ordering by created_at which can be wrong
-    // if invoices are created out of order or restored from trash
-    const { data: allInvoices } = await supabase
+    // Fetch only the 25 most recent invoices to find the highest sequence number.
+    // This scales efficiently for users with thousands of invoices.
+    const { data: recentInvoices } = await supabase
       .from('invoices')
       .select('invoice_number')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(25)
 
     const yearStr = new Date().getFullYear().toString()
     let maxSeq = 0
 
-    if (allInvoices && allInvoices.length > 0) {
-      for (const inv of allInvoices) {
+    if (recentInvoices && recentInvoices.length > 0) {
+      for (const inv of recentInvoices) {
         if (!inv.invoice_number) continue
         const numMatch = inv.invoice_number.match(/(\d+)$/)
         if (numMatch) {
