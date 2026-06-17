@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.6] - 2026-06-17
+
+### Added
+- **Custom Page SEO Metadata:** Configured custom, descriptive page titles and meta descriptions for all pages across authentication, dashboard, invoices, clients, reminders, settings, and trash sections, improving browser-tab UX and search engine indexing.
+
+## [2.1.5] - 2026-06-17
+
+### Added
+- **Interactive SVG Astronaut:** Replaced Spline 3D animations with a premium, custom-designed SVG Astronaut empty state character.
+- **anime.js Cursor-Following Interactions:** Integrated `anime.js` (modular v4) to power idle floating/blinking animations and smooth, parallax cursor-tracking effects.
+
+### Removed
+- **Spline Library & Configurations:** Uninstalled `@splinetool/react-spline` and reverted the CSP `connect-src` configuration to exclude `https://unpkg.com`.
+
 ## [2.1.4] - 2026-06-17
 
 ### Added

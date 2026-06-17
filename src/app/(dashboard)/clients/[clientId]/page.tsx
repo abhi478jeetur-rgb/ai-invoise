@@ -4,9 +4,31 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ClientDetailActions } from './client-detail-actions'
+import { Metadata } from 'next'
 
 interface ClientDetailPageProps {
   params: Promise<{ clientId: string }>
+}
+
+export async function generateMetadata({ params }: ClientDetailPageProps): Promise<Metadata> {
+  const { clientId } = await params
+  const supabase = await createClient()
+  const { data: client } = await supabase
+    .from('clients')
+    .select('client_name')
+    .eq('id', clientId)
+    .single()
+
+  if (!client) {
+    return {
+      title: 'Client Not Found - ChaseFree AI',
+    }
+  }
+
+  return {
+    title: `${client.client_name} - ChaseFree AI`,
+    description: `Track billing activity, invoices history, and contact details for ${client.client_name}.`,
+  }
 }
 
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {

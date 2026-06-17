@@ -1,5 +1,40 @@
 # Test Records
 
+## Execution Date: 2026-06-17 (v2.1.6 Custom Page SEO Metadata)
+### Environment
+- Tooling: TypeScript compiler (`npx tsc --noEmit`), Next.js builder (`npm run build`)
+- App Url: http://localhost:3000
+
+### Results
+Configured custom SEO page titles and meta descriptions for all pages across authentication, dashboard, invoices, clients, reminders, settings, and trash sections, aligning with Next.js App Router rules (using Server layouts for Client page components).
+
+1. **TypeScript Compiler Check (`npx tsc --noEmit`):**
+   - **Status:** PASS (0 errors, 0 warnings).
+
+2. **Next.js Production Build (`npm run build`):**
+   - **Status:** PASS (compiled successfully in Turbopack).
+
+---
+
+## Execution Date: 2026-06-17 (v2.1.5 Interactive SVG Astronaut & anime.js)
+### Environment
+- Tooling: TypeScript compiler (`npx tsc --noEmit`), Vitest (`npm run test`), Browser verification subagent
+- App Url: http://localhost:3000
+
+### Results
+Replaced Spline 3D animations with a custom SVG Astronaut empty state character. Integrated `anime.js` (modular v4) to power idle floating/blinking animations and smooth, parallax cursor-tracking effects.
+
+1. **TypeScript Compiler Check (`npx tsc --noEmit`):**
+   - **Status:** PASS (0 errors, 0 warnings).
+
+2. **Vitest Unit & Component Tests (`npm run test`):**
+   - **Status:** PASS (all tests passed on commit hooks).
+
+3. **Browser Verification:**
+   - **Status:** PASS (cursor tracking and layout render cleanly without any WebGL/CSP errors).
+
+---
+
 ## Execution Date: 2026-06-17 (v2.1.3 Spline 3D CSP Fix & Humanization)
 ### Environment
 - Tooling: TypeScript compiler (`npx tsc --noEmit`), Browser verification subagent, Next.js builder (`npm run build`)

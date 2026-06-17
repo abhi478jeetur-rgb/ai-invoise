@@ -7,6 +7,13 @@ import AnimatedHeaderLogo from '@/components/shared/AnimatedHeaderLogo'
 import AnimatedHeroBackground from '@/components/shared/AnimatedHeroBackground'
 import AnimatedFooterCta from '@/components/shared/AnimatedFooterCta'
 import AskLLMSection from '@/components/shared/AskLLMSection'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'ChaseFree AI - Focus on Late Invoices',
+  description: 'ChaseFree AI automatically monitors late invoices and sends smart, polite follow-up reminders to get you paid faster without awkward conversations.',
+}
+
 import {
   Shield,
   Copy,
