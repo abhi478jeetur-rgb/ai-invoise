@@ -5,8 +5,6 @@ import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { logError } from '@/lib/utils/error-handler'
 import { unstable_cache } from 'next/cache'
 
-const ACTIVE_STATUSES = ['sent', 'due_soon', 'overdue'] as const
-
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 async function fetchDashboardDataRaw(userId: string, accessToken: string) {

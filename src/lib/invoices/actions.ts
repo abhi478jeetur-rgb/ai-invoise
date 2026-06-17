@@ -27,7 +27,9 @@ export async function createInvoiceAction(formData: FormData) {
     const lineItemsRaw = formData.get('lineItems') as string
     let lineItems = []
     if (lineItemsRaw) {
-      try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
+      try { lineItems = JSON.parse(lineItemsRaw) } catch {
+        return { error: 'Invalid line items format.' }
+      }
     }
 
     const taxRate = parseFloat(formData.get('taxRate') as string) || 0
@@ -273,7 +275,9 @@ export async function updateInvoiceAction(invoiceId: string, formData: FormData)
     const lineItemsRaw = formData.get('lineItems') as string
     let lineItems = []
     if (lineItemsRaw) {
-      try { lineItems = JSON.parse(lineItemsRaw) } catch (e) {}
+      try { lineItems = JSON.parse(lineItemsRaw) } catch {
+        return { error: 'Invalid line items format.' }
+      }
     }
 
     const taxRate = parseFloat(formData.get('taxRate') as string) || 0

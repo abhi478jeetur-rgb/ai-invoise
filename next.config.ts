@@ -40,10 +40,6 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   async headers() {
     return [
       {
