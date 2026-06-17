@@ -198,6 +198,19 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     }
   }
 
+  const escapeXml = (unsafe: string): string => {
+    return unsafe.replace(/[<>&'"]/g, (char) => {
+      switch (char) {
+        case '<': return '&lt;'
+        case '>': return '&gt;'
+        case '&': return '&amp;'
+        case '\'': return '&apos;'
+        case '"': return '&quot;'
+        default: return char
+      }
+    })
+  }
+
   const exportToCSV = () => {
     if (invoices.length === 0) {
       toast.error('No invoices to export.')
@@ -226,7 +239,8 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
       }).join(','))
     ].join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    // Prepend UTF-8 BOM so Excel opens the CSV directly with correct character encoding
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -261,15 +275,17 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     
     xml += '      <Row>\n'
     headers.forEach(h => {
-      xml += `        <Cell><Data ss:Type="String">${h}</Data></Cell>\n`
+      xml += `        <Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>\n`
     })
     xml += '      </Row>\n'
 
     rows.forEach(row => {
       xml += '      <Row>\n'
       row.forEach(val => {
-        const type = typeof val === 'number' ? 'Number' : 'String'
-        xml += `        <Cell><Data ss:Type="${type}">${val}</Data></Cell>\n`
+        const isNum = typeof val === 'number'
+        const type = isNum ? 'Number' : 'String'
+        const safeVal = isNum ? val : escapeXml(String(val ?? ''))
+        xml += `        <Cell><Data ss:Type="${type}">${safeVal}</Data></Cell>\n`
       })
       xml += '      </Row>\n'
     })

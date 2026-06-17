@@ -54,6 +54,19 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     }
   }
 
+  const escapeXml = (unsafe: string): string => {
+    return unsafe.replace(/[<>&'"]/g, (char) => {
+      switch (char) {
+        case '<': return '&lt;'
+        case '>': return '&gt;'
+        case '&': return '&amp;'
+        case '\'': return '&apos;'
+        case '"': return '&quot;'
+        default: return char
+      }
+    })
+  }
+
   const exportToCSV = () => {
     if (clients.length === 0) {
       toast.error('No clients to export.')
@@ -81,7 +94,8 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
       }).join(','))
     ].join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    // Prepend UTF-8 BOM so Excel opens the CSV directly with correct character encoding
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -115,14 +129,15 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     
     xml += '      <Row>\n'
     headers.forEach(h => {
-      xml += `        <Cell><Data ss:Type="String">${h}</Data></Cell>\n`
+      xml += `        <Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>\n`
     })
     xml += '      </Row>\n'
 
     rows.forEach(row => {
       xml += '      <Row>\n'
       row.forEach(val => {
-        xml += `        <Cell><Data ss:Type="String">${val}</Data></Cell>\n`
+        const safeVal = escapeXml(String(val ?? ''))
+        xml += `        <Cell><Data ss:Type="String">${safeVal}</Data></Cell>\n`
       })
       xml += '      </Row>\n'
     })
