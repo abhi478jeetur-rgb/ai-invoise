@@ -54,6 +54,92 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     }
   }
 
+  const exportToCSV = () => {
+    if (clients.length === 0) {
+      toast.error('No clients to export.')
+      return
+    }
+    const headers = ['Client Name', 'Contact Name', 'Email', 'Phone', 'Company Name', 'Notes', 'Created At']
+    const rows = clients.map(cli => [
+      cli.client_name,
+      cli.contact_name || '',
+      cli.email || '',
+      cli.phone || '',
+      cli.company_name || '',
+      cli.notes || '',
+      cli.created_at ? new Date(cli.created_at).toLocaleDateString() : ''
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const str = String(val ?? '')
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `clients_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Clients exported to CSV successfully!')
+  }
+
+  const exportToExcel = () => {
+    if (clients.length === 0) {
+      toast.error('No clients to export.')
+      return
+    }
+    const headers = ['Client Name', 'Contact Name', 'Email', 'Phone', 'Company Name', 'Notes', 'Created At']
+    const rows = clients.map(cli => [
+      cli.client_name,
+      cli.contact_name || '',
+      cli.email || '',
+      cli.phone || '',
+      cli.company_name || '',
+      cli.notes || '',
+      cli.created_at ? new Date(cli.created_at).toLocaleDateString() : ''
+    ])
+
+    let xml = 'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+              'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
+              'xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
+              '  <Worksheet ss:Name="Clients">\n' +
+              '    <Table>\n'
+    
+    xml += '      <Row>\n'
+    headers.forEach(h => {
+      xml += `        <Cell><Data ss:Type="String">${h}</Data></Cell>\n`
+    })
+    xml += '      </Row>\n'
+
+    rows.forEach(row => {
+      xml += '      <Row>\n'
+      row.forEach(val => {
+        xml += `        <Cell><Data ss:Type="String">${val}</Data></Cell>\n`
+      })
+      xml += '      </Row>\n'
+    })
+
+    xml += '    </Table>\n  </Worksheet>\n</Workbook>'
+    
+    const content = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n ' + xml
+    const blob = new Blob([content], { type: 'application/vnd.ms-excel' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `clients_export_${new Date().toISOString().split('T')[0]}.xls`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Clients exported to Excel successfully!')
+  }
+
   function handleFormClose(open: boolean) {
     setFormOpen(open)
     if (!open) {
@@ -64,7 +150,25 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
   return (
     <div className="space-y-4">
       {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+        {clients.length > 0 && (
+          <>
+            <Button
+              variant="outline"
+              onClick={exportToCSV}
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportToExcel}
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
+            >
+              Export Excel
+            </Button>
+          </>
+        )}
         <Button
           id="tour-add-client"
           onClick={() => {

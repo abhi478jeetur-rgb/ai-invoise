@@ -4,10 +4,22 @@ import { createClient } from '@/lib/db/server'
 import { revalidatePath } from 'next/cache'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 
+import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
+
 // M18: UUID validation helper
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id)
+}
+
+const CLIENT_CREATE_LIMIT = { limit: 15, windowMs: 15 * 60 * 1000 } // 15 clients per 15 minutes
+
+function handleRateLimitError(e: unknown): { error: string } | null {
+  if (e instanceof RateLimitError) {
+    const seconds = Math.ceil(e.retryAfterMs / 1000)
+    return { error: `Too many client creation requests. Please try again in ${seconds} seconds.` }
+  }
+  return null
 }
 
 export async function createClientAction(formData: FormData) {
@@ -48,6 +60,13 @@ export async function createClientAction(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return { error: 'You must be authenticated.' }
+    }
+
+    try {
+      await enforceRateLimit(user.id, CLIENT_CREATE_LIMIT)
+    } catch (e) {
+      const rateLimitErr = handleRateLimitError(e)
+      if (rateLimitErr) return rateLimitErr
     }
 
     const { data, error } = await supabase

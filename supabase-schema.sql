@@ -169,7 +169,7 @@ alter table public.invoices
   add constraint invoices_discount_type_value
     check (discount_type in ('flat', 'percentage')),
   add constraint valid_currency 
-    check (currency in ('USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY'));
+    check (currency in ('USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY', 'SGD', 'CHF', 'AED', 'BRL', 'HKD', 'MYR'));
 
 -- unique invoice number per user
 create unique index invoices_user_id_invoice_number_unique

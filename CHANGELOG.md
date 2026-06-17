@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.8] - 2026-06-17
+
+### Added
+- **CSV & Excel Data Export:** Added Export to CSV and Export to Excel buttons on Invoices and Clients pages. Exporting is processed directly on the client side using compliant formats.
+- **API Rate Limiting:** Enforced local-memory based rate limiting for client and invoice creation Server Actions.
+
+### Fixed
+- **Invoice Sequence Optimization:** Refactored `getNextInvoiceNumberAction` to fetch a small window of 25 invoices with numeric validation instead of downloading all invoices, optimizing sequence generation performance.
+
+### Removed
+- **Dead Code:** Completely removed `UnbilledScratchpad` component and associated unbilled task schema/server actions from the application to simplify the codebase.
+
 ## [2.1.7] - 2026-06-17
 
 ### Fixed

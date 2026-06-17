@@ -433,11 +433,18 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           <div className="mt-4 overflow-x-auto">
             {recentInvoices.length === 0 ? (
-              <div className="py-10 text-center flex flex-col items-center justify-center">
+              <div className="py-10 text-center flex flex-col items-center justify-center gap-3">
                 <AIHelperCharacter variant="invoices" />
-                <p className="text-sm mt-2" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+                <p className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                   No invoices created yet.
                 </p>
+                <Link
+                  href="/invoices?new=true"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 mt-2"
+                  style={{ backgroundColor: 'var(--user-accent)', color: '#000' }}
+                >
+                  + Create Your First Invoice
+                </Link>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">

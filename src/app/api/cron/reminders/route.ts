@@ -52,28 +52,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No users scheduled for reminders right now.' })
     }
 
-    // 5. For each scheduled user, check if they have unbilled tasks
+    // 5. For each scheduled user, check if they have active outstanding invoices
     const notificationsSent = []
 
     for (const user of users) {
-      const { data: unbilled, error: unbilledError } = await supabaseAdmin
-        .from('unbilled_tasks')
-        .select('id, description')
+      const { data: outstandingInvoices, error: invoicesError } = await supabaseAdmin
+        .from('invoices')
+        .select('id, invoice_number, amount, currency, status')
         .eq('user_id', user.id)
-        .eq('status', 'pending')
+        .in('status', ['sent', 'due_soon', 'overdue'])
 
-      if (!unbilledError && unbilled && unbilled.length > 0) {
+      if (!invoicesError && outstandingInvoices && outstandingInvoices.length > 0) {
         // Here we would integrate with Resend, SendGrid, or AWS SES
         // For now, we simulate the email logic by logging to console
         console.log(`[CRON] 📧 Sending Reminder Email to ${user.email} (${user.full_name})`)
-        console.log(`[CRON] You have ${unbilled.length} pending unbilled tasks:`)
-        unbilled.forEach(task => console.log(`   - ${task.description}`))
-        console.log(`[CRON] Click here to generate invoices: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard\n`)
+        console.log(`[CRON] You have ${outstandingInvoices.length} outstanding invoices:`)
+        outstandingInvoices.forEach(inv => console.log(`   - Invoice #${inv.invoice_number}: ${inv.currency} ${inv.amount} (${inv.status})`))
+        console.log(`[CRON] Click here to manage invoices: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard\n`)
 
         notificationsSent.push({
           userId: user.id,
           email: user.email,
-          taskCount: unbilled.length
+          invoiceCount: outstandingInvoices.length
         })
       }
     }

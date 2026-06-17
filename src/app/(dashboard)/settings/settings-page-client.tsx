@@ -33,6 +33,9 @@ const CURRENCIES = [
   { value: 'SGD', label: 'SGD - Singapore Dollar' },
   { value: 'CHF', label: 'CHF - Swiss Franc' },
   { value: 'AED', label: 'AED - UAE Dirham' },
+  { value: 'BRL', label: 'BRL - Brazilian Real' },
+  { value: 'HKD', label: 'HKD - Hong Kong Dollar' },
+  { value: 'MYR', label: 'MYR - Malaysian Ringgit' },
 ]
 
 const PAYMENT_TERMS = [
@@ -388,7 +391,7 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
             <CardHeader>
               <CardTitle className="text-base font-medium text-foreground">Invoice Reminders</CardTitle>
               <CardDescription className="text-sm text-muted-foreground">
-                Schedule a weekly reminder to log your unbilled work.
+                Schedule a weekly reminder for your outstanding invoices.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -198,6 +198,95 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     }
   }
 
+  const exportToCSV = () => {
+    if (invoices.length === 0) {
+      toast.error('No invoices to export.')
+      return
+    }
+    const headers = ['Invoice Number', 'Client', 'Title', 'Amount', 'Currency', 'Status', 'Due Date', 'Created At']
+    const rows = invoices.map(inv => [
+      inv.invoice_number,
+      inv.clients?.client_name || '',
+      inv.title || '',
+      inv.amount,
+      inv.currency,
+      inv.status,
+      inv.due_date,
+      new Date(inv.created_at).toLocaleDateString()
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const str = String(val ?? '')
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`
+        }
+        return str
+      }).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `invoices_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Invoices exported to CSV successfully!')
+  }
+
+  const exportToExcel = () => {
+    if (invoices.length === 0) {
+      toast.error('No invoices to export.')
+      return
+    }
+    const headers = ['Invoice Number', 'Client', 'Title', 'Amount', 'Currency', 'Status', 'Due Date', 'Created At']
+    const rows = invoices.map(inv => [
+      inv.invoice_number,
+      inv.clients?.client_name || '',
+      inv.title || '',
+      inv.amount,
+      inv.currency,
+      inv.status,
+      inv.due_date,
+      new Date(inv.created_at).toLocaleDateString()
+    ])
+
+    let xml = 'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+              'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
+              'xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
+              '  <Worksheet ss:Name="Invoices">\n' +
+              '    <Table>\n'
+    
+    xml += '      <Row>\n'
+    headers.forEach(h => {
+      xml += `        <Cell><Data ss:Type="String">${h}</Data></Cell>\n`
+    })
+    xml += '      </Row>\n'
+
+    rows.forEach(row => {
+      xml += '      <Row>\n'
+      row.forEach(val => {
+        const type = typeof val === 'number' ? 'Number' : 'String'
+        xml += `        <Cell><Data ss:Type="${type}">${val}</Data></Cell>\n`
+      })
+      xml += '      </Row>\n'
+    })
+
+    xml += '    </Table>\n  </Worksheet>\n</Workbook>'
+    
+    const content = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n ' + xml
+    const blob = new Blob([content], { type: 'application/vnd.ms-excel' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `invoices_export_${new Date().toISOString().split('T')[0]}.xls`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Invoices exported to Excel successfully!')
+  }
+
   function handleFormClose(open: boolean) {
     setFormOpen(open)
     if (!open) {
@@ -209,6 +298,24 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     <div className="space-y-4">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+        {invoices.length > 0 && (
+          <>
+            <Button
+              variant="outline"
+              onClick={exportToCSV}
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportToExcel}
+              className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
+            >
+              Export Excel
+            </Button>
+          </>
+        )}
         <Link href="/invoices/import">
           <Button
             variant="outline"
@@ -265,26 +372,18 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
             <h3 className="text-base font-medium text-foreground/80 mb-1">No invoices yet</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               {clients.length === 0
-                ? 'Add a client first, then create your first invoice to start tracking payments.'
+                ? 'Create your first invoice and add a client inline to start tracking payments.'
                 : 'Create your first invoice to track payments and generate AI-powered reminders.'}
             </p>
-            {clients.length === 0 ? (
-              <Link href="/clients">
-                <Button className="bg-white text-black hover:bg-neutral-200 font-medium text-sm cursor-pointer">
-                  Go to Clients
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                onClick={() => {
-                  setEditingInvoice(null)
-                  setFormOpen(true)
-                }}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer"
-              >
-                + Create Your First Invoice
-              </Button>
-            )}
+            <Button
+              onClick={() => {
+                setEditingInvoice(null)
+                setFormOpen(true)
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm cursor-pointer"
+            >
+              + Create Your First Invoice
+            </Button>
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
