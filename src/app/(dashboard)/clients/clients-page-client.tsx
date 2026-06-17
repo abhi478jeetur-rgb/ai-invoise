@@ -1,5 +1,6 @@
 'use client'
 
+import * as XLSX from 'xlsx'
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -54,54 +55,27 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
     }
   }
 
-  const escapeXml = (unsafe: string): string => {
-    return unsafe.replace(/[<>&'"]/g, (char) => {
-      switch (char) {
-        case '<': return '&lt;'
-        case '>': return '&gt;'
-        case '&': return '&amp;'
-        case '\'': return '&apos;'
-        case '"': return '&quot;'
-        default: return char
-      }
-    })
-  }
+  const buildClientRows = () => clients.map(cli => ({
+    'Client Name': cli.client_name,
+    'Contact Name': cli.contact_name ?? '',
+    'Email': cli.email ?? '',
+    'Phone': cli.phone ?? '',
+    'Company Name': cli.company_name ?? '',
+    'Notes': cli.notes ?? '',
+    'Created At': cli.created_at ? new Date(cli.created_at).toLocaleDateString() : '',
+  }))
 
   const exportToCSV = () => {
     if (clients.length === 0) {
       toast.error('No clients to export.')
       return
     }
-    const headers = ['Client Name', 'Contact Name', 'Email', 'Phone', 'Company Name', 'Notes', 'Created At']
-    const rows = clients.map(cli => [
-      cli.client_name,
-      cli.contact_name || '',
-      cli.email || '',
-      cli.phone || '',
-      cli.company_name || '',
-      cli.notes || '',
-      cli.created_at ? new Date(cli.created_at).toLocaleDateString() : ''
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(val => {
-        const str = String(val ?? '')
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`
-        }
-        return str
-      }).join(','))
-    ].join('\n')
-
-    // Prepend UTF-8 BOM so Excel opens the CSV directly with correct character encoding
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `clients_export_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const worksheet = XLSX.utils.json_to_sheet(buildClientRows())
+    XLSX.writeFile(
+      { SheetNames: ['Clients'], Sheets: { Clients: worksheet } },
+      `clients_export_${new Date().toISOString().split('T')[0]}.csv`,
+      { bookType: 'csv', type: 'file' }
+    )
     toast.success('Clients exported to CSV successfully!')
   }
 
@@ -110,48 +84,10 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
       toast.error('No clients to export.')
       return
     }
-    const headers = ['Client Name', 'Contact Name', 'Email', 'Phone', 'Company Name', 'Notes', 'Created At']
-    const rows = clients.map(cli => [
-      cli.client_name,
-      cli.contact_name || '',
-      cli.email || '',
-      cli.phone || '',
-      cli.company_name || '',
-      cli.notes || '',
-      cli.created_at ? new Date(cli.created_at).toLocaleDateString() : ''
-    ])
-
-    let xml = 'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
-              'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
-              'xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
-              '  <Worksheet ss:Name="Clients">\n' +
-              '    <Table>\n'
-    
-    xml += '      <Row>\n'
-    headers.forEach(h => {
-      xml += `        <Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>\n`
-    })
-    xml += '      </Row>\n'
-
-    rows.forEach(row => {
-      xml += '      <Row>\n'
-      row.forEach(val => {
-        const safeVal = escapeXml(String(val ?? ''))
-        xml += `        <Cell><Data ss:Type="String">${safeVal}</Data></Cell>\n`
-      })
-      xml += '      </Row>\n'
-    })
-
-    xml += '    </Table>\n  </Worksheet>\n</Workbook>'
-    
-    const content = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n ' + xml
-    const blob = new Blob([content], { type: 'application/vnd.ms-excel' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `clients_export_${new Date().toISOString().split('T')[0]}.xls`
-    a.click()
-    URL.revokeObjectURL(url)
+    const worksheet = XLSX.utils.json_to_sheet(buildClientRows())
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Clients')
+    XLSX.writeFile(workbook, `clients_export_${new Date().toISOString().split('T')[0]}.xlsx`)
     toast.success('Clients exported to Excel successfully!')
   }
 
@@ -180,7 +116,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
               onClick={exportToExcel}
               className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
             >
-              Export Excel
+              Export Excel (.xlsx)
             </Button>
           </>
         )}
