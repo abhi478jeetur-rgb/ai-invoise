@@ -2,6 +2,12 @@ import { createClient } from '@/lib/db/server'
 import { redirect } from 'next/navigation'
 import { getSettingsAction } from '@/lib/settings/actions'
 import { SettingsPageClient } from './settings-page-client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Settings - ChaseFree AI',
+  description: 'Configure your profile details, custom payment terms, SWR caching strategies, and Sentry tracking properties.',
+}
 
 export default async function SettingsPage() {
   const supabase = await createClient()

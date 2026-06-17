@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getInvoiceDetailAction } from '@/lib/invoices/actions'
 import { sanitizeHref } from '@/lib/utils/security'
+import { Metadata } from 'next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { InvoiceDetailActions } from './invoice-detail-actions'
@@ -11,6 +12,25 @@ import { LivePdfPreview } from '@/components/invoices/live-pdf-preview'
 import { Button } from '@/components/ui/button'
 
 interface InvoiceDetailPageProps {
+  params: Promise<{ invoiceId: string }>
+}
+
+export async function generateMetadata({ params }: InvoiceDetailPageProps): Promise<Metadata> {
+  const { invoiceId } = await params
+  const result = await getInvoiceDetailAction(invoiceId)
+  if (!result.success || !result.data) {
+    return {
+      title: 'Invoice Not Found - ChaseFree AI',
+    }
+  }
+  const invoice = result.data
+  return {
+    title: `Invoice ${invoice.invoice_number} - ChaseFree AI`,
+    description: `Track details, payment history, and AI reminder events for invoice ${invoice.invoice_number}.`,
+  }
+}
+
+interface InvoiceDetailPagePropsInner {
   params: Promise<{ invoiceId: string }>
 }
 

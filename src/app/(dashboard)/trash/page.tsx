@@ -3,6 +3,12 @@ import { redirect } from 'next/navigation'
 import { getDeletedInvoicesAction } from '@/lib/invoices/actions'
 import { getDeletedClientsAction } from '@/lib/clients/actions'
 import { TrashPageClient } from './trash-page-client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Trash Recovery - ChaseFree AI',
+  description: 'View and restore soft-deleted invoices or clients, or permanently delete them.',
+}
 
 export default async function TrashPage() {
   const supabase = await createClient()
