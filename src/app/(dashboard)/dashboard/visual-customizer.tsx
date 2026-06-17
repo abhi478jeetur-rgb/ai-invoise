@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { QuickStartBanner } from '@/components/dashboard/QuickStartBanner'
 import { useTheme } from 'next-themes'
 import { AnalyticsCharts, AgingReceivablesChart } from '@/components/dashboard/analytics-charts'
+import { AIHelperCharacter } from '@/components/ui/AIHelperCharacter'
 
 import { DashboardData, RecentActivity, ChaseItem, RecentInvoice } from '@/types/dashboard'
 
@@ -338,9 +339,7 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
           <div className="mt-4">
             {displayChaseList.length === 0 ? (
               <div className="py-12 text-center">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg border mb-4" style={{ backgroundColor: 'var(--user-bg)', borderColor: 'var(--user-border)' }}>
-                  <span className="text-sm" style={{ color: 'var(--user-accent)' }}>&#10003;</span>
-                </div>
+                <AIHelperCharacter variant="all-clear" />
                 <h4 className="text-xs font-semibold mb-1" style={{ color: 'var(--user-title)' }}>All clear</h4>
                 <p className="text-sm max-w-xs mx-auto" style={{ color: 'var(--user-text)', opacity: 0.7 }}>
                   No invoices need chasing right now. When invoices become due soon or overdue, they&apos;ll appear here.
@@ -434,8 +433,9 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           <div className="mt-4 overflow-x-auto">
             {recentInvoices.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+              <div className="py-10 text-center flex flex-col items-center justify-center">
+                <AIHelperCharacter variant="invoices" />
+                <p className="text-sm mt-2" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                   No invoices created yet.
                 </p>
               </div>
@@ -481,11 +481,9 @@ export default function DashboardVisualCustomizer({ initialData, setupPreference
 
           <div className="mt-4">
             {recentActivities.length === 0 ? (
-              <div className="py-10 text-center">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg border mb-3" style={{ backgroundColor: 'var(--user-bg)', borderColor: 'var(--user-border)' }}>
-                  <span className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.4 }}>&#9993;</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
+              <div className="py-12 text-center flex flex-col items-center justify-center">
+                <AIHelperCharacter variant="activity" />
+                <p className="text-sm mt-2" style={{ color: 'var(--user-text)', opacity: 0.5 }}>
                   No reminder activity yet. Generate a draft to see it here.
                 </p>
               </div>

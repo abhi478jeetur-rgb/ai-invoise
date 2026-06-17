@@ -396,7 +396,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
                       provider.isWhatsApp
                         ? buildWhatsAppUrl(editMode ? editedBody : draft.body)
                         : buildEmailUrl(
-                            provider.key,
+                            provider.key as 'gmail' | 'outlook' | 'default',
                             clientEmail || '',
                             draft.subject,
                             editMode ? editedBody : draft.body

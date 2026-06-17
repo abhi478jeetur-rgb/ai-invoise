@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Search, AlertCircle, Check, Clock, ArrowRight, Copy, Send, Sparkles, Loader2, FileText, MessageSquare, ExternalLink } from 'lucide-react'
 import { getReminderHistoryAction, generateMultipleDraftsAction, logReminderEventAction } from '@/lib/reminders/actions'
 import { toast } from 'sonner'
+import { AIHelperCharacter } from '@/components/ui/AIHelperCharacter'
 
 interface Invoice {
   id: string
@@ -574,10 +575,11 @@ export function RemindersPageClient({ initialInvoices, initialSettings }: Remind
         {/* Right Column — Workspace */}
         <div className="rounded-lg border border-border bg-card/50">
           {!selectedInvoice ? (
-            <div className="flex h-full min-h-[300px] items-center justify-center px-6 text-center">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Select an invoice to begin drafting follow-ups.
+            <div className="flex h-full min-h-[400px] items-center justify-center px-6 text-center">
+              <div className="space-y-4">
+                <AIHelperCharacter variant="activity" />
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  Select an invoice from the list to begin drafting follow-ups.
                 </p>
               </div>
             </div>
