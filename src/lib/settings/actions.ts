@@ -274,7 +274,7 @@ export async function saveAISettingsAction(formData: FormData) {
     if (providerLabel.trim().length > 100) {
       return { error: 'Provider label must be 100 characters or less.' }
     }
-    if (baseUrl && !isSafeUrl(baseUrl)) {
+    if (baseUrl && !(await isSafeUrl(baseUrl))) {
       return { error: 'Invalid base URL.' }
     }
 

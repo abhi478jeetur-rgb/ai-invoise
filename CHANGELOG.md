@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.7] - 2026-06-17
+
+### Fixed
+- **TypeScript Build Safety:** Removed `ignoreBuildErrors: true` from `next.config.ts`. TypeScript errors are now enforced during production builds, preventing runtime type crashes.
+- **SSRF Validation Bug:** Fixed `saveAISettingsAction` where `isSafeUrl()` (an async function) was called without `await`, causing the URL safety check to always pass.
+- **E2E Bypass Security Hardening:** Removed hardcoded fallback value from E2E bypass secret. The bypass is now completely disabled when the `E2E_BYPASS_SECRET` environment variable is not set.
+- **Duplicate Error Logging:** Removed duplicate `console.error` for reminder count update failures in `reminders/actions.ts`.
+
+### Removed
+- **Dead Code:** Removed unused `ACTIVE_STATUSES` constant from `dashboard/actions.ts`.
+
+### Changed
+- **Silent Error Handling:** Replaced empty `catch (e) {}` blocks in `createInvoiceAction` and `updateInvoiceAction` with proper error returns for malformed line items JSON.
+
 ## [2.1.6] - 2026-06-17
 
 ### Added

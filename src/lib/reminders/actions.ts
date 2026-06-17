@@ -111,8 +111,8 @@ export async function generateReminderAction(
     const currency = invoice.currency || 'USD'
 
     const headersList = await headers()
-    const expectedSecret = process.env.E2E_BYPASS_SECRET || 'playwright-bypass-turnstile-secret-value-123456'
-    const isE2EBypass = headersList.get('x-e2e-secret') === expectedSecret
+    const e2eSecret = process.env.E2E_BYPASS_SECRET
+    const isE2EBypass = Boolean(e2eSecret) && headersList.get('x-e2e-secret') === e2eSecret
 
     if (isE2EBypass) {
       const subject = `Payment Reminder - Invoice ${invoice.invoice_number}`
@@ -320,9 +320,7 @@ CRITICAL INSTRUCTIONS:
       console.error('Failed to increment reminder count:', updateError.message)
     }
 
-    if (updateError) {
-      console.error('Failed to update invoice reminder count:', updateError.message)
-    }
+
 
     // Log the event
     let eventRes: { error: { message: string; code?: string } | null } = await supabase

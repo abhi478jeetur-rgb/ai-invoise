@@ -100,9 +100,12 @@ visual-audit.mjs
 tracked_files.txt
 obsidian-mcp-config.json
 obsidian-vault/
+.obsidian/
 My research docs/
 scripts/debug_db.js
 scripts/reset_onboarding.js
 scripts/visual-audit.mjs
 
+# Internal Reports (private, not for GitHub)
+PRODUCT_SURVEY_REPORT.md
 
