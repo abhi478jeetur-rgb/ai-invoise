@@ -74,7 +74,25 @@ function formatRelativeTime(dateStr: string): string {
 export function ActivityTimeline({ events, showInvoiceRef = false }: ActivityTimelineProps) {
   if (events.length === 0) {
     return (
-      <div className="py-6 text-center">
+      <div className="py-8 text-center flex flex-col items-center justify-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl border border-border/60 bg-secondary/30 mb-4 animate-pulse">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-muted-foreground/80"
+          >
+            <rect width="16" height="16" x="4" y="4" rx="2" />
+            <path d="M9 9h6" />
+            <path d="M9 13h6" />
+            <path d="M9 17h6" />
+          </svg>
+        </div>
         <p className="text-sm text-muted-foreground">No activity yet.</p>
         <p className="text-xs text-muted-foreground/60 mt-1">
           Generate a reminder to see activity here.

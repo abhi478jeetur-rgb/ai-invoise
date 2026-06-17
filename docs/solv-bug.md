@@ -904,3 +904,23 @@ ext.config.ts to allow Turnstile's iframe and scripts to load.
   - `src/components/ui/dropdown-menu.tsx`
   - `src/lib/reminders/actions.ts`
   - `src/lib/settings/actions.ts`
+
+### 93. Spline 3D Scene Runtime Exception due to CSP Policy
+- **Bug:** The dashboard failed to render and triggered a client-side crash exception ("Application error: a client-side exception has occurred") when trying to load the 3D Spline animation.
+- **Root Cause:** The react-spline rendering engine runs a WebAssembly module (`process.wasm`) loaded dynamically from `https://unpkg.com`. The project's Content Security Policy (CSP) header defined in `next.config.ts` had a strict `connect-src` directive that lacked `https://unpkg.com`, causing the browser to block the download and throw a runtime exception.
+- **Solution:** Added `https://unpkg.com` to the list of allowed domains in the `connect-src` directive in the CSP configuration inside `next.config.ts`.
+- **Files Changed:** `next.config.ts`
+
+### 94. TypeScript Compilation & Turbopack Build Failures with anime.js v4
+- **Bug:** Type checking failed with `error TS1192: Module 'animejs' has no default export`, and Turbopack builds failed with `The export default was not found in module animejs`. Additionally, type checking threw `Expected 2 arguments, but got 1` and `Type 'null' is not assignable to type 'TargetsParam'`.
+- **Root Cause:** 
+  1. In `animejs` v4 (which was installed), there is no default `anime` export. The main library function is now exported as a named function `animate()`.
+  2. The `animate` function in v4 changed its signature to require the animation target as the first parameter, and the properties configuration object as the second: `animate(targets, parameters)`.
+  3. React refs (`ref.current`) are initially null, causing TypeScript compilation warnings for targets being potentially null on mount.
+- **Solution:**
+  1. Updated the import to use the named export: `import { animate } from 'animejs'`.
+  2. Refactored all animation triggers to follow the v4 signature: `animate(targets, parameters)`.
+  3. Added null-safety guards (`if (!ref.current) return`) before executing any anime.js animations.
+- **Files Changed:** `src/components/ui/AIHelperCharacter.tsx`
+
+

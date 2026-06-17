@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { AIHelperCharacter } from '@/components/ui/AIHelperCharacter'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,9 +93,7 @@ export function ClientsPageClient({ clients }: ClientsPageClientProps) {
       {clients.length === 0 ? (
         <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
           <CardContent className="py-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary border border-border mb-4">
-              <span className="text-lg text-muted-foreground">+</span>
-            </div>
+            <AIHelperCharacter variant="clients" />
             <h3 className="text-base font-medium text-foreground/80 mb-1">No clients yet</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               Add your first client to start tracking invoices and sending follow-ups.

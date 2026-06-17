@@ -3,6 +3,12 @@ import { redirect } from 'next/navigation'
 import { getInvoicesAction } from '@/lib/invoices/actions'
 import { getClientsAction } from '@/lib/clients/actions'
 import { InvoicesPageClient } from './invoices-page-client'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Invoices - ChaseFree AI',
+  description: 'Manage, create, and track all your invoices and their payment status.',
+}
 
 export default async function InvoicesPage() {
   const supabase = await createClient()
