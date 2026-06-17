@@ -1,5 +1,6 @@
 'use client'
 
+import * as XLSX from 'xlsx'
 import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -198,56 +199,34 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
     }
   }
 
-  const escapeXml = (unsafe: string): string => {
-    return unsafe.replace(/[<>&'"]/g, (char) => {
-      switch (char) {
-        case '<': return '&lt;'
-        case '>': return '&gt;'
-        case '&': return '&amp;'
-        case '\'': return '&apos;'
-        case '"': return '&quot;'
-        default: return char
-      }
-    })
-  }
+  const buildInvoiceRows = () => invoices.map(inv => ({
+    'Invoice Number': inv.invoice_number,
+    'Client': inv.clients?.client_name ?? '',
+    'Title': inv.title ?? '',
+    'Amount': inv.amount,
+    'Amount Paid': inv.amount_paid,
+    'Currency': inv.currency,
+    'Status': inv.status,
+    'Due Date': inv.due_date,
+    'Paid Date': inv.paid_date ?? '',
+    'Notes': inv.notes ?? '',
+    'Created At': inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '',
+  }))
 
   const exportToCSV = () => {
     if (invoices.length === 0) {
       toast.error('No invoices to export.')
       return
     }
-    const headers = ['Invoice Number', 'Client', 'Title', 'Amount', 'Currency', 'Status', 'Due Date', 'Created At']
-    const rows = invoices.map(inv => [
-      inv.invoice_number,
-      inv.clients?.client_name || '',
-      inv.title || '',
-      inv.amount,
-      inv.currency,
-      inv.status,
-      inv.due_date,
-      new Date(inv.created_at).toLocaleDateString()
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(val => {
-        const str = String(val ?? '')
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`
-        }
-        return str
-      }).join(','))
-    ].join('\n')
-
-    // Prepend UTF-8 BOM so Excel opens the CSV directly with correct character encoding
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `invoices_export_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const worksheet = XLSX.utils.json_to_sheet(buildInvoiceRows())
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet)
+    XLSX.writeFile(
+      { SheetNames: ['Invoices'], Sheets: { Invoices: worksheet } },
+      `invoices_export_${new Date().toISOString().split('T')[0]}.csv`,
+      { bookType: 'csv', type: 'file' }
+    )
     toast.success('Invoices exported to CSV successfully!')
+    void csvContent
   }
 
   const exportToExcel = () => {
@@ -255,51 +234,10 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
       toast.error('No invoices to export.')
       return
     }
-    const headers = ['Invoice Number', 'Client', 'Title', 'Amount', 'Currency', 'Status', 'Due Date', 'Created At']
-    const rows = invoices.map(inv => [
-      inv.invoice_number,
-      inv.clients?.client_name || '',
-      inv.title || '',
-      inv.amount,
-      inv.currency,
-      inv.status,
-      inv.due_date,
-      new Date(inv.created_at).toLocaleDateString()
-    ])
-
-    let xml = 'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
-              'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
-              'xmlns:html="http://www.w3.org/TR/REC-html40">\n' +
-              '  <Worksheet ss:Name="Invoices">\n' +
-              '    <Table>\n'
-    
-    xml += '      <Row>\n'
-    headers.forEach(h => {
-      xml += `        <Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>\n`
-    })
-    xml += '      </Row>\n'
-
-    rows.forEach(row => {
-      xml += '      <Row>\n'
-      row.forEach(val => {
-        const isNum = typeof val === 'number'
-        const type = isNum ? 'Number' : 'String'
-        const safeVal = isNum ? val : escapeXml(String(val ?? ''))
-        xml += `        <Cell><Data ss:Type="${type}">${safeVal}</Data></Cell>\n`
-      })
-      xml += '      </Row>\n'
-    })
-
-    xml += '    </Table>\n  </Worksheet>\n</Workbook>'
-    
-    const content = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n ' + xml
-    const blob = new Blob([content], { type: 'application/vnd.ms-excel' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `invoices_export_${new Date().toISOString().split('T')[0]}.xls`
-    a.click()
-    URL.revokeObjectURL(url)
+    const worksheet = XLSX.utils.json_to_sheet(buildInvoiceRows())
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoices')
+    XLSX.writeFile(workbook, `invoices_export_${new Date().toISOString().split('T')[0]}.xlsx`)
     toast.success('Invoices exported to Excel successfully!')
   }
 
@@ -328,7 +266,7 @@ export function InvoicesPageClient({ invoices, clients, defaultProfile }: Invoic
               onClick={exportToExcel}
               className="border-border bg-card hover:bg-accent hover:text-accent-foreground text-foreground font-medium text-sm cursor-pointer w-fit"
             >
-              Export Excel
+              Export Excel (.xlsx)
             </Button>
           </>
         )}
