@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.11] - 2026-06-18
+
+### Added
+- **Gmail OAuth 2.0 Integration:** Secure integration to connect user's personal or business Gmail accounts using Google OAuth.
+- **Email Service Layer:** Implemented `gmail.ts` helper library to exchange tokens, auto-refresh expired access tokens using the refresh token, and send rich HTML emails via Gmail REST API.
+- **Google Auth Redirect Route:** Added OAuth callback router `/api/auth/gmail/callback` to handle authorization flow, token encryption, and database state management.
+- **Integrations Settings Tab:** Created a new "Integrations" section in the settings panel with visual indicators of connection status and Connect/Disconnect options.
+- **Weekly Outstanding Invoices Summary Sending:** Connected weekly automated reminder cron route to Gmail sending, distributing real HTML outstanding invoice digests to connected users.
+
 ## [2.1.10] - 2026-06-17
 
 ### Changed

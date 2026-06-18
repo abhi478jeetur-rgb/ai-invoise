@@ -16,6 +16,8 @@ import {
   uploadBusinessLogoAction,
   uploadKnowledgeBaseDocumentAction,
   deleteKnowledgeBaseDocumentAction,
+  getGoogleAuthUrlAction,
+  disconnectGmailAction,
 } from '@/lib/settings/actions'
 import { updateReminderSettingsAction } from '@/lib/profile/actions'
 import { updatePassword } from '@/lib/auth/actions'
@@ -82,6 +84,11 @@ interface SettingsData {
     file_type: string
     created_at: string
   }[]
+  emailConnection: {
+    connected: boolean
+    emailAddress: string | null
+    isActive: boolean
+  }
 }
 
 interface SettingsPageClientProps {
@@ -90,6 +97,58 @@ interface SettingsPageClientProps {
 
 export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
   const router = useRouter()
+
+  // Gmail connection state
+  const [emailConn, setEmailConn] = useState(initialData.emailConnection)
+  const [gmailConnecting, setGmailConnecting] = useState(false)
+  const [gmailDisconnecting, setGmailDisconnecting] = useState(false)
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const gmailStatus = params.get('gmail')
+    if (gmailStatus === 'connected') {
+      toast.success('Gmail connected successfully!')
+      router.replace('/settings')
+    } else if (gmailStatus === 'error') {
+      const reason = params.get('reason') || 'Unknown error'
+      toast.error('Failed to connect Gmail', { description: reason })
+      router.replace('/settings')
+    }
+  }, [router])
+
+  async function handleConnectGmail() {
+    setGmailConnecting(true)
+    try {
+      const result = await getGoogleAuthUrlAction()
+      if (result.error) {
+        toast.error(result.error)
+      } else if (result.url) {
+        window.location.href = result.url
+      }
+    } catch (err) {
+      handleClientError('settings/connectGmail', err, 'Failed to initialize Gmail connection.')
+    } finally {
+      setGmailConnecting(false)
+    }
+  }
+
+  async function handleDisconnectGmail() {
+    setGmailDisconnecting(true)
+    try {
+      const result = await disconnectGmailAction()
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        setEmailConn({ connected: false, emailAddress: null, isActive: false })
+        toast.success('Gmail disconnected successfully.')
+        router.refresh()
+      }
+    } catch (err) {
+      handleClientError('settings/disconnectGmail', err, 'Failed to disconnect Gmail.')
+    } finally {
+      setGmailDisconnecting(false)
+    }
+  }
 
   // Knowledge Base state
   const [kbDocs, setKbDocs] = useState<KnowledgeBaseDocument[]>(initialData.knowledgeBaseDocuments || [])
@@ -308,6 +367,9 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           </TabsTrigger>
           <TabsTrigger value="business" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground hover:bg-accent/50 hover:text-foreground/80 text-xs cursor-pointer transition-colors">
             Business & Invoicing
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="data-[state=active]:bg-accent data-[state=active]:text-foreground text-muted-foreground hover:bg-accent/50 hover:text-foreground/80 text-xs cursor-pointer transition-colors">
+            Integrations
           </TabsTrigger>
 
           <TabsTrigger value="account" className="data-[state=active]:bg-red-950/50 data-[state=active]:text-red-400 text-muted-foreground hover:bg-red-950/30 hover:text-red-300 text-xs cursor-pointer transition-colors">
@@ -698,6 +760,62 @@ export function SettingsPageClient({ initialData }: SettingsPageClientProps) {
           </form>
         </TabsContent>
 
+        {/* ─── Tab 3: Integrations ─── */}
+        <TabsContent value="integrations" className="mt-4 space-y-6">
+          <Card className="border-border bg-card/40 backdrop-blur-xl max-w-lg">
+            <CardHeader>
+              <CardTitle className="text-base font-medium text-foreground">Email Connections</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
+                Connect your personal or business email to send reminders from your own address.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-secondary/20">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">✉️</div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground">Google Gmail</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {emailConn.connected
+                        ? `Connected as ${emailConn.emailAddress}`
+                        : 'Not connected'}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  {emailConn.connected ? (
+                    <Button
+                      type="button"
+                      onClick={handleDisconnectGmail}
+                      disabled={gmailDisconnecting}
+                      className="bg-red-950/40 text-red-400 hover:bg-red-950/60 border border-red-900/50 text-xs px-3 h-8 cursor-pointer animate-in fade-in"
+                    >
+                      {gmailDisconnecting ? 'Disconnecting...' : 'Disconnect'}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={handleConnectGmail}
+                      disabled={gmailConnecting}
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 text-xs px-3 h-8 cursor-pointer animate-in fade-in"
+                    >
+                      {gmailConnecting ? 'Connecting...' : 'Connect Gmail'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {emailConn.connected && (
+                <div className="p-3 text-xs bg-emerald-950/20 border border-emerald-900/30 text-emerald-400 rounded-lg flex items-start gap-2 animate-in slide-in-from-top-2">
+                  <span>✅</span>
+                  <div>
+                    <strong>Active Connection:</strong> Reminders will now be sent using your Gmail account. We will also monitor for client replies to maintain context.
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* ─── Tab 4: Account (Danger Zone) ─── */}
         <TabsContent value="account" className="mt-4">
