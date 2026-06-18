@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.12] - 2026-06-18
+
+### Fixed
+- **Sheet Modal Outside Dismissal:** Added `disablePointerDismissal={true}` to prevent the right-side Sheet/Drawer from dismissing on outside clicks, preventing accidental draft loss.
+- **Gmail Direct Sending HTML Spacing:** Created an HTML email formatter (`formatPlainTextToEmailHtml`) that automatically splits text paragraphs, adds line breaks, and links URLs properly in direct reminder emails.
+
 ## [2.1.11] - 2026-06-18
 
 ### Added

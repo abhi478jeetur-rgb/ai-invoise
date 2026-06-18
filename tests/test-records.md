@@ -1,5 +1,21 @@
 # Test Records
 
+## Execution Date: 2026-06-18 (v2.1.11 Gmail Direct Send & Right-side Sheet Transition)
+### Environment
+- Tooling: TypeScript compiler (`npx tsc --noEmit`), Vitest (`npm run test`)
+- App Url: http://localhost:3000
+
+### Results
+Implemented right-side drawer/Sheet UI in `reminder-modal.tsx` to prevent accidental close on outside click (using `disablePointerDismissal={true}`). Connected direct sending using Gmail OAuth connections. Integrated `formatPlainTextToEmailHtml` to cleanly structure and style raw draft text with proper double-newline paragraph spaces, single-newline line breaks, and auto-linked clickable anchor tags in outgoing HTML emails.
+
+1. **TypeScript Compiler Check (`npx tsc --noEmit`):**
+   - **Status:** PASS (0 errors, 0 warnings).
+
+2. **Vitest Unit & Component Tests (`npm run test`):**
+   - **Status:** PASS (all tests passed).
+
+---
+
 ## Execution Date: 2026-06-17 (v2.1.6 Custom Page SEO Metadata)
 ### Environment
 - Tooling: TypeScript compiler (`npx tsc --noEmit`), Next.js builder (`npm run build`)
