@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "ChaseFree AI - Focus on Late Invoices",
   description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
   openGraph: {
