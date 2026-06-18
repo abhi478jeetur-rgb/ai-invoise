@@ -6,6 +6,7 @@ import { encryptKey, decryptKey, maskApiKey } from '@/lib/crypto'
 import { isSafeUrl, sanitizeDatabaseError } from '@/lib/utils/security'
 import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
 import { logError } from '@/lib/utils/error-handler'
+import { getGoogleAuthUrl } from '@/lib/notifications/gmail'
 
 export async function getSettingsAction() {
   try {
@@ -71,6 +72,14 @@ export async function getSettingsAction() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
+    // Fetch email connections
+    const { data: emailConnection, error: emailConnError } = await supabase
+      .from('email_connections')
+      .select('email_address, is_active')
+      .eq('user_id', user.id)
+      .eq('provider', 'gmail')
+      .single()
+
     return {
       success: true,
       data: {
@@ -103,6 +112,15 @@ export async function getSettingsAction() {
             }
           : null,
         knowledgeBaseDocuments: kbDocs || [],
+        emailConnection: emailConnection ? {
+          connected: true,
+          emailAddress: emailConnection.email_address,
+          isActive: emailConnection.is_active,
+        } : {
+          connected: false,
+          emailAddress: null,
+          isActive: false,
+        }
       },
     }
   } catch (e) {
@@ -549,6 +567,79 @@ export async function deleteAccountAction(confirmationText: string) {
     return { success: true }
   } catch (e) {
     logError('settings/deleteAccount', e)
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function getGoogleAuthUrlAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const url = getGoogleAuthUrl()
+    return { success: true, url }
+  } catch (e) {
+    logError('settings/getGoogleAuthUrlAction', e)
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function disconnectGmailAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { error } = await supabase
+      .from('email_connections')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('provider', 'gmail')
+
+    if (error) {
+      return { error: sanitizeDatabaseError(error, 'Failed to disconnect Gmail.') }
+    }
+
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (e) {
+    logError('settings/disconnectGmailAction', e)
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function getEmailConnectionStateAction() {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    const { data, error } = await supabase
+      .from('email_connections')
+      .select('email_address, is_active')
+      .eq('user_id', user.id)
+      .eq('provider', 'gmail')
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      return { error: sanitizeDatabaseError(error) }
+    }
+
+    return {
+      success: true,
+      data: data ? {
+        connected: true,
+        emailAddress: data.email_address,
+        isActive: data.is_active,
+      } : {
+        connected: false,
+        emailAddress: null,
+        isActive: false,
+      }
+    }
+  } catch (e) {
+    logError('settings/getEmailConnectionStateAction', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
