@@ -18,6 +18,25 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ChaseFree AI - Focus on Late Invoices",
   description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
+  openGraph: {
+    title: "ChaseFree AI - Focus on Late Invoices",
+    description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
+    images: [
+      {
+        url: "/images/og%20image.png",
+        width: 1200,
+        height: 630,
+        alt: "ChaseFree AI",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ChaseFree AI - Focus on Late Invoices",
+    description: "A specialized invoicing and automated late payment follow-up dashboard for freelancers and small agencies.",
+    images: ["/images/og%20image.png"],
+  },
 };
 
 import { Viewport } from 'next';
