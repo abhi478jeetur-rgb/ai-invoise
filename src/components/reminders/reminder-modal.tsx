@@ -1,18 +1,19 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ExternalLink, MessageSquare } from 'lucide-react'
+import { ExternalLink, MessageSquare, Loader2, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { generateReminderAction, logReminderEventAction } from '@/lib/reminders/actions'
+import { generateReminderAction, logReminderEventAction, sendDirectGmailReminderAction } from '@/lib/reminders/actions'
+import { getEmailConnectionStateAction } from '@/lib/settings/actions'
 import { toast } from 'sonner'
 
 function buildWhatsAppUrl(body: string): string {
@@ -98,6 +99,48 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
   const [generating, setGenerating] = useState(false)
   const [statusIndex, setStatusIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
+
+  const [gmailConnected, setGmailConnected] = useState(false)
+  const [gmailAddress, setGmailAddress] = useState<string | null>(null)
+  const [sendingDirect, setSendingDirect] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      getEmailConnectionStateAction().then((res) => {
+        if (res.success && res.data?.connected) {
+          setGmailConnected(true)
+          setGmailAddress(res.data.emailAddress)
+        } else {
+          setGmailConnected(false)
+          setGmailAddress(null)
+        }
+      })
+    }
+  }, [open])
+
+  async function handleSendDirect() {
+    if (!draft || !clientEmail) return
+    setSendingDirect(true)
+    setError(null)
+
+    const result = await sendDirectGmailReminderAction(
+      invoiceId,
+      clientEmail,
+      draft.subject,
+      editMode ? editedBody : draft.body,
+      draft.id
+    )
+
+    setSendingDirect(false)
+
+    if (result.error) {
+      setError(result.error)
+      toast.error('Failed to send email directly', { description: result.error })
+    } else {
+      toast.success('Reminder email sent directly via your Gmail!')
+      handleClose(false)
+    }
+  }
 
   useEffect(() => {
     if (!generating) {
@@ -190,18 +233,21 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-xl max-w-[95vw] border-border bg-card backdrop-blur-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-foreground">
+    <Sheet open={open} onOpenChange={handleClose} disablePointerDismissal={true}>
+      <SheetContent 
+        className="w-full sm:max-w-md border-l border-border bg-card/95 backdrop-blur-xl h-full overflow-y-auto p-6" 
+        side="right"
+      >
+        <SheetHeader>
+          <SheetTitle className="text-lg font-semibold text-foreground">
             {draft ? 'Reminder Draft' : 'Generate Reminder'}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          </SheetTitle>
+          <SheetDescription className="text-sm text-muted-foreground">
             {draft
               ? `AI-generated ${tone} reminder for Invoice ${invoiceNumber}`
               : `Create an AI-drafted follow-up for Invoice ${invoiceNumber}`}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {generating ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 space-y-5">
@@ -359,25 +405,47 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
-              <Button
-                onClick={handleMarkSent}
-                disabled={markingSent}
-                className="flex-1 h-9 bg-green-600 text-white hover:bg-green-700 font-medium text-sm cursor-pointer disabled:opacity-50"
-              >
-                {markingSent ? 'Marking...' : 'Mark as Sent'}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setDraft(null)
-                  setError(null)
-                  setEditMode(false)
-                }}
-                className="h-9 text-muted-foreground hover:text-foreground hover:bg-accent text-sm cursor-pointer"
-              >
-                New Draft
-              </Button>
+            <div className="flex flex-col gap-2 pt-2">
+              {gmailConnected && (
+                <Button
+                  onClick={handleSendDirect}
+                  disabled={sendingDirect}
+                  className="w-full h-10 bg-emerald-600 text-white hover:bg-emerald-700 font-semibold text-sm cursor-pointer flex items-center justify-center gap-2 animate-in fade-in"
+                >
+                  {sendingDirect ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sending via Gmail...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send directly via your Gmail ({gmailAddress})
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleMarkSent}
+                  disabled={markingSent}
+                  className="flex-1 h-9 bg-green-600 text-white hover:bg-green-700 font-medium text-sm cursor-pointer disabled:opacity-50"
+                >
+                  {markingSent ? 'Marking...' : 'Mark as Sent'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setDraft(null)
+                    setError(null)
+                    setEditMode(false)
+                  }}
+                  className="h-9 text-muted-foreground hover:text-foreground hover:bg-accent text-sm cursor-pointer"
+                >
+                  New Draft
+                </Button>
+              </div>
             </div>
 
             {/* Send Reminder via... */}
@@ -418,7 +486,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

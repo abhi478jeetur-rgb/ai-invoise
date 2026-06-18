@@ -8,6 +8,7 @@ import { enforceRateLimit, RateLimitError } from '@/lib/utils/rate-limit'
 import { logError } from '@/lib/utils/error-handler'
 import { ReminderHistoryEvent } from '@/types/reminder'
 import { headers } from 'next/headers'
+import { getValidAccessToken, sendGmailReminder } from '@/lib/notifications/gmail'
 
 function sanitizeInput(input?: string): string {
   if (!input) return '';
@@ -17,6 +18,45 @@ function sanitizeInput(input?: string): string {
   const isGibberish = words.some(word => word.length > 30 && !word.startsWith('http'));
   if (isGibberish) return '';
   return clean.trim();
+}
+
+function formatPlainTextToEmailHtml(text: string): string {
+  if (text.includes('<') && text.includes('>')) {
+    return text;
+  }
+  
+  const paragraphs = text.split(/\r?\n\r?\n/);
+  
+  const formattedParagraphs = paragraphs.map(p => {
+    let cleanParagraph = p.trim();
+    if (!cleanParagraph) return '';
+    
+    // Replace URLs with clickable anchors
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    cleanParagraph = cleanParagraph.replace(urlPattern, (url) => {
+      let cleanUrl = url;
+      let suffix = '';
+      const lastChar = url[url.length - 1];
+      if (['.', ',', '!', '?'].includes(lastChar)) {
+        cleanUrl = url.slice(0, -1);
+        suffix = lastChar;
+      }
+      return `<a href="${cleanUrl}" target="_blank" style="color: #10b981; font-weight: 600; text-decoration: underline;">${cleanUrl}</a>${suffix}`;
+    });
+
+    const withLineBreaks = cleanParagraph.replace(/\r?\n/g, '<br />');
+    return `<p style="margin: 0 0 16px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #334155;">${withLineBreaks}</p>`;
+  });
+
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+      <div style="margin-bottom: 24px;">
+        ${formattedParagraphs.filter(Boolean).join('')}
+      </div>
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+      <p style="color: #94a3b8; font-size: 11px; margin: 0; text-align: center;">Sent via ChaseFree AI</p>
+    </div>
+  `;
 }
 
 interface ReminderResult {
@@ -777,6 +817,99 @@ export async function getReminderHistoryAction(
     return { success: true, data }
   } catch (e) {
     logError('reminders/getReminderHistory', e)
+    return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
+  }
+}
+
+export async function sendDirectGmailReminderAction(
+  invoiceId: string,
+  to: string,
+  subject: string,
+  bodyHtml: string,
+  draftId?: string
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'You must be authenticated.' }
+
+    // Fetch active Gmail connection for the user
+    const { data: connection } = await supabase
+      .from('email_connections')
+      .select('email_address')
+      .eq('user_id', user.id)
+      .eq('provider', 'gmail')
+      .single()
+
+    if (!connection) {
+      return { error: 'No active Gmail connection found. Please connect your Gmail account in Settings.' }
+    }
+
+    // Get valid access token
+    const accessToken = await getValidAccessToken(supabase, user.id)
+
+    // Format plaintext body to professional HTML
+    const formattedHtml = formatPlainTextToEmailHtml(bodyHtml)
+
+    // Send the email via Gmail API
+    const sendResult = await sendGmailReminder(accessToken, to, subject, formattedHtml)
+
+    // Fetch invoice detail to get client_id
+    const { data: invoice } = await supabase
+      .from('invoices')
+      .select('client_id, reminder_count')
+      .eq('id', invoiceId)
+      .single()
+
+    // Log in email_messages
+    const { error: msgError } = await supabase
+      .from('email_messages')
+      .insert({
+        user_id: user.id,
+        invoice_id: invoiceId,
+        client_id: invoice?.client_id,
+        gmail_message_id: sendResult.messageId,
+        gmail_thread_id: sendResult.threadId,
+        direction: 'outbound',
+        subject,
+        body_text: bodyHtml,
+      })
+
+    if (msgError) {
+      console.error('Failed to log message in email_messages:', msgError.message)
+    }
+
+    // Log the reminder event
+    await logReminderEventAction(
+      invoiceId,
+      'marked_sent',
+      draftId,
+      `Reminder email sent directly via Gmail connection to ${to}`
+    )
+
+    // Update reminder count atomically
+    const { error: updateError } = await supabase.rpc('increment_reminder_count', {
+      p_invoice_id: invoiceId,
+      p_user_id: user.id,
+    })
+
+    if (updateError && updateError.code === '42883') {
+      await supabase
+        .from('invoices')
+        .update({
+          reminder_count: ((invoice?.reminder_count || 0) + 1),
+          last_reminder_at: new Date().toISOString(),
+        })
+        .eq('id', invoiceId)
+    }
+
+    revalidatePath(`/invoices/${invoiceId}`)
+    revalidatePath('/invoices')
+    revalidatePath('/dashboard')
+
+    return { success: true }
+  } catch (e) {
+    logError('reminders/sendDirectGmailReminder', e)
     return { error: e instanceof Error ? e.message : 'An unexpected error occurred.' }
   }
 }
