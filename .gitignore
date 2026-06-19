@@ -109,3 +109,5 @@ scripts/visual-audit.mjs
 # Internal Reports (private, not for GitHub)
 PRODUCT_SURVEY_REPORT.md
 
+migrations
+supabase\migrations
