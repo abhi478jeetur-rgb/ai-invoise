@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Security Hardening
+
+### Security
+- **Removed all hardcoded secrets from source and history.** Purged 4 leaked secrets (2 NVIDIA API keys, E2E test password, Turnstile bypass secret) from the entire git history via `git-filter-repo` and force-pushed a clean `main`.
+- **Removed insecure bypass fallback** in `src/lib/auth/actions.ts` — the Turnstile bypass no longer falls back to a known default string; it only activates when `E2E_BYPASS_SECRET` is explicitly set.
+- **Externalized all credentials to environment variables:** E2E test email/password, Supabase URL/anon key, NVIDIA API key, and Turnstile bypass secret now read from env (`.env.local` locally, GitHub Actions secrets in CI).
+
+### Changed
+- **Consolidated E2E login** into the shared `signIn()` helper (`tests/helpers/auth.ts`) across 7 spec files, removing duplicated inline login blocks and the hardcoded test credentials within them.
+- **Added `.env.local.example`** documenting all required environment variables for new contributors.
+- **Untracked non-application artifacts** from git: `scripts/debug/` (9 files), `public/theme-debug-screenshots/` (13 PNGs), `docs/archive/` (6 reports), and duplicate `docs/solv-bug.md`. Files remain locally but are no longer on GitHub.
+- **Tightened `.gitignore`** to prevent these artifacts from being re-uploaded.
+
+### Removed
+- Deleted 9 stale remote branches (`feat/*`, `feature/*`, `fix/*`) — all fully merged or 131 commits behind `main`.
+
 ## [2.1.12] - 2026-06-18
 
 ### Fixed
