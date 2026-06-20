@@ -23,13 +23,17 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
 
 // ─── Configuration ────────────────────────────────────────────────────
-const SUPABASE_URL = 'https://hfwuvramwfwmyplynqyr.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhmd3V2cmFtd2Z3bXlwbHlucXlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNzU5NDIsImV4cCI6MjA5NDY1MTk0Mn0.YQmN8YK_bDz5wPyGG-_hlSaPszjCzkiYBC32a7qSaQM';
+// Supabase URL + anon key are public (NEXT_PUBLIC_) but read from env so the
+// test suite is environment-portable. CI sets these as Actions secrets.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-// Two separate user contexts for cross-tenant testing
-const USER_A = { email: 'testabhi1@clockivo.com', password: '***REMOVED***' };
-const USER_B = { email: 'testabhi5@clockivo.com', password: '***REMOVED***' };
+// Two separate user contexts for cross-tenant testing.
+// USER_B is the primary test account (shared with other E2E specs);
+// USER_A is a second tenant used only by these RLS isolation tests.
+const E2E_PASSWORD = process.env.E2E_TEST_PASSWORD ?? '';
+const USER_A = { email: process.env.E2E_TEST_EMAIL_ALT ?? '', password: E2E_PASSWORD };
+const USER_B = { email: process.env.E2E_TEST_EMAIL ?? '', password: E2E_PASSWORD };
 
 const BASE_URL = 'http://localhost:3000';
 

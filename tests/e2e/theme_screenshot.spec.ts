@@ -1,18 +1,14 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import { signIn } from '../helpers/auth';
 
 test.describe('Theme Visual Screenshot Verification', () => {
   test.setTimeout(90000);
 
   test('capture theme screenshots', async ({ page }) => {
     // 1. Log in
-    await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(3500); // Wait for Turnstile
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-    await expect(page).toHaveURL(/.*dashboard|invoices/);
+    await signIn(page);
 
     const pages = [
       { name: 'dashboard', url: '/dashboard' },

@@ -30,8 +30,10 @@ async function isE2ERequest(): Promise<boolean> {
   try {
     const { headers } = await import('next/headers')
     const headersList = await headers()
-    const expectedSecret = process.env.E2E_BYPASS_SECRET || '***REMOVED***'
-    if (headersList.get('x-e2e-secret') === expectedSecret) {
+    // No default secret: a missing E2E_BYPASS_SECRET means the bypass is disabled,
+    // so production can never be opened up by a known fallback string.
+    const e2eSecret = process.env.E2E_BYPASS_SECRET
+    if (e2eSecret && headersList.get('x-e2e-secret') === e2eSecret) {
       return true
     }
   } catch {
