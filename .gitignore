@@ -37,6 +37,8 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env*.local
+# .env.local.example is the safe template — it MUST be tracked
+!.env.local.example
 
 # vercel
 .vercel
@@ -102,9 +104,17 @@ obsidian-mcp-config.json
 obsidian-vault/
 .obsidian/
 My research docs/
+# All debug scripts in one place
+scripts/debug/
 scripts/debug_db.js
 scripts/reset_onboarding.js
 scripts/visual-audit.mjs
+
+# Debug screenshots — debugging output, not production assets
+public/theme-debug-screenshots/
+
+# Archived internal reports — not needed to run the app
+docs/archive/
 
 # Internal Reports (private, not for GitHub)
 PRODUCT_SURVEY_REPORT.md

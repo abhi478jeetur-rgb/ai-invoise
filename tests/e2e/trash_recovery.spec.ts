@@ -1,18 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { signIn } from '../helpers/auth';
 
 test.describe('Trash & Recovery Management', () => {
   test.setTimeout(120000); // 2 minutes to accommodate dev server cold starts and multiple page reloads
 
   test.beforeEach(async ({ page }) => {
-    // Log in
-    await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(3500); // Wait for Turnstile
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-    
-    // Wait for dashboard to load
-    await expect(page).toHaveURL(/.*dashboard|invoices/);
+    await signIn(page);
   });
 
   test('can soft-delete an invoice, restore it, soft-delete again, and permanently delete it', async ({ page }) => {

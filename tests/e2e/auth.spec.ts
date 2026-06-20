@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { signIn } from '../helpers/auth';
 
 test.describe('Authentication Flows', () => {
   // Test route protection
@@ -69,17 +70,8 @@ test.describe('Authentication Flows', () => {
 
   // Test Sign In (requires live credentials)
   test('existing user can sign in and log out', async ({ page }) => {
-    await page.goto('/sign-in');
-    
-    // Using the known test user
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(3500); // Wait for Turnstile
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+    await signIn(page);
 
-    // Should reach dashboard
-    await expect(page).toHaveURL(/.*dashboard|invoices/);
-    
     // Open user menu
     await page.locator('button[aria-haspopup="menu"]').first().click();
     // Now Log out

@@ -1,7 +1,11 @@
 import { Page, expect } from '@playwright/test';
 
-const DEFAULT_EMAIL = 'testabhi5@clockivo.com';
-const DEFAULT_PASSWORD = '***REMOVED***';
+const DEFAULT_EMAIL = process.env.E2E_TEST_EMAIL ?? '';
+const DEFAULT_PASSWORD = process.env.E2E_TEST_PASSWORD ?? '';
+
+// Turnstile widget needs time to render and validate before submit is enabled.
+// Lower than this and CI sees intermittent "invalid captcha" rejections.
+const TURNSTILE_SETTLE_MS = 3500;
 
 export async function signIn(
   page: Page,
@@ -10,9 +14,17 @@ export async function signIn(
   const email = credentials.email ?? DEFAULT_EMAIL;
   const password = credentials.password ?? DEFAULT_PASSWORD;
 
+  if (!email || !password) {
+    throw new Error(
+      'E2E_TEST_EMAIL and E2E_TEST_PASSWORD must be set in the environment. ' +
+        'Add them to .env.local (local) or GitHub Actions secrets (CI).'
+    );
+  }
+
   await page.goto('/sign-in');
   await page.getByRole('textbox', { name: 'Email Address' }).fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.waitForTimeout(TURNSTILE_SETTLE_MS);
   await page.getByRole('button', { name: 'Sign In' }).click();
 
   // Wait for either a successful redirect or an error message
@@ -25,7 +37,7 @@ export async function signIn(
   if (page.url().includes('/sign-in')) {
     throw new Error(
       `Sign-in failed for ${email}. The test credentials may be stale. ` +
-      `Update DEFAULT_EMAIL and DEFAULT_PASSWORD in tests/helpers/auth.ts.`
+        `Update E2E_TEST_EMAIL and E2E_TEST_PASSWORD in your environment.`
     );
   }
 }

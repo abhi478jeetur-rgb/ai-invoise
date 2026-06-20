@@ -1,17 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { signIn } from '../helpers/auth';
 
 test.describe('Client Management', () => {
-  // Use a single user session for all tests in this block
   test.beforeEach(async ({ page }) => {
-    // Log in
-    await page.goto('/sign-in');
-    await page.getByRole('textbox', { name: 'Email Address' }).fill('testabhi5@clockivo.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('***REMOVED***');
-    await page.waitForTimeout(3500); // Wait for Turnstile
-    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-    
-    // Wait for dashboard to load
-    await expect(page).toHaveURL(/.*dashboard|invoices/);
+    await signIn(page);
   });
 
   test('can add, edit, and delete a client', async ({ page }) => {
