@@ -50,8 +50,8 @@ export function ClientForm({ open, onOpenChange, onSaved, client }: ClientFormPr
       ? await updateClientAction(client!.id, formData)
       : await createClientAction(formData)
 
-    if (result?.error) {
-      setError(result.error)
+    if (result && 'error' in result) {
+      setError(result.error ?? 'An unexpected error occurred.')
       setLoading(false)
     } else {
       onOpenChange(false)

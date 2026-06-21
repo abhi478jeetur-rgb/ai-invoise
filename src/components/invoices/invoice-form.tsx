@@ -152,8 +152,8 @@ export function InvoiceForm({ open, onOpenChange, onSaved, clients, invoice, def
       ? await updateInvoiceAction(invoice!.id, formData)
       : await createInvoiceAction(formData)
 
-    if (result?.error) {
-      setError(result.error)
+    if (result && 'error' in result) {
+      setError(result.error ?? 'An unexpected error occurred.')
       setLoading(false)
     } else {
       toast.success(isEditing ? 'Invoice saved successfully!' : 'Invoice created successfully!')
