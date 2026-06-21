@@ -25,7 +25,7 @@ export async function signIn(
   await page.getByRole('textbox', { name: 'Email Address' }).fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
   await page.waitForTimeout(TURNSTILE_SETTLE_MS);
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
   // Wait for either a successful redirect or an error message
   await Promise.race([
