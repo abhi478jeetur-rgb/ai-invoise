@@ -42,6 +42,9 @@ jobs:
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+        E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        E2E_BYPASS_SECRET: ${{ secrets.E2E_BYPASS_SECRET }}
 
     - name: Delay to prevent Rate Limiting
       run: sleep 10
@@ -52,6 +55,10 @@ jobs:
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+        E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        E2E_TEST_EMAIL_ALT: ${{ secrets.E2E_TEST_EMAIL_ALT }}
+        E2E_BYPASS_SECRET: ${{ secrets.E2E_BYPASS_SECRET }}
 
     - name: Delay to prevent Rate Limiting
       run: sleep 10
@@ -65,6 +72,9 @@ jobs:
         AI_API_KEY: ${{ secrets.AI_API_KEY }}
         AI_BASE_URL: ${{ secrets.AI_BASE_URL }}
         AI_MODEL_NAME: ${{ secrets.AI_MODEL_NAME }}
+        E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+        E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        E2E_BYPASS_SECRET: ${{ secrets.E2E_BYPASS_SECRET }}
 
     - name: Upload Test Results
       if: always()
