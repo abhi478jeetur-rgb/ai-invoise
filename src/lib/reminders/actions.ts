@@ -9,6 +9,7 @@ import { logError } from '@/lib/utils/error-handler'
 import { ReminderHistoryEvent } from '@/types/reminder'
 import { headers } from 'next/headers'
 import { getValidAccessToken, sendGmailReminder } from '@/lib/notifications/gmail'
+import { buildPaymentReminderPrompt, callAIApi, ReminderPromptContext } from '@/lib/ai/prompt-builders/reminder-prompt'
 
 function sanitizeInput(input?: string): string {
   if (!input) return '';
@@ -197,124 +198,47 @@ export async function generateReminderAction(
       ? `\nBUSINESS RULES (follow these when writing the email):\n${rulesLines.join('\n')}\n`
       : ''
 
-    const toneDescriptions: Record<string, string> = {
-      friendly: 'Soft, warm, and polite. Assume the client simply forgot. Be understanding and gentle. Use casual professional language.',
-      professional: 'Standard business-appropriate. Polite but clear about the outstanding payment. Neutral and courteous tone.',
-      firm: 'Urgent and direct. Set clear expectations and a specific deadline. Professional but assertive. Convey seriousness.',
-      final_notice: 'Extremely direct final warning. State this is the last notice before further action. Professional but unyielding. Create urgency.',
-    }
-
     const sanitizedInstructions = sanitizeInput(customInstructions)
 
-    const prompt = `You are an expert email writer specializing in payment follow-up reminders for freelancers.
-
-Generate a payment reminder email with the following context:
-
-SENDER:
-- Name: ${senderName}
-${senderCompany ? `- Company: ${senderCompany}` : ''}
-
-RECIPIENT:
-- Client Name: ${clientName}
-${companyName ? `- Company: ${companyName}` : ''}
-${client?.email ? `- Email: ${client.email}` : ''}
-
-INVOICE DETAILS:
-- Invoice Number: ${invoice.invoice_number}
-${invoice.title ? `- Title: ${invoice.title}` : ''}
-- Amount: ${currency} ${Number(invoice.amount).toFixed(2)}
-- Due Date: ${invoice.due_date}
-- Days ${daysOverdue > 0 ? 'Overdue' : 'Until Due'}: ${daysOverdue > 0 ? daysOverdue : Math.abs(daysOverdue)}
-${invoice.payment_link ? `- Payment Link: ${invoice.payment_link}` : ''}
-${invoice.description ? `- Description: ${invoice.description}` : ''}
-${rulesSection}
-TONE: ${tone}
-Tone Guidelines: ${toneDescriptions[tone]}
-
-${invoice.reminder_count > 0 ? `This is reminder #${invoice.reminder_count + 1}. Previous reminders have already been sent.` : 'This is the first reminder for this invoice.'}
-${sanitizedInstructions ? `\nCUSTOM INSTRUCTIONS FROM SENDER:\n${sanitizedInstructions}` : ''}
-${kbSection}
-
-IMPORTANT RULES:
-- Write as if you are ${senderName} sending to ${clientName}.
-- Keep the email concise (3-5 short paragraphs max).
-- Include the invoice number and amount clearly.
-${invoice.payment_link ? '- Include the payment link prominently.' : ''}
-- Be human-sounding, not robotic.
-- Do NOT include a subject line in the body text.
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
-{"subject": "Your subject line here", "body": "The full email body here"}`
-
-    // Call the LLM
-    const normalizedUrl = baseUrl.replace(/\/+$/, '')
-    const endpoint = `${normalizedUrl}/chat/completions`
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-        body: JSON.stringify({
-          model: modelName,
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are ChaseFree AI, a highly empathetic yet highly effective professional communication expert specializing in writing payment follow-ups for business owners and freelancers. 
-              
-Your goal is to write natural, human-sounding emails that get invoices paid faster without ruining client relationships.
-
-CRITICAL INSTRUCTIONS:
-1. Speak 100% as the sender (business owner/freelancer) writing directly to the client. Never speak as an assistant.
-2. Structure the email logically:
-   - Appropriate salutation (e.g., "Hi [Client Name]", "Dear [Client Name]" depending on tone).
-   - A clear opening explaining the status of the invoice.
-   - Body showing invoice number, amount due, and due date clearly.
-   - A direct, clean call-to-action (prominently referencing the payment link if provided).
-   - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
-3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
-4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
-{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.4,
-          max_tokens: 8000,
-        }),
-      signal: AbortSignal.timeout(60000),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
-      return { error: `AI provider error (HTTP ${response.status}): ${errorText.slice(0, 200) || response.statusText}` }
+    const contextParams: ReminderPromptContext = {
+      senderName,
+      senderCompany,
+      clientName,
+      companyName,
+      clientEmail: client?.email ?? null,
+      invoiceNumber: invoice.invoice_number,
+      invoiceTitle: invoice.title,
+      amount: Number(invoice.amount),
+      currency,
+      dueDate: invoice.due_date,
+      daysOverdue,
+      paymentLink: invoice.payment_link,
+      description: invoice.description,
+      rulesSection,
+      kbSection,
+      reminderCount: invoice.reminder_count || 0,
+      tone,
+      customInstructions: sanitizedInstructions
     }
 
-    const data = await response.json()
-    const rawContent = data.choices?.[0]?.message?.content?.trim() ?? ''
-
-    let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
-    let body: string = ''
-
+    let subject = `Payment Reminder - Invoice ${invoice.invoice_number}`
+    let body = ''
     try {
-      const cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-      let jsonStr = cleanContent
-      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        jsonStr = jsonMatch[0]
-      }
-      
-      const parsed = JSON.parse(jsonStr)
-      if (parsed.subject) subject = parsed.subject
-      if (parsed.body) body = parsed.body
-      else throw new Error('JSON parsed but missing body')
+      const messages = buildPaymentReminderPrompt(contextParams)
+      const aiResult = await callAIApi(baseUrl, modelName, apiKey, messages)
+      subject = aiResult.subject
+      body = aiResult.body
     } catch (e) {
-      console.error('Failed to parse AI response as JSON:', e)
-      // Prevent raw JSON string from dumping into the UI
-      if (rawContent.includes('{') || rawContent.includes('}')) {
-        body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+      logError('reminders/generateReminderAction', e, 'Failed to generate single AI reminder')
+      if (e instanceof Error && (e as any).rawContent) {
+        const rawContent = (e as any).rawContent
+        if (rawContent.includes('{') || rawContent.includes('}')) {
+          body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
+        } else {
+          body = rawContent || 'Please find the payment reminder details enclosed.'
+        }
       } else {
-        body = rawContent || 'Please find the payment reminder details enclosed.'
+        return { error: e instanceof Error ? e.message : 'AI generation failed.' }
       }
     }
 
@@ -354,10 +278,10 @@ CRITICAL INSTRUCTIONS:
         .eq('user_id', user.id)
 
       if (fallbackError) {
-        console.error('Failed to update invoice reminder count:', fallbackError.message)
+        logError('reminders/generateReminderAction', fallbackError, 'Failed to update invoice reminder count via fallback')
       }
     } else if (updateError) {
-      console.error('Failed to increment reminder count:', updateError.message)
+      logError('reminders/generateReminderAction', updateError, 'Failed to increment reminder count via RPC')
     }
 
 
@@ -482,132 +406,35 @@ export async function generateMultipleDraftsAction(
       ? `\nBUSINESS RULES:\n${rulesLines2.join('\n')}\n`
       : ''
 
-    const toneDescriptions: Record<string, string> = {
-      friendly: 'Soft, warm, and polite. Assume the client simply forgot. Be understanding and gentle. Use casual professional language.',
-      professional: 'Standard business-appropriate. Polite but clear about the outstanding payment. Neutral and courteous tone.',
-      firm: 'Urgent and direct. Set clear expectations and a specific deadline. Professional but assertive. Convey seriousness.',
-      final_notice: 'Extremely direct final warning. State this is the last notice before further action. Professional but unyielding. Create urgency.',
-    }
-
     const styleVariations = [
       'Write in a direct, concise style. Keep it short.',
       'Write with a slightly warmer, more personal tone.',
       'Write a more detailed version with clear next steps.',
     ]
 
-    const buildPrompt = (styleInstruction: string) => `You are an expert email writer specializing in payment follow-up reminders for freelancers.
-
-Generate a payment reminder email with the following context:
-
-SENDER:
-- Name: ${senderName}
-${senderCompany ? `- Company: ${senderCompany}` : ''}
-
-RECIPIENT:
-- Client Name: ${clientName}
-${companyName ? `- Company: ${companyName}` : ''}
-${client?.email ? `- Email: ${client.email}` : ''}
-
-INVOICE DETAILS:
-- Invoice Number: ${invoice.invoice_number}
-${invoice.title ? `- Title: ${invoice.title}` : ''}
-- Amount: ${currency} ${Number(invoice.amount).toFixed(2)}
-- Due Date: ${invoice.due_date}
-- Days ${daysOverdue > 0 ? 'Overdue' : 'Until Due'}: ${daysOverdue > 0 ? daysOverdue : Math.abs(daysOverdue)}
-${invoice.payment_link ? `- Payment Link: ${invoice.payment_link}` : ''}
-${invoice.description ? `- Description: ${invoice.description}` : ''}
-${rulesSection2}
-TONE: ${tone}
-Tone Guidelines: ${toneDescriptions[tone]}
-
-${invoice.reminder_count > 0 ? `This is reminder #${invoice.reminder_count + 1}. Previous reminders have already been sent.` : 'This is the first reminder for this invoice.'}
-
-STYLE: ${styleInstruction}
-
-IMPORTANT RULES:
-- Write as if you are ${senderName} sending to ${clientName}.
-- Keep the email concise (3-5 short paragraphs max).
-- Include the invoice number and amount clearly.
-${invoice.payment_link ? '- Include the payment link prominently.' : ''}
-- Be human-sounding, not robotic.
-- Do NOT include a subject line in the body text.
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
-{"subject": "Your subject line here", "body": "The full email body here"}`
-
-    const normalizedUrl = baseUrl.replace(/\/+$/, '')
-    const endpoint = `${normalizedUrl}/chat/completions`
+    const baseContext: ReminderPromptContext = {
+      senderName,
+      senderCompany,
+      clientName,
+      companyName,
+      clientEmail: client?.email ?? null,
+      invoiceNumber: invoice.invoice_number,
+      invoiceTitle: invoice.title,
+      amount: Number(invoice.amount),
+      currency,
+      dueDate: invoice.due_date,
+      daysOverdue,
+      paymentLink: invoice.payment_link,
+      description: invoice.description,
+      rulesSection: rulesSection2,
+      kbSection: '',
+      reminderCount: invoice.reminder_count || 0,
+      tone
+    }
 
     const callLLM = async (styleInstruction: string) => {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: modelName,
-          messages: [
-            { 
-              role: 'system', 
-              content: `You are ChaseFree AI, a highly empathetic yet highly effective professional communication expert specializing in writing payment follow-ups for business owners and freelancers. 
-              
-Your goal is to write natural, human-sounding emails that get invoices paid faster without ruining client relationships.
-
-CRITICAL INSTRUCTIONS:
-1. Speak 100% as the sender (business owner/freelancer) writing directly to the client. Never speak as an assistant.
-2. Structure the email logically:
-   - Appropriate salutation (e.g., "Hi [Client Name]", "Dear [Client Name]" depending on tone).
-   - A clear opening explaining the status of the invoice.
-   - Body showing invoice number, amount due, and due date clearly.
-   - A direct, clean call-to-action (prominently referencing the payment link if provided).
-   - Professional, warm sign-off (e.g., "Best regards,", "Thanks," followed by sender name).
-3. Do not sound robotic, boilerplate, or over-formal unless the tone strictly demands it. Make the text sound fresh and tailored to the invoice details.
-4. Output formatting: You MUST respond ONLY with a single JSON object in the exact schema below. Do not wrap it in markdown code blocks (\`\`\`json ... \`\`\`), do not write any pre-text or post-text. Escape double quotes inside the subject and body properly.
-{"subject": "The email subject line", "body": "The full email body including salutations, paragraphs separated by double newlines \\n\\n, and sign-off. DO NOT include the subject line inside the body."}`
-            },
-            { role: 'user', content: buildPrompt(styleInstruction) },
-          ],
-          temperature: 0.4,
-          max_tokens: 8000,
-        }),
-        signal: AbortSignal.timeout(60000),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '')
-        throw new Error(`AI provider error (HTTP ${response.status}): ${errorText.slice(0, 200) || response.statusText}`)
-      }
-
-      const data = await response.json()
-      const rawContent = data.choices?.[0]?.message?.content?.trim() ?? ''
-
-      let subject: string = `Payment Reminder - Invoice ${invoice.invoice_number}`
-      let body: string = ''
-      try {
-        const cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-        let jsonStr = cleanContent
-        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          jsonStr = jsonMatch[0]
-        }
-        
-        const parsed = JSON.parse(jsonStr)
-        if (parsed.subject) subject = parsed.subject
-        if (parsed.body) body = parsed.body
-        else throw new Error('JSON parsed but missing body')
-      } catch (e) {
-        console.error('Failed to parse AI response as JSON:', e)
-        console.error('Raw content was:', rawContent)
-        console.error('Full AI response data:', JSON.stringify(data).slice(0, 500))
-        if (rawContent.includes('{') || rawContent.includes('}')) {
-          body = 'We are following up regarding the outstanding invoice. Please let us know if you need any assistance.'
-        } else {
-          body = rawContent || 'Please find the payment reminder details enclosed.'
-        }
-      }
-
-      return { subject, body }
+      const messages = buildPaymentReminderPrompt({ ...baseContext, styleInstruction })
+      return await callAIApi(baseUrl, modelName, apiKey, messages)
     }
 
     // Run 3 LLM calls in parallel, catching individual failures
@@ -617,7 +444,7 @@ CRITICAL INSTRUCTIONS:
           const { subject, body } = await callLLM(style)
           return { success: true as const, subject, body, variantIndex: index }
         } catch (e) {
-          console.error(`Variant ${index} failed:`, e instanceof Error ? e.message : e)
+          logError('reminders/generateMultipleDrafts', e instanceof Error ? e : new Error(String(e)), `Variant ${index} failed`)
           return { success: false as const, variantIndex: index }
         }
       })
@@ -647,7 +474,7 @@ CRITICAL INSTRUCTIONS:
         .single()
 
       if (draftError) {
-        console.error(`Failed to insert variant ${variant.variantIndex}:`, draftError.message)
+        logError('reminders/generateMultipleDrafts', draftError, `Failed to insert variant ${variant.variantIndex}`)
         continue
       }
 
@@ -682,10 +509,10 @@ CRITICAL INSTRUCTIONS:
         .eq('user_id', user.id)
 
       if (fallbackError) {
-        console.error('Failed to update invoice reminder count:', fallbackError.message)
+        logError('reminders/generateMultipleDrafts', fallbackError, 'Failed to update invoice reminder count via fallback')
       }
     } else if (updateError) {
-      console.error('Failed to increment reminder count:', updateError.message)
+      logError('reminders/generateMultipleDrafts', updateError, 'Failed to increment reminder count via RPC')
     }
 
     return { success: true, data: inserted }
@@ -876,7 +703,7 @@ export async function sendDirectGmailReminderAction(
       })
 
     if (msgError) {
-      console.error('Failed to log message in email_messages:', msgError.message)
+      logError('reminders/sendDirectGmailReminder', msgError, 'Failed to log message in email_messages')
     }
 
     // Log the reminder event

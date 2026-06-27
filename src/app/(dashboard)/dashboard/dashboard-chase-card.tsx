@@ -84,7 +84,7 @@ export function ChaseCard({ invoice }: ChaseCardProps) {
   }
 
   return (
-    <div className="flex items-center justify-between p-3.5 rounded-lg border border-border/60 bg-secondary/30 hover:bg-card/50 transition-colors">
+    <div className="flex items-center justify-between p-3.5 rounded-lg border border-border/60 bg-secondary/30 t-hover-lift">
       <div className="flex items-center gap-3 min-w-0">
         <div className={`w-1.5 h-8 rounded-full shrink-0 ${
           invoice.status === 'overdue' ? 'bg-red-500' :

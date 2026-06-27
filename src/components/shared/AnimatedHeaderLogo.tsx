@@ -39,6 +39,9 @@ export default function AnimatedHeaderLogo() {
       <span className="text-sm font-semibold text-neutral-200 tracking-tight transition-colors duration-300 group-hover:text-white">
         ChaseFree AI
       </span>
+      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-bold tracking-wider uppercase border border-emerald-500/20 leading-none">
+        Beta
+      </span>
     </Link>
   )
 }

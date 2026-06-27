@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.1.18] - 2026-06-27
+
+### Added
+- **Global DNA Helix Loader:** Created a root-level `loading.tsx` page featuring a pure CSS 3D-simulated vertical DNA helix spinner. Shows up instantly during server-side auth checking, avoiding initial black screens.
+- **Beta Badge:** Added a sleek, emerald Beta pill badge to the landing page hero and the main header logo component next to "ChaseFree AI".
+
+### Changed
+- **Transition Overrides:** Configured custom transitions for all Popover inputs globally (`globals.css`) for smooth dropdown opens.
+- **Slick Drawer Slide-in:** Refactored sidebar sheets in `src/components/ui/sheet.tsx` to translate all the way off-screen (`translate-x-full` / `-translate-x-full`) for drawer animations.
+- **Tactile Card Hover Lift:** Added `.t-hover-lift` to the "Who to Chase Today" list items.
+
+### Fixed
+- **UI Dialog Error:** Resolved a nested popover trigger error with Base UI by using separate triggers for desktop and mobile buttons.
+
 ## [Unreleased] - Security Hardening
 
 ### Security

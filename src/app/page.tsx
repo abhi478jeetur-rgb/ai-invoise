@@ -112,6 +112,9 @@ export default async function LandingPage() {
           <div className="text-center max-w-3xl mx-auto">
             {/* Badge */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-neutral-900 bg-neutral-900/60 text-[11px] text-neutral-400 mb-6 backdrop-blur-md">
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-bold tracking-wider uppercase border border-emerald-500/20 leading-none">
+                Beta
+              </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Built for freelancers who hate chasing payments
             </div>

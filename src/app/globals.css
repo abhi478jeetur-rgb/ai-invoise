@@ -8,8 +8,91 @@ next-devtools-portal,
 #__next-devtools__ {
   display: none !important;
 }
-@import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
+/* ── DNA Helix Loading Keyframes ── */
+@keyframes dna-line-scale {
+  0%, 50%, 100% {
+    transform: scaleY(1);
+  }
+  25%, 75% {
+    transform: scaleY(0);
+  }
+}
+@keyframes dna-move-a {
+  0%, 100% {
+    top: 0%;
+    transform: scale(1);
+    z-index: 2;
+  }
+  25% {
+    transform: scale(1.4);
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.6));
+  }
+  50% {
+    top: 100%;
+    transform: scale(1);
+    z-index: 1;
+  }
+  75% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+}
+@keyframes dna-move-b {
+  0%, 100% {
+    top: 100%;
+    transform: scale(1);
+    z-index: 1;
+  }
+  25% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  50% {
+    top: 0%;
+    transform: scale(1);
+    z-index: 2;
+  }
+  75% {
+    transform: scale(1.4);
+    filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.6));
+  }
+}
+
+.animate-dna-line {
+  animation: dna-line-scale 2s infinite ease-in-out;
+}
+.animate-dna-dot-a {
+  animation: dna-move-a 2s infinite ease-in-out;
+}
+.animate-dna-dot-b {
+  animation: dna-move-b 2s infinite ease-in-out;
+}
+
+/* ── Popover Transition overrides ── */
+[data-slot="popover-content"] {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transform-origin: var(--transform-origin);
+}
+[data-slot="popover-content"][data-open] {
+  opacity: 1 !important;
+  transform: scale(1) translateY(0) !important;
+}
+[data-slot="popover-content"][data-closed] {
+  opacity: 0 !important;
+  transform: scale(0.97) translateY(6px) !important;
+}
+
+/* ── Hover Lift transition utility ── */
+.t-hover-lift {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.t-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -10px rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
 
 @custom-variant dark (&:is(.dark *));
 

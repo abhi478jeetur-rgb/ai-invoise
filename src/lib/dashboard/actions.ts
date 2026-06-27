@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/db/server'
 import { sanitizeDatabaseError } from '@/lib/utils/security'
 import { logError } from '@/lib/utils/error-handler'
-import { unstable_cache } from 'next/cache'
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
@@ -302,14 +301,7 @@ async function fetchDashboardDataRaw(userId: string, accessToken: string) {
 }
 
 function getCachedDashboardData(userId: string, accessToken: string) {
-  return unstable_cache(
-    async () => fetchDashboardDataRaw(userId, accessToken),
-    ['dashboard-analytics-key', userId],
-    {
-      revalidate: false,
-      tags: [`dashboard-analytics-${userId}`],
-    }
-  )()
+  return fetchDashboardDataRaw(userId, accessToken)
 }
 
 export async function getDashboardDataAction() {

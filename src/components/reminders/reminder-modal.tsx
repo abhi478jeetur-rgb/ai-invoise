@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { generateReminderAction, logReminderEventAction, sendDirectGmailReminderAction } from '@/lib/reminders/actions'
 import { getEmailConnectionStateAction } from '@/lib/settings/actions'
 import { toast } from 'sonner'
+import { ReminderGeneratingAnimation } from './ReminderGeneratingAnimation'
 
 function buildWhatsAppUrl(body: string): string {
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`
@@ -97,7 +98,6 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
   const [tone, setTone] = useState<Tone>('professional')
   const [customInstructions, setCustomInstructions] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [statusIndex, setStatusIndex] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   const [gmailConnected, setGmailConnected] = useState(false)
@@ -142,16 +142,7 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
     }
   }
 
-  useEffect(() => {
-    if (!generating) {
-      setStatusIndex(0)
-      return
-    }
-    const interval = setInterval(() => {
-      setStatusIndex((prev) => (prev + 1) % GENERATION_STATUSES.length)
-    }, 1500)
-    return () => clearInterval(interval)
-  }, [generating])
+
 
   // Draft state
   const [draft, setDraft] = useState<{ id: string; subject: string; body: string } | null>(null)
@@ -250,19 +241,10 @@ export function ReminderModal({ open, onOpenChange, invoiceId, invoiceNumber, cl
         </SheetHeader>
 
         {generating ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 space-y-5">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full" />
-              <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <div className="absolute inset-2.5 bg-emerald-500/10 rounded-full blur-sm animate-pulse" />
-            </div>
-            <div className="space-y-1.5 text-center">
-              <p className="text-sm font-semibold text-foreground">Generating Reminder</p>
-              <p className="text-xs text-emerald-400 font-light min-h-[16px] animate-pulse transition-all duration-500">
-                {GENERATION_STATUSES[statusIndex]}
-              </p>
-            </div>
-          </div>
+          <ReminderGeneratingAnimation 
+            title="Generating Reminder" 
+            statusMessages={GENERATION_STATUSES} 
+          />
         ) : !draft ? (
           /* Tone Selection & Generate */
           <div className="space-y-5 pt-2">

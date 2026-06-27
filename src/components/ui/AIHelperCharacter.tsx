@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { animate } from 'animejs'
+import gsap from 'gsap'
 
 interface AIHelperCharacterProps {
   variant?: 'invoices' | 'clients' | 'all-clear' | 'activity'
@@ -23,51 +23,59 @@ export function AIHelperCharacter({ variant = 'invoices' }: AIHelperCharacterPro
     if (!astronautBodyRef.current || !astronautLeftArmRef.current || !astronautRightArmRef.current) return
 
     // Idle floating animation for the body
-    const floatingAnimation = animate(astronautBodyRef.current, {
-      translateY: [-4, 4],
-      rotate: [-1, 1],
-      duration: 3000,
-      direction: 'alternate',
-      loop: true,
-      easing: 'easeInOutSine'
-    })
+    const floatingAnimation = gsap.fromTo(astronautBodyRef.current,
+      { y: -4, rotation: -1 },
+      {
+        y: 4,
+        rotation: 1,
+        duration: 3,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      }
+    )
 
     // Sub-animation for left arm bobbing
-    const leftArmBob = animate(astronautLeftArmRef.current, {
-      rotate: [-3, 3],
-      transformOrigin: '15px 12px',
-      duration: 2400,
-      direction: 'alternate',
-      loop: true,
-      easing: 'easeInOutSine'
-    })
+    const leftArmBob = gsap.fromTo(astronautLeftArmRef.current,
+      { rotation: -3, transformOrigin: '15px 12px' },
+      {
+        rotation: 3,
+        duration: 2.4,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      }
+    )
 
     // Sub-animation for right arm bobbing
-    const rightArmBob = animate(astronautRightArmRef.current, {
-      rotate: [3, -3],
-      transformOrigin: '65px 12px',
-      duration: 2600,
-      direction: 'alternate',
-      loop: true,
-      easing: 'easeInOutSine'
-    })
+    const rightArmBob = gsap.fromTo(astronautRightArmRef.current,
+      { rotation: 3, transformOrigin: '65px 12px' },
+      {
+        rotation: -3,
+        duration: 2.6,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut'
+      }
+    )
 
     // Random winking/blinking simulation for the eyes
-    const eyeBlink = animate('.astronaut-eye', {
-      scaleY: [
-        { value: 0.1, duration: 150, delay: 4000 },
-        { value: 1, duration: 150 }
-      ],
+    const eyeBlink = gsap.to('.astronaut-eye', {
+      scaleY: 0.1,
       transformOrigin: 'center center',
-      loop: true,
-      easing: 'easeOutQuad'
+      duration: 0.15,
+      yoyo: true,
+      repeat: -1,
+      repeatDelay: 4,
+      delay: 4,
+      ease: 'power1.out'
     })
 
     return () => {
-      floatingAnimation.pause()
-      leftArmBob.pause()
-      rightArmBob.pause()
-      eyeBlink.pause()
+      floatingAnimation.kill()
+      leftArmBob.kill()
+      rightArmBob.kill()
+      eyeBlink.kill()
     }
   }, [])
 
@@ -102,12 +110,12 @@ export function AIHelperCharacter({ variant = 'invoices' }: AIHelperCharacterPro
       if (!astronautVisorRef.current || !astronautHeadRef.current) return
       
       // Smoothly transition visor and head back to original center coordinates
-      animate([astronautVisorRef.current, astronautHeadRef.current], {
-        translateX: 0,
-        translateY: 0,
-        rotate: 0,
-        duration: 600,
-        easing: 'easeOutElastic(1, 0.6)'
+      gsap.to([astronautVisorRef.current, astronautHeadRef.current], {
+        x: 0,
+        y: 0,
+        rotation: 0,
+        duration: 0.6,
+        ease: 'elastic.out(1, 0.6)'
       })
       setCursorOffset({ x: 0, y: 0 })
     }

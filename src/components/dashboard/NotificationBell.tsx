@@ -26,9 +26,6 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications()
-    // Poll every minute
-    const interval = setInterval(fetchNotifications, 60000)
-    return () => clearInterval(interval)
   }, [])
 
   const unreadCount = notifications.filter(n => !n.is_read).length
